@@ -31,6 +31,7 @@ static struct {
 	int (*func)(int, char **);
 } tools[] = {
 	{ "toolbox", toolbox_main },
+	{ "libtoolbox.so", toolbox_main },
 #define TOOL(name) { #name, name##_main },
 #include "tools.h"
 #undef TOOL
@@ -38,8 +39,8 @@ static struct {
 };
 
 static void help() {
-	puts("PC GO ToolBox 1.2\nCopyright 2007-2015 PC GO Ld.\n\nUsage: \n	toolbox <tool> [<tool-arguments>]\n	<tool> [<tool-arguments>]\n\nList of tools:");
-	for(i = 1; tools[i].name; i++) printf("	%s\n", tools[i].name);
+	puts("libdll.so ToolBox 1.3\nCopyright 2007-2015 PC GO Ld.\n\nUsage: \n	toolbox <tool> [<tool-arguments>]\n	<tool> [<tool-arguments>]\n\nList of tools:");
+	for(i = 2; tools[i].name; i++) printf("	%s\n", tools[i].name);
 	putchar('\n');
 }
 

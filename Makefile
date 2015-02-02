@@ -1,6 +1,7 @@
 # 工具箱的 Makefile
 
 OS_NAME = $(shell uname -s)
+OUTFILE = toolbox
 
 ifeq ($(OS_NAME),Darwin)
 MAC_HELP = \
@@ -35,6 +36,15 @@ ifndef DARWIN
 ifndef NO_STATIC
 UNITY_LDFLAGS = --static
 endif
+endif
+
+# Both shared library and executable
+# Note: Option --pie -Wl,-E replaces --shared
+ifdef SHARED_OBJECT
+CFLAGS += -fPIC
+# LDFLAGS += --shared
+LDFLAGS += --pie -Wl,-E
+OUTFILE = libtoolbox.so
 endif
 
 ALL_TOOLS := \
@@ -221,7 +231,7 @@ TRAN_SRC = \
 first:	unity
 
 unity:	$(ALL_TOOLS) toolbox.o
-	$(CC) $(LDFLAGS) $(UNITY_LDFLAGS) $(ALL_TOOLS) toolbox.o -o toolbox $(LIBS) $(SELINUX_LIBS) $(TIMELIB) -lcrypto -lpthread
+	$(CC) $(LDFLAGS) $(UNITY_LDFLAGS) $(ALL_TOOLS) toolbox.o -o $(OUTFILE) $(LIBS) $(SELINUX_LIBS) $(TIMELIB) -lcrypto -lpthread
 
 separate:	$(DEPEND) $(BASE_TOOLS) $(EXTRA_TOOLS)
 
@@ -236,7 +246,7 @@ cleanc:
 	/bin/rm -f $(TRAN_SRC)
 
 clean:	cleanc
-	/bin/rm -f toolbox $(BASE_TOOLS) $(EXTRA_TOOLS) *.o *.exe
+	/bin/rm -f toolbox libtoolbox.so $(BASE_TOOLS) $(EXTRA_TOOLS) *.o *.exe
 	$(MAKE) -C posix-io-for-windows distclean
 
 help:
