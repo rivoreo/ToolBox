@@ -1,0 +1,2 @@
+CFLAGS="-I/media/f01a9cd1-2570-4619-b4cd-41a27bdcfbd3/local/include"
+LIBS="-L/media/f01a9cd1-2570-4619-b4cd-41a27bdcfbd3/local/lib"

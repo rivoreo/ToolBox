@@ -1,0 +1,8 @@
+void help(){
+	printf("PC GO ToolBox 1.1\nCopyright 2007-2013 PC GO Ld.\n\nUsage: \n	toolbox <tool> [tool-arguments]...\n	<tool> [tool-arguments]...\n\nList of tools:\n");
+	for(i = 0; tools[i].name; i++) if(strcmp(tools[i].name, "toolbox")){
+		if(i == 1) printf("	"); else printf(", ");
+		printf("%s", tools[i].name);
+	}
+	printf("\n\n");
+}
