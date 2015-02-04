@@ -35,8 +35,9 @@ static int do_md5(const char *path)
         rlen = read(fd, buf, sizeof(buf));
         if(rlen == 0) break;
         else if(rlen < 0) {
+			int e = errno;
             close(fd);
-            fprintf(stderr,"could not read %s, %s\n", path, strerror(errno));
+            fprintf(stderr,"could not read %s, %s\n", path, strerror(e));
             return -1;
         }
         MD5_Update(&md5_ctx, buf, rlen);
