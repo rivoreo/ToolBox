@@ -182,7 +182,7 @@ EXTRA_TOOLS += \
 	runcon \
 	setenforce \
 	setsebool
-SELINUX_LIBS = -lselinux
+SELINUX_LIBS = -lselinux -lpcre
 ifndef NO_STATIC
 SELINUX_LIBS += -lsepol
 endif
