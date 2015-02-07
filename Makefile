@@ -206,6 +206,7 @@ TRAN_SRC = \
 	getevent.c \
 	id.c \
 	ln.c \
+	ls.c \
 	mv.c \
 	netstat.c \
 	ps.c \

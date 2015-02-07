@@ -24,7 +24,6 @@ Files
 	kill*,
 	link.c,
 	ln_u.c,
-	ls.c,
 	ls_u.c
 	lsmod*,
 	Makefile,
