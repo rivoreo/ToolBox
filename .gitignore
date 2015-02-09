@@ -1,0 +1,7 @@
+*~
+*.o
+*.swp
+*.i
+*.orig
+.directory
+a.out
