@@ -13,10 +13,11 @@ CFLAGS = -O1 -Wall
 #OBJS = open.o read.o write.o close.o
 OBJS = \
 	close.o \
+	fileno.o \
 	lseek.o \
 	open.o \
 	read.o \
-	write.o \
+	write.o
 
 libposixio.a:	$(OBJS)
 	$(AR) -r $@ $^

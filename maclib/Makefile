@@ -1,5 +1,4 @@
 CFLAGS = -Wall -arch i386 -arch x86_64 -arch ppc -mmacosx-version-min=10.4
-#LDFLAGS = --static $(CFLAGS)
 
 libcrypto.dylib:	libcrypto.0.9.7.dylib
 	strip $^ -o $@
@@ -12,4 +11,3 @@ libcrypto.0.9.7.exported.c:	libcrypto-0.9.7-export-list
 
 clean:
 	rm -f libcrypto.0.9.7.exported.c libcrypto.0.9.7.dylib
-

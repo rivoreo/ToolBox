@@ -1,16 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
+//#include <stdint.h>
 #include <unistd.h>
 #include <fcntl.h>
-#ifndef _WIN32
-#include <sys/ioctl.h>
-#endif
+//#ifndef _WIN32
+//#include <sys/ioctl.h>
+//#endif
 #include <errno.h>
 
 int main(int argc, char *argv[]) {
-	int c;
 	int fd;
 	unsigned char buf[4096];
 	int res;
@@ -26,7 +25,7 @@ int main(int argc, char *argv[]) {
 	int repeat = 0;
 
 	while(1) {
-		c = getopt(argc, argv, "b:c:r:");
+		int c = getopt(argc, argv, "b:c:r:");
 		if(c == EOF) break;
 		switch(c) {
 			case 'b':
@@ -64,11 +63,11 @@ int main(int argc, char *argv[]) {
 		lsum = 0;
 		while(1) {
 			read_len = sizeof(buf);
-			if(count > 0 && base + count - filepos < read_len)
+			if(count > 0 && base + count - filepos < read_len) {
 				read_len = base + count - filepos;
+			}
 			res = read(fd, &buf, read_len);
-			if(res == 0)
-				break;
+			if(res == 0) break;
 			for(i = 0; i < res; i++) {
 				if((i & 15) == 0) {
 					printf("%08x: ", filepos + i);

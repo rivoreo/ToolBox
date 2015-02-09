@@ -19,7 +19,7 @@
 #include <sys/time.h>
 #if defined _WIN32 && !defined _WIN32_WNT_NATIVE
 #include "timefunc.h"
-#define CLOCK_MONOTONIC 1
+//#define CLOCK_MONOTONIC 1
 //#include <windows.h>
 #elif defined __linux__
 //#include <sys/ioctl.h>

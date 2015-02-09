@@ -43,8 +43,12 @@
 #include <string.h>
 #include <unistd.h>
 
+#ifdef _WIN32
 #ifdef _WIN32_WCE
 #define CAT_BUFSIZ (1024)
+#else
+#define CAT_BUFSIZ (2048)
+#endif
 #else
 #define CAT_BUFSIZ (4096)
 #endif
@@ -88,8 +92,8 @@ static void cook_buf(FILE *fp) {
 						}
 					}
 				}
-			} else if (nflag) {
-				if (fprintf(stdout, "%6d\t", ++line) < 0) {
+			} else if(nflag) {
+				if(fprintf(stdout, "%6d\t", ++line) < 0) {
 					stdout_err++;
 					break;
 				}
@@ -100,26 +104,22 @@ static void cook_buf(FILE *fp) {
 			if(eflag && putchar('$') == EOF) break;
 		} else if (ch == '\t') {
 			if (tflag) {
-				if (putchar('^') == EOF || putchar('I') == EOF)
-					break;
+				if (putchar('^') == EOF || putchar('I') == EOF) break;
 				continue;
 			}
 		} else if (vflag) {
 			if (!isascii(ch)) {
-				if (putchar('M') == EOF || putchar('-') == EOF)
-					break;
+				if (putchar('M') == EOF || putchar('-') == EOF) break;
 				ch = (ch) & 0x7f;
 			}
 			if (iscntrl(ch)) {
-				if (putchar('^') == EOF ||
-				    putchar(ch == '\177' ? '?' :
-				    ch | 0100) == EOF)
-					break;
+				if(putchar('^') == EOF ||
+				putchar(ch == '\177' ? '?' : ch | 0100) == EOF) break;
+
 				continue;
 			}
 		}
-		if (putchar(ch) == EOF)
-			break;
+		if(putchar(ch) == EOF) break;
 	}
 	if (stdout_err) {
 		perror(filename);
@@ -134,23 +134,21 @@ static void cook_args(char **argv) {
 	filename = "stdin";
 	do {
 		if (*argv) {
-			if (!strcmp(*argv, "-"))
-				fp = stdin;
-			else if ((fp = fopen(*argv, 
+			if(strcmp(*argv, "-") == 0) fp = stdin;
+			else if((fp = fopen(*argv,
 #ifndef _WIN32
-				fflag ? "rf" : 
+			fflag ? "rf" : 
 #endif
-				"r")) == NULL) {
+			"r")) == NULL) {
 				perror("fopen");
 				rval = 1;
-				++argv;
+				argv++;
 				continue;
 			}
 			filename = *argv++;
 		}
 		cook_buf(fp);
-		if (fp != stdin)
-			fclose(fp);
+		if(fp != stdin) fclose(fp);
 	} while (*argv);
 }
 
@@ -165,23 +163,22 @@ static void raw_cat(int rfd) {
 	int wfd;
 
 	wfd = fileno(stdout);
-#ifndef _WIN32
-	if(buf == NULL) {
+#if !defined _WIN32 || defined _WIN32_WNT_NATIVE
+	if(!buf) {
 		if(fstat(wfd, &sbuf) == 0) {
-			bsize = sbuf.st_blksize > CAT_BUFSIZ ?
-			    sbuf.st_blksize : CAT_BUFSIZ;
+			bsize = sbuf.st_blksize > CAT_BUFSIZ ? sbuf.st_blksize : CAT_BUFSIZ;
 			buf = malloc(bsize);
 		}
 #endif
-		if(buf == NULL) {
+		if(!buf) {
 			buf = fb_buf;
 			bsize = CAT_BUFSIZ;
 		}
-#ifndef _WIN32
+#if !defined _WIN32 || defined _WIN32_WNT_NATIVE
 	}
 #endif
 	while((nr = read(rfd, buf, bsize)) > 0) {
-		for(off = 0; nr; nr -= nw, off += nw) {
+		for(off = 0; nr > 0; nr -= nw, off += nw) {
 			if((nw = write(wfd, buf + off, (size_t)nr)) < 0) {
 				perror("write");
 				exit(EXIT_FAILURE);
@@ -199,14 +196,14 @@ static void raw_args(char **argv) {
 
 	fd = fileno(stdin);
 	filename = "stdin";
-	do{
+	do {
 		if(*argv) {
-			if(!strcmp(*argv, "-")) fd = fileno(stdin);
+			if(strcmp(*argv, "-") == 0) fd = fileno(stdin);
 #ifndef _WIN32
 			else if(fflag) {
 				struct stat st;
-				fd = open(*argv, O_RDONLY|O_NONBLOCK, 0);
-				if(fd < 0) goto skip;
+				fd = open(*argv, O_RDONLY|O_NONBLOCK);
+				if(fd == -1) goto skip;
 
 				if(fstat(fd, &st) == -1) {
 					close(fd);
@@ -219,7 +216,7 @@ static void raw_args(char **argv) {
 				}
 			} else
 #endif
-			if((fd = open(*argv, O_RDONLY, 0)) < 0) {
+			if((fd = open(*argv, O_RDONLY)) == -1) {
 #ifndef _WIN32
 skip:
 #endif

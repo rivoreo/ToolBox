@@ -11,7 +11,7 @@
 #endif
 
 #ifndef _WCE
-#define _WCE
+#define _WCE 4
 #endif
 
 #ifndef _WINCE
@@ -23,4 +23,4 @@
 #endif
 
 #undef PATH_MAX
-#define PATH_MAX 260
+#define PATH_MAX 259

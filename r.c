@@ -54,43 +54,42 @@ int main(int argc, char *argv[]) {
 	}
 
 	fd = open("/dev/mem", O_RDWR | O_SYNC);
-	if(fd < 0) {
+	if(fd == -1) {
 		fprintf(stderr,"cannot open /dev/mem\n");
 		return -1;
 	}
 
 	mmap_start = addr ;
 	mmap_size = endaddr - mmap_start + 1;
-	//mmap_size = (mmap_size + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
 
 	page = mmap(0, mmap_size, PROT_READ | PROT_WRITE,
-			MAP_SHARED, fd, mmap_start);
+		MAP_SHARED, fd, mmap_start);
 
-	if(page == MAP_FAILED){
+	if(page == MAP_FAILED) {
 		fprintf(stderr,"cannot mmap region\n");
 		return -1;
 	}
 
-	while (addr <= endaddr) {
-		switch(width){
+	while(addr <= endaddr) {
+		switch(width) {
 			case 4: {
-					unsigned *x = (unsigned*)(((char *)page) + (addr & 4095));
-					if(set) *x = value;
-					fprintf(stderr,"%08x: %08x\n", addr, *x);
-					break;
-				}
+				unsigned *x = (unsigned*)(((char *)page) + (addr & 4095));
+				if(set) *x = value;
+				fprintf(stderr,"%08x: %08x\n", addr, *x);
+				break;
+			}
 			case 2: {
-					unsigned short *x = (unsigned short*)(((char *)page) + (addr & 4095));
-					if(set) *x = value;
-					fprintf(stderr,"%08x: %04x\n", addr, *x);
-					break;
-				}
+				unsigned short *x = (unsigned short*)(((char *)page) + (addr & 4095));
+				if(set) *x = value;
+				fprintf(stderr,"%08x: %04x\n", addr, *x);
+				break;
+			}
 			case 1: {
-					unsigned char *x = (unsigned char*)(((char *)page) + (addr & 4095));
-					if(set) *x = value;
-					fprintf(stderr,"%08x: %02x\n", addr, *x);
-					break;
-				}
+				unsigned char *x = (unsigned char*)(((char *)page) + (addr & 4095));
+				if(set) *x = value;
+				fprintf(stderr,"%08x: %02x\n", addr, *x);
+				break;
+			}
 		}
 		addr += width;
 	}

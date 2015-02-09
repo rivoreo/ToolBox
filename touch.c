@@ -10,21 +10,26 @@
 #ifdef _NO_UTIMENSAT
 #include <sys/time.h>
 #endif
-/*
-#ifdef _WIN32
-#ifdef _WIN32_WCE
-#undef _WIN32_WCE
+
+#ifndef _NO_UTIMENSAT
+#ifndef AT_FDCWD
+#define AT_FDCWD -100
 #endif
-#include <windows.h>
+#ifndef AT_SYMLINK_NOFOLLOW
+#define AT_SYMLINK_NOFOLLOW 0x100
 #endif
-*/
+#endif
 
 static void usage(void) {
 	fprintf(stderr, "Usage: touch"
 #if defined _WIN32 && !defined _WIN32_WNT_NATIVE
 		".exe"
 #endif
-		" [-alm] [-t <time_t>] <file>\n");
+		" [-am"
+#ifndef _NO_UTIMENSAT
+		"l"
+#endif
+		"] [-t <time_t>] <file>\n");
 	exit(255);
 }
 
@@ -69,8 +74,9 @@ int main(int argc, char *argv[]) {
 						specified_time.tv_nsec = 0;
 #endif
 						break;
+#ifndef _NO_UTIMENSAT
 					case 'l': flags |= AT_SYMLINK_NOFOLLOW; break;
-//#ifndef _NO_UTIMENSAT
+#endif
 					case 'd': debug = 1; break;
 //#endif
 					default:

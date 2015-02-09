@@ -304,12 +304,12 @@ static int open_device(const char *device, int print_flags)
     struct input_id id;
 
     fd = open(device, O_RDWR);
-    if(fd < 0) {
+    if(fd == -1) {
         if(print_flags & PRINT_DEVICE_ERRORS)
             fprintf(stderr, "could not open %s, %s\n", device, strerror(errno));
         return -1;
     }
-    
+
     if(ioctl(fd, EVIOCGVERSION, &version)) {
         if(print_flags & PRINT_DEVICE_ERRORS)
             fprintf(stderr, "could not get driver version for %s, %s\n", device, strerror(errno));
@@ -391,8 +391,7 @@ int close_device(const char *device, int print_flags)
     for(i = 1; i < nfds; i++) {
         if(strcmp(device_names[i], device) == 0) {
             int count = nfds - i - 1;
-            if(print_flags & PRINT_DEVICE)
-                printf("remove device %d: %s\n", i, device);
+            if(print_flags & PRINT_DEVICE) printf("remove device %d: %s\n", i, device);
             free(device_names[i]);
             memmove(device_names + i, device_names + i + 1, sizeof(device_names[0]) * count);
             memmove(ufds + i, ufds + i + 1, sizeof(ufds[0]) * count);
@@ -400,8 +399,7 @@ int close_device(const char *device, int print_flags)
             return 0;
         }
     }
-    if(print_flags & PRINT_DEVICE_ERRORS)
-        fprintf(stderr, "remote device: %s not found\n", device);
+    if(print_flags & PRINT_DEVICE_ERRORS) fprintf(stderr, "remote device: %s not found\n", device);
     return -1;
 }
 
@@ -461,8 +459,7 @@ static int scan_dir(const char *dirname, int print_flags)
     while((de = readdir(dir))) {
         if(de->d_name[0] == '.' &&
            (de->d_name[1] == '\0' ||
-            (de->d_name[1] == '.' && de->d_name[2] == '\0')))
-            continue;
+            (de->d_name[1] == '.' && de->d_name[2] == '\0'))) continue;
         strcpy(filename, de->d_name);
         open_device(devname, print_flags);
     }
@@ -584,26 +581,24 @@ int getevent_main(int argc, char *argv[])
     ufds[0].fd = inotify_init();
     ufds[0].events = POLLIN;
     if(device) {
-        if(!print_flags_set)
-            print_flags |= PRINT_DEVICE_ERRORS;
+        if(!print_flags_set) print_flags |= PRINT_DEVICE_ERRORS;
         res = open_device(device, print_flags);
         if(res < 0) {
             return 1;
         }
     } else {
-        if(!print_flags_set)
-            print_flags |= PRINT_DEVICE_ERRORS | PRINT_DEVICE | PRINT_DEVICE_NAME;
-        print_device = 1;
+		if(!print_flags_set) print_flags |= PRINT_DEVICE_ERRORS | PRINT_DEVICE | PRINT_DEVICE_NAME;
+		print_device = 1;
 		res = inotify_add_watch(ufds[0].fd, device_path, IN_DELETE | IN_CREATE);
-        if(res < 0) {
-            fprintf(stderr, "could not add watch for %s, %s\n", device_path, strerror(errno));
-            return 1;
-        }
-        res = scan_dir(device_path, print_flags);
-        if(res < 0) {
-            fprintf(stderr, "scan dir failed for %s\n", device_path);
-            return 1;
-        }
+		if(res < 0) {
+			fprintf(stderr, "could not add watch for %s, %s\n", device_path, strerror(errno));
+			return 1;
+		}
+		res = scan_dir(device_path, print_flags);
+		if(res < 0) {
+			fprintf(stderr, "scan dir failed for %s\n", device_path);
+			return 1;
+		}
     }
 
     if(get_switch) {
@@ -642,8 +637,9 @@ int getevent_main(int argc, char *argv[])
                     print_event(event.type, event.code, event.value, print_flags);
                     if(sync_rate && event.type == 0 && event.code == 0) {
                         int64_t now = event.time.tv_sec * 1000000LL + event.time.tv_usec;
-                        if(last_sync_time)
+                        if(last_sync_time) {
                             printf(" rate %lld", 1000000LL / (now - last_sync_time));
+			}
                         last_sync_time = now;
                     }
                     printf("%s", newline);
