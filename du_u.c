@@ -71,56 +71,56 @@ du_main(int argc, char *argv[])
 	totalblocks = 0;
 	ftsoptions = FTS_PHYSICAL;
 	depth = INT_MAX;
-	while((ch = getopt(argc, argv, "HLPacd:ghkmnrsx")) != -1)
-		switch(ch) {
-			case 'H':
-				Hflag = 1;
-				Lflag = 0;
-				break;
-			case 'L':
-				Lflag = 1;
-				Hflag = 0;
-				break;
-			case 'P':
-				Hflag = Lflag = 0;
-				break;
-			case 'a':
-				aflag = 1;
-				break;
-			case 'c':
-				cflag = 1;
-				break;
-			case 'd':
-				dflag = 1;
-				depth = atoi(optarg);
-				if (depth < 0 || depth > SHRT_MAX) {
-					warnx("invalid argument to option d: %s", optarg);
-					usage();
-				}
-				break;
-			case 'g':
-				blocksize = 1024 * 1024 * 1024;
-				gkmflag = 1;
-				break;
-			case 'k':
-				blocksize = 1024;
-				gkmflag = 1;
-				break;
-			case 'm':
-				blocksize = 1024 * 1024;
-				gkmflag = 1;
-				break; 
-			case 'r':
-				break;
-			case 's':
-				sflag = 1;
-				break;
-			case 'x':
-				ftsoptions |= FTS_XDEV;
-				break;
-			case '?':
-			default:
+	while ((ch = getopt(argc, argv, "HLPacd:ghkmnrsx")) != -1)
+		switch (ch) {
+		case 'H':
+			Hflag = 1;
+			Lflag = 0;
+			break;
+		case 'L':
+			Lflag = 1;
+			Hflag = 0;
+			break;
+		case 'P':
+			Hflag = Lflag = 0;
+			break;
+		case 'a':
+			aflag = 1;
+			break;
+		case 'c':
+			cflag = 1;
+			break;
+		case 'd':
+			dflag = 1;
+			depth = atoi(optarg);
+			if (depth < 0 || depth > SHRT_MAX) {
+				warnx("invalid argument to option d: %s", optarg);
 				usage();
+			}
+			break;
+		case 'g':
+			blocksize = 1024 * 1024 * 1024;
+			gkmflag = 1;
+			break;
+		case 'k':
+			blocksize = 1024;
+			gkmflag = 1;
+			break;
+		case 'm':
+			blocksize = 1024 * 1024;
+			gkmflag = 1;
+			break; 
+		case 'r':
+			break;
+		case 's':
+			sflag = 1;
+			break;
+		case 'x':
+			ftsoptions |= FTS_XDEV;
+			break;
+		case '?':
+		default:
+			usage();
 		}
 	argc -= optind;
 	argv += optind;
@@ -191,27 +191,33 @@ du_main(int argc, char *argv[])
 			rval = 1;
 			break;
 		default:
-			if (p->fts_statp->st_nlink > 1 && linkchk(p->fts_statp->st_dev, p->fts_statp->st_ino)) {
+			if (p->fts_statp->st_nlink > 1 &&
+			    linkchk(p->fts_statp->st_dev, p->fts_statp->st_ino))
 				break;
-			}
 			/*
 			 * If listing each file, or a non-directory file was
 			 * the root of a traversal, display the total.
 			 */
-			if(listfiles || !p->fts_level) prstat(p->fts_path, p->fts_statp->st_blocks);
+			if (listfiles || !p->fts_level)
+				prstat(p->fts_path, p->fts_statp->st_blocks);
 			p->fts_parent->fts_number += p->fts_statp->st_blocks;
-			if(cflag) totalblocks += p->fts_statp->st_blocks;
+			if (cflag)
+				totalblocks += p->fts_statp->st_blocks;
 		}
 	}
-	if(errno) err(1, "fts_read");
-	if(cflag) prstat("total", totalblocks);
+	if (errno)
+		err(1, "fts_read");
+	if (cflag)
+		prstat("total", totalblocks);
 	exit(rval);
 }
 
 void
 prstat(const char *fname, int64_t blocks)
 {
-	printf("%lld\t%s\n", (long long)howmany(blocks, (int64_t)blocksize), fname);
+	(void)printf("%lld\t%s\n",
+	    (long long)howmany(blocks, (int64_t)blocksize),
+	    fname);
 }
 
 int
@@ -234,32 +240,35 @@ linkchk(dev_t dev, ino_t ino)
 	const int HTBITS = CHAR_BIT * sizeof(tmp);
 
 	/* Never store zero in hashtable */
-	if(dev == 0 && ino == 0) {
+	if (dev == 0 && ino == 0) {
 		h = sawzero;
 		sawzero = 1;
 		return h;
 	}
 
 	/* Extend hash table if necessary, keep load under 0.5 */
-	if(htused<<1 >= htmask) {
+	if (htused<<1 >= htmask) {
 		struct entry *ohtable;
 
-		if(!htable) htshift = 10;   /* starting hashtable size */
-		else htshift++;   /* exponential hashtable growth */
+		if (!htable)
+			htshift = 10;   /* starting hashtable size */
+		else
+			htshift++;   /* exponential hashtable growth */
 
-		htmask = (1 << htshift) - 1;
+		htmask  = (1 << htshift) - 1;
 		htused = 0;
 
 		ohtable = htable;
 		htable = calloc(htmask+1, sizeof(*htable));
-		if(!htable) err(1, "calloc");
+		if (!htable)
+			err(1, "calloc");
 
 		/* populate newly allocated hashtable */
-		if(ohtable) {
+		if (ohtable) {
 			int i;
-			for(i = 0; i <= htmask>>1; i++) {
-				if(ohtable[i].ino || ohtable[i].dev) linkchk(ohtable[i].dev, ohtable[i].ino);
-			}
+			for (i = 0; i <= htmask>>1; i++)
+				if (ohtable[i].ino || ohtable[i].dev)
+					linkchk(ohtable[i].dev, ohtable[i].ino);
 			free(ohtable);
 		}
 	}
@@ -273,8 +282,9 @@ linkchk(dev_t dev, ino_t ino)
 	h2 = 1 | ( tmp >> (HTBITS - (htshift<<1) - 1));		/* must be odd */
 
 	/* open address hashtable search with double hash probing */
-	while(htable[h].ino || htable[h].dev) {
-		if(htable[h].ino == ino && htable[h].dev == dev) return 1;
+	while (htable[h].ino || htable[h].dev) {
+		if ((htable[h].ino == ino) && (htable[h].dev == dev))
+			return 1;
 		h = (h + h2) & htmask;
 	}
 

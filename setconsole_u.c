@@ -16,12 +16,13 @@ static void *activate_thread(void *arg)
     int fd = (int)arg;
     while(activate_thread_switch_vc >= 0) {
         do {
-            res = ioctl(fd, VT_ACTIVATE, (void *)activate_thread_switch_vc);
+            res = ioctl(fd, VT_ACTIVATE, (void*)activate_thread_switch_vc);
         } while(res < 0 && errno == EINTR);
         if (res < 0) {
             fprintf(stderr, "ioctl( vcfd, VT_ACTIVATE, vtnum) failed, %d %d %s for %d\n", res, errno, strerror(errno), activate_thread_switch_vc);
         }
-        if(activate_thread_switch_vc >= 0) sleep(1);
+        if(activate_thread_switch_vc >= 0)
+            sleep(1);
     }
     return NULL;
 }
@@ -29,6 +30,7 @@ static void *activate_thread(void *arg)
 
 int setconsole_main(int argc, char *argv[])
 {
+    int c;
     int fd;
     int res;
 
@@ -39,9 +41,10 @@ int setconsole_main(int argc, char *argv[])
     int printvc = 0;
     char *ttydev = "/dev/tty0";
 
-    while(1) {
-        int c = getopt(argc, argv, "d:gtncv:poh");
-        if(c == EOF) break;
+    do {
+        c = getopt(argc, argv, "d:gtncv:poh");
+        if (c == EOF)
+            break;
         switch (c) {
         case 'd':
             ttydev = optarg;
@@ -92,46 +95,46 @@ int setconsole_main(int argc, char *argv[])
                 argv[0], optopt);
             exit(1);
         }
-    }
+    } while (1);
     if(mode == -1 && new_vc == 0 && close_vc == 0 && switch_vc == -1 && printvc == 0) {
         fprintf(stderr,"%s [-d <dev>] [-v <vc>] [-gtncpoh]\n", argv[0]);
         return -1;
     }
 
     fd = open(ttydev, O_RDWR | O_SYNC);
-    if(fd == -1) {
+    if (fd < 0) {
         fprintf(stderr, "cannot open %s\n", ttydev);
         return -1;
     }
 
-    if((printvc && !new_vc) || (printvc & 2)) {
+    if ((printvc && !new_vc) || (printvc & 2)) {
         struct vt_stat vs;
 
         res = ioctl(fd, VT_GETSTATE, &vs);
-        if(res < 0) {
+        if (res < 0) {
             fprintf(stderr, "ioctl(vcfd, VT_GETSTATE, &vs) failed, %d\n", res);
         }
         printf("%d\n", vs.v_active);
     }
 
-    if(new_vc) {
+    if (new_vc) {
         int vtnum;
         res = ioctl(fd, VT_OPENQRY, &vtnum);
-        if(res < 0 || vtnum == -1) {
+        if (res < 0 || vtnum == -1) {
             fprintf(stderr, "ioctl(vcfd, VT_OPENQRY, &vtnum) failed, res %d, vtnum %d\n", res, vtnum);
         }
         switch_vc = vtnum;
     }
-    if(switch_vc != -1) {
+    if (switch_vc != -1) {
         pthread_t thread;
         pthread_attr_t attr;
         activate_thread_switch_vc = switch_vc;
         pthread_attr_init(&attr);
         pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-        pthread_create(&thread, &attr, activate_thread, (void *)fd);
-
+        pthread_create(&thread, &attr, activate_thread, (void*)fd);
+        
         do {
-            res = ioctl(fd, VT_WAITACTIVE, (void *)switch_vc);
+            res = ioctl(fd, VT_WAITACTIVE, (void*)switch_vc);
         } while(res < 0 && errno == EINTR);
         activate_thread_switch_vc = -1;
         if (res < 0) {
@@ -147,14 +150,14 @@ int setconsole_main(int argc, char *argv[])
             return -1;
         }
     }
-    if(close_vc) {
+    if (close_vc) {
         res = ioctl(fd, VT_DISALLOCATE, 0);
         if (res < 0) {
             fprintf(stderr, "ioctl(vcfd, VT_DISALLOCATE, 0) failed, %d\n", res);
         }
     }
-    if(mode != -1) {
-        if (ioctl(fd, KDSETMODE, (void *)mode) < 0) {
+    if (mode != -1) {
+        if (ioctl(fd, KDSETMODE, (void*)mode) < 0) {
             fprintf(stderr, "KDSETMODE %d failed\n", mode);
             return -1;
         }

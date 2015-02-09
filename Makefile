@@ -1,6 +1,7 @@
 # 工具箱的 Makefile
 
 OS_NAME = $(shell uname -s)
+OUTFILE = toolbox
 
 ifeq ($(OS_NAME),Darwin)
 MAC_HELP = \
@@ -37,6 +38,15 @@ UNITY_LDFLAGS = --static
 endif
 endif
 
+# Both shared library and executable
+# Note: Option --pie -Wl,-E replaces --shared
+ifdef SHARED_OBJECT
+CFLAGS += -fPIC
+# LDFLAGS += --shared
+LDFLAGS += --pie -Wl,-E
+OUTFILE = libtoolbox.so
+endif
+
 ALL_TOOLS := \
 	cat_u.o \
 	chmod_u.o \
@@ -61,6 +71,7 @@ ALL_TOOLS := \
 	mtdread_u.o \
 	mv_u.o \
 	netstat_u.o \
+	nohup_u.o \
 	printenv_u.o \
 	ps_u.o \
 	r_u.o \
@@ -83,6 +94,7 @@ LIBS += -Lwcelib -lc
 TIMELIB = -lmmtimer
 endif
 ifeq ($(CC),i586-mingw32msvc-gcc)
+CFLAGS += --include config/wntdef.h
 LIBS += -Lposix-io-for-windows -lposixio
 DEPEND = posix-io-for-windows/libposixio.a
 export CONSOLE = 1
@@ -92,6 +104,7 @@ else
 EXTRA_TOOLS := \
 	chown \
 	dd \
+	df \
 	du \
 	id \
 	ifconfig \
@@ -169,7 +182,7 @@ EXTRA_TOOLS += \
 	runcon \
 	setenforce \
 	setsebool
-SELINUX_LIBS = -lselinux
+SELINUX_LIBS = -lselinux -lpcre
 ifndef NO_STATIC
 SELINUX_LIBS += -lsepol
 endif
@@ -222,7 +235,7 @@ TRAN_SRC = \
 first:	unity
 
 unity:	$(ALL_TOOLS) toolbox.o
-	$(CC) $(LDFLAGS) $(UNITY_LDFLAGS) $(ALL_TOOLS) toolbox.o -o toolbox $(LIBS) $(SELINUX_LIBS) $(TIMELIB) -lcrypto -lpthread
+	$(CC) $(LDFLAGS) $(UNITY_LDFLAGS) $(ALL_TOOLS) toolbox.o -o $(OUTFILE) $(LIBS) $(SELINUX_LIBS) $(TIMELIB) -lcrypto -lpthread
 
 separate:	$(DEPEND) $(BASE_TOOLS) $(EXTRA_TOOLS)
 
@@ -237,7 +250,7 @@ cleanc:
 	/bin/rm -f $(TRAN_SRC)
 
 clean:	cleanc
-	/bin/rm -f toolbox $(BASE_TOOLS) $(EXTRA_TOOLS) *.o *.exe
+	/bin/rm -f toolbox libtoolbox.so $(BASE_TOOLS) $(EXTRA_TOOLS) *.o *.exe
 	$(MAKE) -C posix-io-for-windows distclean
 
 help:

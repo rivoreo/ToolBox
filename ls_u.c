@@ -23,12 +23,16 @@
 #include <pwd.h>
 #include <grp.h>
 #endif
+#include <stdbool.h>
 
 #ifdef __linux__
 #include <linux/kdev_t.h>
 #ifndef _NO_SELINUX
 #include <selinux/selinux.h>
 #endif
+
+
+#include <linux/kdev_t.h>
 #elif defined __MACH__
 #ifdef __APPLE__
 #ifndef MAJOR
@@ -72,6 +76,93 @@ int _snprintf(char *, size_t, const char *, ...);
 #endif
 #endif
 
+/* Test COLOR */
+bool is_color = false;
+
+#define COLOR_PRINT(_color,_str, _input_str) \
+	do { \
+		if(is_color) \
+		snprintf(_str, sizeof(_str), "\e[%sm%s\e[0m", _color, _input_str); \
+		else \
+		snprintf(_str, sizeof(_str), "%s", _input_str); \
+	} while(0) 
+
+/* # Terminal Color
+ * # Reset
+ * Color_Off='\e[0m'       # Text Reset
+ *
+ * # Regular Colors
+ * Black='\e[0;30m'        # Black
+ * Red='\e[0;31m'          # Red
+ * Green='\e[0;32m'        # Green
+ * Yellow='\e[0;33m'       # Yellow
+ * Blue='\e[0;34m'         # Blue
+ * Purple='\e[0;35m'       # Purple
+ * Cyan='\e[0;36m'         # Cyan
+ * White='\e[0;37m'        # White
+ *
+ * # Bold
+ * BBlack='\e[1;30m'       # Black
+ * BRed='\e[1;31m'         # Red
+ * BGreen='\e[1;32m'       # Green
+ * BYellow='\e[1;33m'      # Yellow
+ * BBlue='\e[1;34m'        # Blue
+ * BPurple='\e[1;35m'      # Purple
+ * BCyan='\e[1;36m'        # Cyan
+ * BWhite='\e[1;37m'       # White
+ *
+ * # Underline
+ * UBlack='\e[4;30m'       # Black
+ * URed='\e[4;31m'         # Red
+ * UGreen='\e[4;32m'       # Green
+ * UYellow='\e[4;33m'      # Yellow
+ * UBlue='\e[4;34m'        # Blue
+ * UPurple='\e[4;35m'      # Purple
+ * UCyan='\e[4;36m'        # Cyan
+ * UWhite='\e[4;37m'       # White
+ *
+ * # Background
+ * On_Black='\e[40m'       # Black
+ * On_Red='\e[41m'         # Red
+ * On_Green='\e[42m'       # Green
+ * On_Yellow='\e[43m'      # Yellow
+ * On_Blue='\e[44m'        # Blue
+ * On_Purple='\e[45m'      # Purple
+ * On_Cyan='\e[46m'        # Cyan
+ * On_White='\e[47m'       # White
+ *
+ * # High Intensity
+ * IBlack='\e[0;90m'       # Black
+ * IRed='\e[0;91m'         # Red
+ * IGreen='\e[0;92m'       # Green
+ * IYellow='\e[0;93m'      # Yellow
+ * IBlue='\e[0;94m'        # Blue
+ * IPurple='\e[0;95m'      # Purple
+ * ICyan='\e[0;96m'        # Cyan
+ * IWhite='\e[0;97m'       # White
+ *
+ * # Bold High Intensity
+ * BIBlack='\e[1;90m'      # Black
+ * BIRed='\e[1;91m'        # Red
+ * BIGreen='\e[1;92m'      # Green
+ * BIYellow='\e[1;93m'     # Yellow
+ * BIBlue='\e[1;94m'       # Blue
+ * BIPurple='\e[1;95m'     # Purple
+ * BICyan='\e[1;96m'       # Cyan
+ * BIWhite='\e[1;97m'      # White
+ *
+ * # High Intensity backgrounds
+ * On_IBlack='\e[0;100m'   # Black
+ * On_IRed='\e[0;101m'     # Red
+ * On_IGreen='\e[0;102m'   # Green
+ * On_IYellow='\e[0;103m'  # Yellow
+ * On_IBlue='\e[0;104m'    # Blue
+ * On_IPurple='\e[0;105m'  # Purple
+* On_ICyan='\e[0;106m'    # Cyan
+* On_IWhite='\e[0;107m'   # White
+*/
+
+
 // dynamic arrays
 typedef struct {
 	int count;
@@ -108,7 +199,7 @@ static void dynarray_reserve_more( dynarray_t *a, int count )
 			new_cap = max_cap;
 		}
 	}
-	new_items = realloc(a->items, new_cap*sizeof(void *));
+	new_items = realloc(a->items, new_cap * sizeof(void *));
 	if (new_items == NULL)
 		abort();
 
@@ -186,8 +277,10 @@ static int strlist_compare_strings(const void *a, const void *b)
 static void strlist_sort( strlist_t *list )
 {
 	if (list->count > 0) {
-		qsort(list->items, (size_t)list->count,
-				sizeof(void *), strlist_compare_strings);
+		qsort(list->items, 
+				(size_t)list->count,
+				sizeof(void *),
+				strlist_compare_strings);
 	}
 }
 
@@ -198,13 +291,9 @@ static void strlist_sort( strlist_t *list )
 #define LIST_DIRECTORIES    (1 << 3)
 #define LIST_SIZE           (1 << 4)
 #define LIST_CLASSIFY       (1 << 6)
-#define LIST_ALL_ALMOST		(1 << 7)
-//#ifndef _NO_SELINUX
-#define LIST_MACLABEL		(1 << 8)
-//#endif
-
-// auto flags
-#define MULTI_FILES		(1 << 9)
+#define LIST_ALL_ALMOST     (1 << 7)
+#define LIST_MACLABEL       (1 << 8)
+#define MULTI_FILES         (1 << 9)
 
 // fwd
 static int listpath(const char *name, int flags);
@@ -285,13 +374,6 @@ static int show_total_size(const char *dirname, DIR *d, int flags)
 	while ((de = readdir(d)) != 0) {
 		if(!(flags & LIST_ALL) && (strcmp(de->d_name, ".") == 0 || strcmp(de->d_name, "..") == 0)) continue;
 		if(de->d_name[0] == '.' && !(flags & LIST_ALL) && !(flags & LIST_ALL_ALMOST)) continue;
-/*
-		if(strcmp(dirname, "/") == 0) {
-			snprintf(tmp, sizeof(tmp), "/%s", de->d_name);
-		} else {
-			snprintf(tmp, sizeof(tmp), "%s/%s", dirname, de->d_name);
-		}
-*/
 		const char *slash = "/";
 		if(dirname[strlen(dirname) - 1] == '/') slash = "";
 		snprintf(tmp, sizeof(tmp), "%s%s%s", dirname, slash, de->d_name);
@@ -365,6 +447,8 @@ static int listfile_long(const char *path, int flags) {
 	//if(flags & LIST_DIRECTORIES) name = path;
 	//else if((name = strrchr(path, '/')) name++;
 	//else name = path;
+	char file[4096];
+
 	if((flags & LIST_DIRECTORIES) || !(name = strrchr(path, '/'))) name = path;
 	else name++;
 
@@ -394,11 +478,19 @@ static int listfile_long(const char *path, int flags) {
 	// MMMMMMMMMM LLL UUUUUU GGGGGG XXXXXXXX YYYY-MM-DD HH:MM NAME (->SLINKTARGET)
 
 	switch(s.st_mode & S_IFMT) {
+		case S_IFDIR:
+			COLOR_PRINT("1;34", file, name);
+			printf("%s %3u %-6s %-6s          %s %s\n",	
+					mode, (unsigned int)s.st_nlink, user, group, date, file);
+			break;
 #ifndef _WIN32
 		case S_IFBLK:
 		case S_IFCHR:
-			printf("%s %3u %-6s %-6s %3d, %3d %s %s\n", mode, (unsigned int)s.st_nlink,
-				user, group, (int)MAJOR(s.st_rdev), (int)MINOR(s.st_rdev), date, name);
+			COLOR_PRINT("1;33", file, name);
+			printf("%s %3u %-6s %-6s %3d, %3d %s %s\n",
+				mode, (unsigned int)s.st_nlink,
+				user, group, (int)MAJOR(s.st_rdev),
+				(int)MINOR(s.st_rdev), date, file);
 			break;
 #endif
 		case S_IFREG:
@@ -407,36 +499,45 @@ static int listfile_long(const char *path, int flags) {
 			// Some versions of Windows can't handle the type long long int properly in printf
 			printf("%s %3u %-6s %-6s %8ld %s %s\n", mode, (unsigned int)s.st_nlink, user, group, s.st_size, date, name);
 #else
-			printf("%s %3u %-6s %-6s %8lld %s %s\n",
-				mode, (unsigned int)s.st_nlink, user, group, (long long int)s.st_size, date, name);
+			if(access(path, X_OK) < 0) {
+				COLOR_PRINT("0;37", file, name);
+				printf("%s %3u %-6s %-6s %8lld %s %s\n",
+					mode, (unsigned int)s.st_nlink, user,
+					group, (long long int)s.st_size, date, file);
+			} else {
+				COLOR_PRINT("1;32", file, name);
+				printf("%s %3u %-6s %-6s %8lld %s %s\n",
+					mode, (unsigned int)s.st_nlink, user,
+					group, (long long int)s.st_size, date, file);
+			}
 #endif
 			break;
 #if !defined _WIN32 || defined _WIN32_WNT_NATIVE
 		case S_IFLNK: {
-			char linkto[256];
-			int len;
+				      COLOR_PRINT("1;36", file, name);
+				      char linkto[256];
+				      int len;
 
-			len = readlink(path, linkto, 256);
-			if(len < 0) return -1;
+				      len = readlink(path, linkto, 256);
+				      if(len < 0) return -1;
 
-			if(len > 255) {
-				linkto[252] = '.';
-				linkto[253] = '.';
-				linkto[254] = '.';
-				linkto[255] = 0;
-			} else {
-				linkto[len] = 0;
-			}
+				      if(len > 255) {
+					      linkto[252] = '.';
+					      linkto[253] = '.';
+					      linkto[254] = '.';
+					      linkto[255] = 0;
+				      } else {
+					      linkto[len] = 0;
+				      }
 
-			printf("%s %3u %-6s %-6s          %s %s -> %s\n",
-				mode, (unsigned int)s.st_nlink, user, group, date, name, linkto);
-			break;
-		}
+				printf("%s %3u %-6s %-6s          %s %s -> %s\n",
+					mode, (unsigned int)s.st_nlink, user, group, date, file, linkto);
+				      break;
+			      }
 #endif
 		default:
 			printf("%s %3u %-6s %-6s          %s %s\n",
 				mode, (unsigned int)s.st_nlink, user, group, date, name);
-
 	}
 	return 0;
 }
@@ -502,18 +603,15 @@ static int listfile_maclabel(const char *path, int flags) {
 }
 #endif
 
-static int listfile(const char *dirname, const char *filename, int flags) {
-	//fprintf(stderr, "function: listfile(%p<%s>, %p<%s>, 0x%x)\n", dirname, dirname, filename, filename, flags);
-	if((flags & (LIST_LONG | LIST_SIZE | LIST_CLASSIFY | LIST_MACLABEL)) == 0) {
-		//printf("%s\n", filename);
-		puts(filename);
-		return 0;
-	}
-
+static int listfile(const char *dirname, const char *filename, int flags)
+{
+	struct stat s;
+	char file[4096];
 	char tmp[4096];
-	const char *pathname = filename;
+	const char *name;
+	const char* pathname = filename;
 
-	if(dirname != NULL) {
+	if (dirname != NULL) {
 		const char *slash = "/";
 		if(dirname[strlen(dirname) - 1] == '/') slash = "";
 		snprintf(tmp, sizeof(tmp), "%s%s%s", dirname, slash, filename);
@@ -522,12 +620,53 @@ static int listfile(const char *dirname, const char *filename, int flags) {
 		pathname = filename;
 	}
 
+	if ((flags & (LIST_LONG | LIST_SIZE | LIST_CLASSIFY)) == 0) {
+		/* There almost same with listfile_long() function, It should be replace use define or new function. */
+		/* name is anything after the final '/', or the whole path if none*/
+		if((flags & LIST_DIRECTORIES) || !(name = strrchr(pathname, '/'))) name = pathname;
+		else name++;
+
+		if(lstat(pathname, &s) < 0) {
+			return -1;
+		}
+		switch(s.st_mode & S_IFMT) {
+			case S_IFDIR:
+				COLOR_PRINT("1;34", file, name);
+				printf("%s\n", file);
+				break;
+			case S_IFBLK:
+			case S_IFCHR:
+				COLOR_PRINT("1;33", file, name);
+				printf("%s\n", file);
+				break;
+			case S_IFREG:
+				if(access(pathname, X_OK) < 0) {
+					COLOR_PRINT("0;37", file, name);
+					printf("%s\n", file);
+				} else {
+					COLOR_PRINT("1;32", file, name);
+					printf("%s\n", file);
+				}
+				break;
+			case S_IFLNK: {
+
+					      COLOR_PRINT("1;36", file, name);
+					      printf("%s\n", file);
+					      break;
+				      }
+			default:
+				      printf("%s\n", file);
+
+		}
+		return 0;
+	}
+
 #ifndef _NO_SELINUX
 	if(flags & LIST_MACLABEL) {
 		return listfile_maclabel(pathname, flags);
 	} else
 #endif
-	if((flags & LIST_LONG) != 0) {
+	if ((flags & LIST_LONG) != 0) {
 		return listfile_long(pathname, flags);
 	} else /*((flags & LIST_SIZE) != 0)*/ {
 		return listfile_size(pathname, filename, flags);
@@ -650,7 +789,7 @@ static int listpath(const char *name, int flags)
 int ls_main(int argc, char **argv)
 {
 	int flags = 0;
-	//int listed = 0;
+
 
 	if(argc > 1) {
 		int i;
@@ -686,11 +825,12 @@ int ls_main(int argc, char **argv)
 							else {
 								const char *long_arg = arg + 1;
 								if(strcmp(long_arg, "color") == 0) {
-									// TODO
+									// Doing
+									is_color = true;
 								} else if(strncmp(long_arg, "color=", 6) == 0) {
 									// TODO
 								} else if(strcmp(long_arg, "help") == 0) {
-									fprintf(stderr, "Usage: %s [-" SHORT_OPTIONS "]"
+									fprintf(stderr, "Usage: %s [-lsRdAaF] [--color]"
 #ifdef _WIN32_WCE
 										" <file>"
 #endif
@@ -708,7 +848,7 @@ int ls_main(int argc, char **argv)
 					}
 					arg++;
 				}
-out_of_inner_loop:				;
+out_of_inner_loop:		;
 			} else {
 not_an_option:
 				/* not an option ? */

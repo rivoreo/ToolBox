@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#if defined __GLIBC__ || defined _WIN32
+#ifdef __GLIBC__
 #include <sys/statfs.h>
 #else
 #include <sys/param.h>
@@ -59,15 +59,8 @@ static void df(const char *s, int always) {
 }
 
 int df_main(int argc, char *argv[]) {
-#ifdef _WIN32_WNT_NATIVE
-	if(argc == 1) {
-		fprintf(stderr, "df: You need to specify at least one path\n");
-		return -1;
-	}
-#endif
     puts("Filesystem                Size     Used     Free   Blksize");
     if (argc == 1) {
-#ifndef _WIN32_WNT_NATIVE
 #if defined __GNU__ || defined __linux__
         char s[2000];
         FILE *f = fopen("/proc/mounts", "r");
@@ -99,7 +92,9 @@ int df_main(int argc, char *argv[]) {
 
         fclose(f);
 #else
-		int len = getfsstat(NULL, 0, MNT_NOWAIT), i;
+		int i;
+
+		int len = getfsstat(NULL, 0, MNT_NOWAIT);
 		if(len < 0) {
 			perror("getstatfs");
 			return 1;
@@ -109,8 +104,7 @@ int df_main(int argc, char *argv[]) {
 			perror("getstatfs");
 			return 1;
 		}
-		for(i = 0; i < len; i++) sdf(buffer + i, NULL, 0);
-#endif
+		for(i=0; i<len; i++) sdf(buffer + i, NULL, 0);
 #endif
     } else {
         int i;

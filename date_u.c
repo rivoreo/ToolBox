@@ -56,7 +56,7 @@ int date_main(int argc, char *argv[]) {
 				}
 				break;
 			case '?':
-				fprintf(stderr, "%s: Invalid option -%c\n", argv[0], optopt);
+				//fprintf(stderr, "%s: Invalid option -%c\n", argv[0], optopt);
 				return 1;
 		}
 	}

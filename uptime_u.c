@@ -33,14 +33,16 @@ static void format_time(int time, char* buffer) {
     hours = time % 24;
     days = time / 24;
 
-    if(days > 0) sprintf(buffer, "%d days, %02d:%02d:%02d", days, hours, minutes, seconds);
-    else sprintf(buffer, "%02d:%02d:%02d", hours, minutes, seconds);
+    if(days > 0)
+        sprintf(buffer, "%d days, %02d:%02d:%02d", days, hours, minutes, seconds);
+    else
+        sprintf(buffer, "%02d:%02d:%02d", hours, minutes, seconds);
 }
 
 int uptime_main(int argc, char *argv[])
 {
-    float up_time;
-    char up_string[100];
+    float up_time, idle_time;
+    char up_string[100], idle_string[100];
 #ifdef __APPLE__
 	struct timeval boot_tv;
 	size_t len = sizeof boot_tv;
@@ -52,12 +54,10 @@ int uptime_main(int argc, char *argv[])
 	up_time = difftime(time(NULL), boot_tv.tv_sec);
 #else
 	struct timespec up_timespec;
-#ifndef _WIN32
-	float idle_time;
-	char idle_string[100];
     FILE* file = fopen("/proc/uptime", "r");
     if(!file) {
         fprintf(stderr, "Could not open /proc/uptime\n");
+        //return -1;
 	strcpy(idle_string, "unknown");
     } else {
 		if(fscanf(file, "%*f %f", &idle_time) != 1) {
@@ -68,7 +68,7 @@ int uptime_main(int argc, char *argv[])
 		} else format_time(idle_time, idle_string);
 		fclose(file);
     }
-#endif
+
     if (clock_gettime(CLOCK_MONOTONIC, &up_timespec) < 0) {
         fprintf(stderr, "Could not get monotonic time\n");
 	return -1;
@@ -77,7 +77,7 @@ int uptime_main(int argc, char *argv[])
 #endif
 
     format_time(up_time, up_string);
-#if !defined __APPLE__ && !defined _WIN32
+#ifndef __APPLE__
     printf("up time: %s,  idle time: %s\n", up_string, idle_string);
 #else
 	printf("up time: %s\n", up_string);

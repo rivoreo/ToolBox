@@ -1,17 +1,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-//#include <stdint.h>
+#include <stdint.h>
 #include <unistd.h>
 #include <fcntl.h>
-//#ifdef _WIN32
+#ifdef _WIN32
 //#include <winioctl.h>
-//#else
-//#include <sys/ioctl.h>
-//#endif
+#else
+#include <sys/ioctl.h>
+#endif
 #include <errno.h>
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
+	int c;
 	int fd1, fd2;
 	char buf1[4096], buf2[4096];
 	int res, res1, res2;
@@ -23,10 +25,11 @@ int main(int argc, char *argv[]) {
 	int show_all = 0;
 	int limit = 0;
 
-	while(1) {
-		int c = getopt(argc, argv, "bln:");
-		if(c == EOF) break;
-		switch(c) {
+	do {
+		c = getopt(argc, argv, "bln:");
+		if (c == EOF)
+			break;
+		switch (c) {
 			case 'b':
 				show_byte = 1;
 				break;
@@ -37,10 +40,11 @@ int main(int argc, char *argv[]) {
 				limit = atoi(optarg);
 				break;
 			case '?':
-				fprintf(stderr, "%s: invalid option -%c\n", argv[0], optopt);
+				fprintf(stderr, "%s: invalid option -%c\n",
+						argv[0], optopt);
 				exit(1);
 		}
-	}
+	} while (1);
 
 	if (optind + 2 != argc) {
 		fprintf(stderr, "Usage: %s [-b] [-l] [-n <count>] <file1> <file2>\n", argv[0]);
@@ -69,14 +73,17 @@ int main(int argc, char *argv[]) {
 		for(i = 0; i < res; i++) {
 			if(buf1[i] != buf2[i]) {
 				printf("%s %s differ byte %d", argv[optind], argv[optind+1], filepos + i);
-				if(show_byte) printf(" 0x%02x 0x%02x", buf1[i], buf2[i]);
-				putchar('\n');
-				if(!show_all) return 1;
+				if(show_byte)
+					printf(" 0x%02x 0x%02x", buf1[i], buf2[i]);
+				printf("\n");
+				if(!show_all)
+					return 1;
 				rv = 1;
 			}
 			if(limit) {
 				limit--;
-				if(limit == 0) return rv;
+				if(limit == 0)
+					return rv;
 			}
 		}
 		if(res1 != res2 || res < 0) {

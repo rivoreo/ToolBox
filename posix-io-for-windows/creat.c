@@ -1,11 +1,3 @@
-/*
- * This file has no copyright assigned and is placed in the Public Domain.
- * No warranty is given.
- *
- * Written by PC GO
- *
- */
-
 #include <unistd.h>
 #include <fcntl.h>
 

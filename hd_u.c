@@ -1,15 +1,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/ioctl.h>
 #include <errno.h>
 
 int hd_main(int argc, char *argv[])
 {
-	int fd;
+    int c;
+    int fd;
 	unsigned char buf[4096];
-	int res;
+    int res;
 	int read_len;
 	int i;
 	int filepos = 0;
@@ -20,26 +23,28 @@ int hd_main(int argc, char *argv[])
 	int count = 0;
 	int repeat = 0;
 
-	while(1) {
-		int c = getopt(argc, argv, "b:c:r:");
-		if(c == EOF) break;
-		switch (c) {
-			case 'b':
-				base = strtol(optarg, NULL, 0);
-				break;
-			case 'c':
-				count = strtol(optarg, NULL, 0);
-				break;
-			case 'r':
-				repeat = strtol(optarg, NULL, 0);
-				break;
-			case '?':
-				fprintf(stderr, "%s: invalid option -%c\n", argv[0], optopt);
-				exit(1);
-		}
-	}
+    do {
+        c = getopt(argc, argv, "b:c:r:");
+        if (c == EOF)
+            break;
+        switch (c) {
+        case 'b':
+            base = strtol(optarg, NULL, 0);
+            break;
+        case 'c':
+            count = strtol(optarg, NULL, 0);
+            break;
+		case 'r':
+			repeat = strtol(optarg, NULL, 0);
+			break;
+        case '?':
+            fprintf(stderr, "%s: invalid option -%c\n",
+                argv[0], optopt);
+            exit(1);
+        }
+    } while (1);
 
-    if(optind + 1 != argc) {
+    if (optind + 1 != argc) {
         fprintf(stderr, "Usage: %s [-b base] [-c count] [-r delay] file\n", argv[0]);
         exit(1);
     }
@@ -57,11 +62,13 @@ int hd_main(int argc, char *argv[])
 		}
 		sum = 0;
 		lsum = 0;
-		while(1) {
+	    while(1) {
 			read_len = sizeof(buf);
-			if(count > 0 && base + count - filepos < read_len) read_len = base + count - filepos;
-			res = read(fd, &buf, read_len);
-			if(res == 0) break;
+			if(count > 0 && base + count - filepos < read_len)
+				read_len = base + count - filepos;
+	        res = read(fd, &buf, read_len);
+			if(res == 0)
+				break;
 			for(i = 0; i < res; i++) {
 				if((i & 15) == 0) {
 					printf("%08x: ", filepos + i);
@@ -79,10 +86,12 @@ int hd_main(int argc, char *argv[])
 				return 1;
 			}
 			filepos += res;
-			if(filepos == base + count) break;
-		}
+			if(filepos == base + count)
+				break;
+	    }
 		printf("sum %x\n", sum);
-		if(repeat) sleep(repeat);
+		if(repeat)
+			sleep(repeat);
 	} while(repeat);
 	return 0;
 }

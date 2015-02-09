@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 //#include <errno.h>
-#if defined __GLIBC__ || defined _WIN32
+#ifdef __GLIBC__
 #include <sys/statfs.h>
 #else
 #include <sys/param.h>
@@ -28,16 +28,12 @@ static void printsize(long long int n) {
 	}
 
 	t = (n + 512) / 1024;
-#if defined _WIN32 && !defined _WIN32_WNT_NATIVE
-	printf("%4lu.%1lu%ci", (unsigned long int)(t / 10), (unsigned long int)(t % 10), unit);
-#else
 	printf("%4lld.%1lld%ci", t / 10, t % 10, unit);
-#endif
 }
 
 static void sdf(const struct statfs *st, const char *s, int always) {
 	if(st->f_blocks == 0 && !always) return;
-#if defined __GNU__ || defined __linux__ || (defined _WIN32 && !defined _WIN32_WNT_NATIVE)
+#if defined __GNU__ || defined __linux__
 	printf("%-20s  ", s);
 #else
 	printf("%-20s  ", st->f_mntfromname);
@@ -73,14 +69,8 @@ int main(int argc, char *argv[]) {
 		argc--;
 		argv++;
 	}
-#ifdef _WIN32
-	if(argc == 1) {
-		fprintf(stderr, "df: You need to specify at least one path\n");
-		return -1;
-	}
-#endif
 	puts(
-#if defined __GNU__ || defined __linux__ || (defined _WIN32 && !defined _WIN32_WNT_NATIVE)
+#if defined __GNU__ || defined __linux__
 	//"Mounted on"
 	"File system"
 #else
@@ -89,7 +79,6 @@ int main(int argc, char *argv[]) {
 #endif
 	"               Size      Used      Free   Block size");
 	if(argc == 1) {
-#ifndef _WIN32
 #if defined __GNU__ || defined __linux__
 		char s[2000];
 		FILE *f = fopen("/proc/mounts", "r");
@@ -121,8 +110,8 @@ int main(int argc, char *argv[]) {
 
 		fclose(f);
 #else
-		int i;
 		//struct statfs buffer[200];
+		int i;
 		int len = getfsstat(NULL, 0, MNT_NOWAIT);
 		if(len < 0) {
 			perror("getstatfs");
@@ -136,7 +125,6 @@ int main(int argc, char *argv[]) {
 		for(i = 0; i < len; i++) {
 			sdf(buffer + i, NULL, all);
 		}
-#endif
 #endif
 	} else {
 		int i;
