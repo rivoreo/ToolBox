@@ -79,13 +79,36 @@ int _snprintf(char *, size_t, const char *, ...);
 /* Test COLOR */
 bool is_color = false;
 
-#define COLOR_PRINT(_color,_str, _input_str) \
-	do { \
-		if(is_color) \
-		snprintf(_str, sizeof(_str), "\e[%sm%s\e[0m", _color, _input_str); \
-		else \
-		snprintf(_str, sizeof(_str), "%s", _input_str); \
-	} while(0) 
+// The secand argument of this macro should be a char array not a pointer
+#define COLOR_PRINT(_color, _str, _input_str) \
+	do {											\
+		if(is_color) {									\
+			snprintf((_str), sizeof(_str), "\e[%sm%s\e[0m", _color, (_input_str)); 	\
+		} else {									\
+			snprintf((_str), sizeof(_str), "%s", (_input_str));			\
+		}										\
+	} while(0)
+
+#define COLOR_RESET "0"
+
+#define COLOR_BLACK "0;30"
+#define COLOR_RED "0;31"
+#define COLOR_GREEN "0;32"
+#define COLOR_YELLOW "0;33"
+#define COLOR_BLUE "0;34"
+#define COLOR_PURPLE "0;35"
+#define COLOR_CRAN "0;36"
+#define COLOR_GRAY "0;37"
+
+#define COLOR_BOLD_BLACK "1;30"
+#define COLOR_BOLD_RED "1;31"
+#define COLOR_BOLD_GREEN "1;32"
+#define COLOR_BOLD_YELLOW "1;33"
+#define COLOR_BOLD_BLUE "1;34"
+#define COLOR_BOLD_PURPLE "1;35"
+#define COLOR_BOLD_CRAN "1;36"
+#define COLOR_BOLD_WRITE "1;37"
+
 
 /* # Terminal Color
  * # Reset
@@ -475,46 +498,57 @@ static int listfile_long(const char *path, int flags) {
 	date[31] = 0;
 
 	// 12345678901234567890123456789012345678901234567890123456789012345678901234567890
-	// MMMMMMMMMM LLL UUUUUU GGGGGG XXXXXXXX YYYY-MM-DD HH:MM NAME (->SLINKTARGET)
+	// MMMMMMMMMM LLL UUUUUU GGGGGG XXXXXXXX YYYY-MM-DD HH:MM NAME [-> SLINKTARGET]
 
 	switch(s.st_mode & S_IFMT) {
 		case S_IFDIR:
-			COLOR_PRINT("1;34", file, name);
-			printf("%s %3u %-6s %-6s          %s %s\n",	
-				mode, (unsigned int)s.st_nlink, user, group, date, file);
+			COLOR_PRINT(COLOR_BOLD_BLUE, file, name);
+#if defined _WIN32 && !defined _WIN32_WNT_NATIVE
+			printf("%s %3u %-6s %-6s %8ld %s %s\n",
+				mode, (unsigned int)s.st_nlink, user, group, s.st_size, date, file);
+#else
+			printf("%s %3u %-6s %-6s %8lld %s %s\n",
+				mode, (unsigned int)s.st_nlink, user, group, (long long int)s.st_size, date, file);
+#endif
+			break;
+#if !defined _WIN32 || defined _WIN32_WNT_NATIVE
+		case S_IFSOCK:
+			COLOR_PRINT(COLOR_BOLD_PURPLE, file, name);
+			printf("%s %3u %-6s %-6s          %s %s\n",
+				mode, (unsigned int)s.st_nlink, user, group, date,file);
 			break;
 #ifndef _WIN32
 		case S_IFBLK:
 		case S_IFCHR:
-			COLOR_PRINT("1;33", file, name);
+			COLOR_PRINT(COLOR_BOLD_YELLOW, file, name);
 			printf("%s %3u %-6s %-6s %3d, %3d %s %s\n",
 				mode, (unsigned int)s.st_nlink,
 				user, group, (int)MAJOR(s.st_rdev),
 				(int)MINOR(s.st_rdev), date, file);
 			break;
 #endif
+#endif
 		case S_IFREG:
-			//#if defined _WIN32 && !defined _WIN32_WCE
-#ifdef _WIN32
+#if defined _WIN32 && !defined _WIN32_WNT_NATIVE
 			// Some versions of Windows can't handle the type long long int properly in printf
 			printf("%s %3u %-6s %-6s %8ld %s %s\n", mode, (unsigned int)s.st_nlink, user, group, s.st_size, date, name);
 #else
-			if(access(path, X_OK) < 0) {
-				COLOR_PRINT("0;37", file, name);
+			if(is_color && access(path, X_OK) == 0) {
+				COLOR_PRINT(COLOR_BOLD_GREEN, file, name);
 				printf("%s %3u %-6s %-6s %8lld %s %s\n",
 					mode, (unsigned int)s.st_nlink, user,
 					group, (long long int)s.st_size, date, file);
 			} else {
-				COLOR_PRINT("1;32", file, name);
+				//COLOR_PRINT("0;37", file, name);
 				printf("%s %3u %-6s %-6s %8lld %s %s\n",
 					mode, (unsigned int)s.st_nlink, user,
-					group, (long long int)s.st_size, date, file);
+					group, (long long int)s.st_size, date, name);
 			}
 #endif
 			break;
 #if !defined _WIN32 || defined _WIN32_WNT_NATIVE
 		case S_IFLNK: {
-			COLOR_PRINT("1;36", file, name);
+			COLOR_PRINT(COLOR_BOLD_CRAN, file, name);
 			char linkto[256];
 			int len;
 
@@ -630,22 +664,17 @@ static int listfile(const char *dirname, const char *filename, int flags) {
 		}
 		switch(s.st_mode & S_IFMT) {
 			case S_IFDIR:
-				COLOR_PRINT("1;34", file, name);
+				COLOR_PRINT(COLOR_BOLD_BLUE, file, name);
+				puts(file);
+				break;
+			case S_IFSOCK:
+				COLOR_PRINT(COLOR_BOLD_PURPLE, file, name);
 				puts(file);
 				break;
 			case S_IFBLK:
 			case S_IFCHR:
-				COLOR_PRINT("1;33", file, name);
+				COLOR_PRINT(COLOR_BOLD_YELLOW, file, name);
 				puts(file);
-				break;
-			case S_IFREG:
-				if(access(pathname, X_OK) < 0) {
-					COLOR_PRINT("0;37", file, name);
-					puts(file);
-				} else {
-					COLOR_PRINT("1;32", file, name);
-					puts(file);
-				}
 				break;
 #ifndef _WIN32
 			case S_IFLNK:
@@ -653,8 +682,16 @@ static int listfile(const char *dirname, const char *filename, int flags) {
 				puts(file);
 				break;
 #endif
+			case S_IFREG:
+				if(access(pathname, X_OK) == 0) {
+					COLOR_PRINT("1;32", file, name);
+					puts(file);
+					break;
+				}
+				// Fall
 			default:
-				puts(file);
+				puts(name);
+				break;
 		}
 		return 0;
 	}
@@ -680,12 +717,12 @@ static int listdir(const char *name, int flags)
 	int list_all = flags & LIST_ALL;
 
 	d = opendir(name);
-	if(d == 0) {
+	if(!d) {
 		fprintf(stderr, "opendir failed, %s\n", strerror(errno));
 		return -1;
 	}
 
-	if (flags & LIST_SIZE || flags & LIST_LONG) {
+	if(flags & LIST_SIZE || flags & LIST_LONG) {
 		show_total_size(name, d, flags);
 	}
 
@@ -758,7 +795,7 @@ static int listpath(const char *name, int flags)
 	 */
 	err = (name[strlen(name)-1] == '/' ? stat : lstat)(name, &s);
 
-	if (err < 0) {
+	if(err < 0) {
 		perror(name);
 		return -1;
 	}
@@ -812,12 +849,27 @@ int ls_main(int argc, char **argv)
 							else {
 								const char *long_arg = arg + 1;
 								if(strcmp(long_arg, "color") == 0) {
-									// Doing
-									is_color = true;
+									// Done
+									is_color = isatty(STDOUT_FILENO);
 								} else if(strncmp(long_arg, "color=", 6) == 0) {
-									// TODO
+									const char *a = long_arg + 6;
+									if(!*a) {
+										fprintf(stderr, "%s: You forgot to specify a argument for --color after '='\n",
+											argv[0]);
+										return 1;
+									} else if(strcmp(a, "auto") == 0) {
+										is_color = isatty(STDOUT_FILENO);
+									} else if(strcmp(a, "always") == 0 || strcmp(a, "force") == 0) {
+										is_color = 1;
+									} else if(strcmp(a, "never") == 0 || strcmp(a, "none") == 0) {
+										is_color = 0;
+									} else {
+										fprintf(stderr, "%s: Unknown argument '%s' for --color\n",
+											argv[0], a);
+										return 1;
+									}
 								} else if(strcmp(long_arg, "help") == 0) {
-									fprintf(stderr, "Usage: %s [-lsRdAaF] [--color]"
+									fprintf(stderr, "Usage: %s [-" SHORT_OPTIONS "] [--color]"
 #ifdef _WIN32_WCE
 										" <file>"
 #endif
@@ -831,7 +883,7 @@ int ls_main(int argc, char **argv)
 							goto out_of_inner_loop;
 						default:
 							fprintf(stderr, "%s: Unknown option '-%c'. Aborting.\n", argv[0], arg[0]);
-							exit(1);
+							return 1;
 					}
 					arg++;
 				}

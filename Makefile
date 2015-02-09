@@ -31,7 +31,7 @@ ifeq ($(OS_NAME),GNU)
 GNU = 1
 endif
 endif
-CFLAGS += -I. -Iconfig -O1 -Wall
+CFLAGS += -Iinclude -O1 -Wall
 ifndef DARWIN
 ifndef NO_STATIC
 UNITY_LDFLAGS = --static
@@ -91,7 +91,7 @@ ifdef MINGW
 SUFFIX := .exe
 CFLAGS += -D_NO_SELINUX
 ifeq ($(CC),arm-mingw32ce-gcc)
-CFLAGS += --include config/wcedef.h
+CFLAGS += --include include/wcedef.h
 LIBS += -Lwcelib -lc
 TIMELIB = -lmmtimer
 endif
@@ -321,6 +321,12 @@ md5$(SUFFIX):	md5.c
 
 mkdir.exe:	mkdir.c
 	$(CC) $(CFLAGS) $(LDFLAGS) mkdir.c -o mkdir.exe $(LIBS)
+
+modexe.exe:	modexe.c
+	$(CC) $(CFLAGS) $(LDFLAGS) modexe.c -o $@ $(LIBS)
+
+modexeb.exe:	modexeb.c
+	$(CC) $(CFLAGS) $(LDFLAGS) modexeb.c -o $@ $(LIBS)
 
 mv.exe:	mv.c
 	$(CC) $(CFLAGS) $(LDFLAGS) mv.c -o mv.exe $(LIBS)
