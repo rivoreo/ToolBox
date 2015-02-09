@@ -172,13 +172,13 @@ typedef struct {
 
 #define DYNARRAY_INITIALIZER  { 0, 0, NULL }
 
-static void dynarray_init( dynarray_t *a )
+static void dynarray_init(dynarray_t *a)
 {
 	a->count = a->capacity = 0;
 	a->items = NULL;
 }
 
-static void dynarray_reserve_more( dynarray_t *a, int count )
+static void dynarray_reserve_more(dynarray_t *a, int count)
 {
 	int old_cap = a->capacity;
 	int new_cap = old_cap;
@@ -207,7 +207,7 @@ static void dynarray_reserve_more( dynarray_t *a, int count )
 	a->capacity = new_cap;
 }
 
-static void dynarray_append( dynarray_t *a, void *item )
+static void dynarray_append(dynarray_t *a, void *item)
 {
 	if (a->count >= a->capacity)
 		dynarray_reserve_more(a, 1);
@@ -215,7 +215,7 @@ static void dynarray_append( dynarray_t *a, void *item )
 	a->items[a->count++] = item;
 }
 
-static void dynarray_done( dynarray_t *a )
+static void dynarray_done(dynarray_t *a)
 {
 	free(a->items);
 	a->items = NULL;
@@ -243,12 +243,12 @@ typedef dynarray_t  strlist_t;
 #define  STRLIST_FOREACH(_list,_string,_stmnt) \
 	DYNARRAY_FOREACH_TYPE(_list,char *,_string,_stmnt)
 
-static void strlist_init( strlist_t *list )
+static void strlist_init(strlist_t *list)
 {
 	dynarray_init(list);
 }
 
-static void strlist_append_b( strlist_t *list, const void *str, size_t  slen )
+static void strlist_append_b(strlist_t *list, const void *str, size_t slen)
 {
 	char *copy = malloc(slen + 1);
 	memcpy(copy, str, slen);
@@ -256,7 +256,7 @@ static void strlist_append_b( strlist_t *list, const void *str, size_t  slen )
 	dynarray_append(list, copy);
 }
 
-static void strlist_append_dup( strlist_t *list, const char *str)
+static void strlist_append_dup(strlist_t *list, const char *str)
 {
 	strlist_append_b(list, str, strlen(str));
 }
@@ -277,23 +277,23 @@ static int strlist_compare_strings(const void *a, const void *b)
 static void strlist_sort( strlist_t *list )
 {
 	if (list->count > 0) {
-		qsort(list->items, 
-				(size_t)list->count,
-				sizeof(void *),
-				strlist_compare_strings);
+		qsort(list->items,
+			(size_t)list->count,
+			sizeof(void *),
+			strlist_compare_strings);
 	}
 }
 
 // bits for flags argument
-#define LIST_LONG           (1 << 0)
-#define LIST_ALL            (1 << 1)
-#define LIST_RECURSIVE      (1 << 2)
-#define LIST_DIRECTORIES    (1 << 3)
-#define LIST_SIZE           (1 << 4)
-#define LIST_CLASSIFY       (1 << 6)
-#define LIST_ALL_ALMOST     (1 << 7)
-#define LIST_MACLABEL       (1 << 8)
-#define MULTI_FILES         (1 << 9)
+#define LIST_LONG		(1 << 0)
+#define LIST_ALL		(1 << 1)
+#define LIST_RECURSIVE		(1 << 2)
+#define LIST_DIRECTORIES	(1 << 3)
+#define LIST_SIZE		(1 << 4)
+#define LIST_CLASSIFY		(1 << 6)
+#define LIST_ALL_ALMOST		(1 << 7)
+#define LIST_MACLABEL		(1 << 8)
+#define MULTI_FILES		(1 << 9)
 
 // fwd
 static int listpath(const char *name, int flags);
@@ -309,7 +309,7 @@ static char mode2kind(unsigned int mode) {
 #endif
 		case S_IFREG: return '-';
 		case S_IFDIR: return 'd';
-		
+
 		default: return '?';
 	}
 }
@@ -481,7 +481,7 @@ static int listfile_long(const char *path, int flags) {
 		case S_IFDIR:
 			COLOR_PRINT("1;34", file, name);
 			printf("%s %3u %-6s %-6s          %s %s\n",	
-					mode, (unsigned int)s.st_nlink, user, group, date, file);
+				mode, (unsigned int)s.st_nlink, user, group, date, file);
 			break;
 #ifndef _WIN32
 		case S_IFBLK:
@@ -494,7 +494,7 @@ static int listfile_long(const char *path, int flags) {
 			break;
 #endif
 		case S_IFREG:
-//#if defined _WIN32 && !defined _WIN32_WCE
+			//#if defined _WIN32 && !defined _WIN32_WCE
 #ifdef _WIN32
 			// Some versions of Windows can't handle the type long long int properly in printf
 			printf("%s %3u %-6s %-6s %8ld %s %s\n", mode, (unsigned int)s.st_nlink, user, group, s.st_size, date, name);
@@ -514,26 +514,26 @@ static int listfile_long(const char *path, int flags) {
 			break;
 #if !defined _WIN32 || defined _WIN32_WNT_NATIVE
 		case S_IFLNK: {
-				      COLOR_PRINT("1;36", file, name);
-				      char linkto[256];
-				      int len;
+			COLOR_PRINT("1;36", file, name);
+			char linkto[256];
+			int len;
 
-				      len = readlink(path, linkto, 256);
-				      if(len < 0) return -1;
+			len = readlink(path, linkto, 256);
+			if(len < 0) return -1;
 
-				      if(len > 255) {
-					      linkto[252] = '.';
-					      linkto[253] = '.';
-					      linkto[254] = '.';
-					      linkto[255] = 0;
-				      } else {
-					      linkto[len] = 0;
-				      }
+			if(len > 255) {
+				linkto[252] = '.';
+				linkto[253] = '.';
+				linkto[254] = '.';
+				linkto[255] = 0;
+			} else {
+				linkto[len] = 0;
+			}
 
-				printf("%s %3u %-6s %-6s          %s %s -> %s\n",
-					mode, (unsigned int)s.st_nlink, user, group, date, file, linkto);
-				      break;
-			      }
+			printf("%s %3u %-6s %-6s          %s %s -> %s\n",
+				mode, (unsigned int)s.st_nlink, user, group, date, file, linkto);
+			break;
+		}
 #endif
 		default:
 			printf("%s %3u %-6s %-6s          %s %s\n",
@@ -603,8 +603,7 @@ static int listfile_maclabel(const char *path, int flags) {
 }
 #endif
 
-static int listfile(const char *dirname, const char *filename, int flags)
-{
+static int listfile(const char *dirname, const char *filename, int flags) {
 	struct stat s;
 	char file[4096];
 	char tmp[4096];
@@ -632,31 +631,30 @@ static int listfile(const char *dirname, const char *filename, int flags)
 		switch(s.st_mode & S_IFMT) {
 			case S_IFDIR:
 				COLOR_PRINT("1;34", file, name);
-				printf("%s\n", file);
+				puts(file);
 				break;
 			case S_IFBLK:
 			case S_IFCHR:
 				COLOR_PRINT("1;33", file, name);
-				printf("%s\n", file);
+				puts(file);
 				break;
 			case S_IFREG:
 				if(access(pathname, X_OK) < 0) {
 					COLOR_PRINT("0;37", file, name);
-					printf("%s\n", file);
+					puts(file);
 				} else {
 					COLOR_PRINT("1;32", file, name);
-					printf("%s\n", file);
+					puts(file);
 				}
 				break;
-			case S_IFLNK: {
-
-					      COLOR_PRINT("1;36", file, name);
-					      printf("%s\n", file);
-					      break;
-				      }
+#ifndef _WIN32
+			case S_IFLNK:
+				COLOR_PRINT("1;36", file, name);
+				puts(file);
+				break;
+#endif
 			default:
-				      printf("%s\n", file);
-
+				puts(file);
 		}
 		return 0;
 	}
@@ -726,16 +724,10 @@ static int listdir(const char *name, int flags)
 			 * If the name ends in a '/', use stat() so we treat it like a
 			 * directory even if it's a symlink.
 			 */
-			if(tmp[strlen(tmp)-1] == '/') {
-				err = stat(tmp, &s);
-			} else {
-				err = lstat(tmp, &s);
-			}
+			err = (tmp[strlen(tmp)-1] == '/' ? stat : lstat)(tmp, &s);
 
 			if(err < 0) {
 				perror(tmp);
-				//closedir(d);
-				//return -1;
 				continue;
 			}
 
@@ -745,9 +737,9 @@ static int listdir(const char *name, int flags)
 		}
 		strlist_sort(&subdirs);
 		STRLIST_FOREACH(&subdirs, path, {
-				printf("\n%s:\n", path);
-				listdir(path, flags);
-				});
+			printf("\n%s:\n", path);
+			listdir(path, flags);
+		});
 		strlist_done(&subdirs);
 	}
 
@@ -764,11 +756,7 @@ static int listpath(const char *name, int flags)
 	 * If the name ends in a '/', use stat() so we treat it like a
 	 * directory even if it's a symlink.
 	 */
-	if(name[strlen(name)-1] == '/') {
-		err = stat(name, &s);
-	} else {
-		err = lstat(name, &s);
-	}
+	err = (name[strlen(name)-1] == '/' ? stat : lstat)(name, &s);
 
 	if (err < 0) {
 		perror(name);
@@ -781,7 +769,7 @@ static int listpath(const char *name, int flags)
 		if(flags & LIST_RECURSIVE || flags & MULTI_FILES) putchar('\n');
 		return r;
 	} else {
-		/* yeah this calls stat() again*/
+		/* yeah this calls stat() again */
 		return listfile(NULL, name, flags);
 	}
 }
@@ -789,7 +777,6 @@ static int listpath(const char *name, int flags)
 int ls_main(int argc, char **argv)
 {
 	int flags = 0;
-
 
 	if(argc > 1) {
 		int i;

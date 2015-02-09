@@ -94,7 +94,6 @@ LIBS += -Lwcelib -lc
 TIMELIB = -lmmtimer
 endif
 ifeq ($(CC),i586-mingw32msvc-gcc)
-CFLAGS += --include config/wntdef.h
 LIBS += -Lposix-io-for-windows -lposixio
 DEPEND = posix-io-for-windows/libposixio.a
 export CONSOLE = 1
