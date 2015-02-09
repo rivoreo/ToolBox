@@ -68,6 +68,8 @@ ALL_TOOLS := \
 	lsof_u.o \
 	md5_u.o \
 	mkdir_u.o \
+	modexe_u.o \
+	modexeb_u.o \
 	mtdread_u.o \
 	mv_u.o \
 	netstat_u.o \
@@ -199,6 +201,8 @@ BASE_TOOLS := \
 	ls$(SUFFIX) \
 	md5$(SUFFIX) \
 	mkdir$(SUFFIX) \
+	modexe$(SUFFIX) \
+	modexeb$(SUFFIX) \
 	mv$(SUFFIX) \
 	printenv$(SUFFIX) \
 	rm$(SUFFIX) \
@@ -219,8 +223,10 @@ TRAN_SRC = \
 	id.c \
 	ln.c \
 	ls.c \
+	modexe.c \
 	mv.c \
 	netstat.c \
+	nohup.c \
 	ps.c \
 	readtty.c \
 	route.c \

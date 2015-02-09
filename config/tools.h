@@ -51,12 +51,15 @@ TOOL(lsof)
 #endif
 TOOL(md5)
 TOOL(mkdir)
+TOOL(modexe)
+TOOL(modexeb)
 #ifndef _WIN32_WNT_NATIVE
 TOOL(mtdread)
 #endif
 TOOL(mv)
 #ifndef _WIN32_WNT_NATIVE
 TOOL(netstat)
+TOOL(nohup)
 #ifdef __linux__
 TOOL(notify)
 #endif

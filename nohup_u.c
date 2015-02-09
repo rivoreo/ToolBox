@@ -1,3 +1,11 @@
+/*	nohup - toolbox
+	Copyright 2015 libdll.so
+
+	This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
+
+	This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+*/
+
 #include <unistd.h>
 #include <stdio.h>
 
@@ -17,7 +25,7 @@ int nohup_main(int argc, char *argv[]) {
 			break;
 		switch(c) {
 			case 'h':
-				fprintf(stdout, "Usage: %s <command> [<arg>]...\n", argv[0]);
+				fprintf(stdout, "Usage: %s <command> [<arg>] [...]\n", argv[0]);
 				return 0;
 			case '?':
 				fprintf(stdout, "Try 'nohup -h' for more information.\n");
