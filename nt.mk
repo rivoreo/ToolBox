@@ -48,6 +48,10 @@ TOOLS = \
 	uptime
 
 
+ifdef SHARED_OBJECT
+first:	libtoolbox.so
+endif
+
 unity:	toolbox
 separate:	$(TOOLS)
 

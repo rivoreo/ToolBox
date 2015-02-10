@@ -290,7 +290,7 @@ help:
 #	@echo " make separate-mingwce	Windows CE (ARM) only"
 #	@echo " make mingwce		Same as before"
 	@echo
-	@echo other action:
+	@echo other actions:
 	@echo " make clean		Clean all output files"
 	@echo " make help		This help"
 	@echo
@@ -299,6 +299,7 @@ help:
 	@echo " CC=arm-linux-gcc make [unity|separate]			To arm-linux"
 	@echo " MINGW=1 CC=arm-mingw32ce-gcc make separate		To arm-windowsce"
 	@echo " MINGW=1 CC=i586-mingw32msvc-gcc make separate		To x86-windows"
+	@echo " make -f nt.mk [unity|separate]				To x86-windowsnt"
 	@$(ECHO) $(MAC_HELP)
 
 cat.exe:	cat.c

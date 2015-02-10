@@ -84,8 +84,9 @@ extern int _snprintf(char *, size_t, const char *, ...);
 #endif
 
 /* Test COLOR */
-bool is_color = false;
+static bool is_color = false;
 
+#if 0
 // The secand argument of this macro should be a char array not a pointer
 #define COLOR_PRINT(_color, _str, _input_str) \
 	do {											\
@@ -115,8 +116,119 @@ bool is_color = false;
 #define COLOR_BOLD_PURPLE "1;35"
 #define COLOR_BOLD_CRAN "1;36"
 #define COLOR_BOLD_WRITE "1;37"
+#endif
 
-//static int printf_color(int color, const char *format, ...)
+/*
+static struct {
+	enum color {
+		COLOR_RESET,
+
+		COLOR_BLACK,
+		COLOR_RED,
+		COLOR_GREEN,
+		COLOR_YELLOW,
+		COLOR_BLUE,
+		COLOR_PURPLE,
+		COLOR_CRAN,
+		COLOR_GRAY,
+
+		COLOR_BOLD_BLACK,
+		COLOR_BOLD_RED,
+		COLOR_BOLD_GREEN,
+		COLOR_BOLD_YELLOW,
+		COLOR_BOLD_BLUE,
+		COLOR_BOLD_PURPLE,
+		COLOR_BOLD_CRAN,
+		COLOR_BOLD_WRITE
+	} color;
+	const char *string;
+} terminal_color_table[] = {
+	{ COLOR_RESET, "0" },
+};
+*/
+
+//#define TERMINAL_CONTROL_START "\e["
+//#define TERMINAL_CONTROL_END "m"
+
+enum color {
+	NO_COLOR,
+
+	//COLOR_RESET,
+
+	COLOR_BLACK,
+	COLOR_RED,
+	COLOR_GREEN,
+	COLOR_YELLOW,
+	COLOR_BLUE,
+	COLOR_PURPLE,
+	COLOR_CRAN,
+	COLOR_GRAY,
+
+	COLOR_BOLD_BLACK,
+	COLOR_BOLD_RED,
+	COLOR_BOLD_GREEN,
+	COLOR_BOLD_YELLOW,
+	COLOR_BOLD_BLUE,
+	COLOR_BOLD_PURPLE,
+	COLOR_BOLD_CRAN,
+	COLOR_BOLD_WRITE
+};
+
+static const char *terminal_colors[] = {
+	//[COLOR_RESET] = "0",
+	[COLOR_BLACK] = "0;30",
+	[COLOR_RED] = "0;31",
+	[COLOR_GREEN] = "0;32",
+	[COLOR_YELLOW] = "0;33",
+	[COLOR_BLUE] = "0;34",
+	[COLOR_PURPLE] = "0;35",
+	[COLOR_CRAN] = "0;36",
+	[COLOR_GRAY] = "0;37",
+	[COLOR_BOLD_BLACK] = "1;30",
+	[COLOR_BOLD_RED] = "1;31",
+	[COLOR_BOLD_GREEN] = "1;32",
+	[COLOR_BOLD_YELLOW] = "1;33",
+	[COLOR_BOLD_BLUE] = "1;34",
+	[COLOR_BOLD_PURPLE] = "1;35",
+	[COLOR_BOLD_CRAN] = "1;36",
+	[COLOR_BOLD_WRITE] = "1;37"
+};
+
+static int printf_color(int color, const char *format, ...) {
+	//fprintf(stderr, "function: printf_color(%d, %p<%s>, ...)\n", color, format, format);
+	char buffer[4096];
+	int i = 0;
+	va_list ap;
+	va_start(ap, format);
+	while(*format && i < sizeof buffer) {
+		if(*format == '%') {
+			if(is_color && color != NO_COLOR) switch(format[1]) {
+				case 'V':
+					//memcpy(buffer + i, "\e[", sizeof "\e[" - 1);
+					//i += sizeof "\e[" - 1;
+					//memcpy(buffer + i, terminal_colors[color], len);
+					//i += len;
+					i += sprintf(buffer + i, "\e[%sm", terminal_colors[color]);
+					format += 2;
+					continue;
+				case 'v':
+					memcpy(buffer + i, "\e[0m", 4);
+					i += 4;
+					format += 2;
+					continue;
+			} else if(format[1] == 'V' || format[1] == 'v') {
+				format += 2;
+				continue;
+			}
+		}
+		buffer[i++] = *format++;
+	}
+	buffer[i] = 0;
+
+	int r = vprintf(buffer, ap);
+	va_end(ap);
+	return r;
+}
 
 
 /* # Terminal Color
@@ -395,6 +507,33 @@ static void group2str(unsigned int gid, char *out)
 }
 #endif
 
+static int get_file_color(const char *pathname) {
+	struct stat st;
+	if(lstat(pathname, &st) < 0) {
+		return NO_COLOR;
+	}
+	switch(st.st_mode & S_IFMT) {
+		case S_IFDIR:
+			return COLOR_BOLD_BLUE;
+#if !defined _WIN32 || defined _WIN32_WNT_NATIVE
+		case S_IFSOCK:
+			return COLOR_BOLD_PURPLE;
+		case S_IFBLK:
+		case S_IFCHR:
+			return COLOR_BOLD_YELLOW;
+		case S_IFLNK:
+			return COLOR_BOLD_CRAN;
+#endif
+		case S_IFREG:
+			if(access(pathname, X_OK) == 0) {
+				return COLOR_BOLD_GREEN;
+			}
+			// Fall
+		default:
+			return NO_COLOR;
+	}
+}
+
 static int show_total_size(const char *dirname, DIR *d, int flags)
 {
 	struct dirent *de;
@@ -479,7 +618,7 @@ static int listfile_long(const char *path, int flags) {
 	//if(flags & LIST_DIRECTORIES) name = path;
 	//else if((name = strrchr(path, '/')) name++;
 	//else name = path;
-	char file[4096];
+	//char file[4096];
 
 	if((flags & LIST_DIRECTORIES) || !(name = strrchr(path, '/'))) name = path;
 	else name++;
@@ -511,53 +650,57 @@ static int listfile_long(const char *path, int flags) {
 
 	switch(s.st_mode & S_IFMT) {
 		case S_IFDIR:
-			COLOR_PRINT(COLOR_BOLD_BLUE, file, name);
+			//COLOR_PRINT(COLOR_BOLD_BLUE, file, name);
 #if defined _WIN32 && !defined _WIN32_WNT_NATIVE
-			printf("%s %3u %-6s %-6s %8ld %s %s\n",
-				mode, (unsigned int)s.st_nlink, user, group, s.st_size, date, file);
+			printf_color(COLOR_BOLD_BLUE, "%s %3u %-6s %-6s %8ld %s %V%s%v\n",
+				mode, (unsigned int)s.st_nlink, user, group, s.st_size, date, name);
 #else
-			printf("%s %3u %-6s %-6s %8lld %s %s\n",
-				mode, (unsigned int)s.st_nlink, user, group, (long long int)s.st_size, date, file);
+			printf_color(COLOR_BOLD_BLUE, "%s %3u %-6s %-6s %8lld %s %V%s%v\n",
+				mode, (unsigned int)s.st_nlink, user, group, (long long int)s.st_size, date, name);
 #endif
 			break;
 #if !defined _WIN32 || defined _WIN32_WNT_NATIVE
 		case S_IFSOCK:
-			COLOR_PRINT(COLOR_BOLD_PURPLE, file, name);
-			printf("%s %3u %-6s %-6s          %s %s\n",
-				mode, (unsigned int)s.st_nlink, user, group, date,file);
+			//COLOR_PRINT(COLOR_BOLD_PURPLE, file, name);
+			printf_color(COLOR_BOLD_PURPLE, "%s %3u %-6s %-6s          %s %V%s%v\n",
+				mode, (unsigned int)s.st_nlink, user, group, date, name);
 			break;
 #ifndef _WIN32
 		case S_IFBLK:
 		case S_IFCHR:
-			COLOR_PRINT(COLOR_BOLD_YELLOW, file, name);
-			printf("%s %3u %-6s %-6s %3d, %3d %s %s\n",
+			//COLOR_PRINT(COLOR_BOLD_YELLOW, file, name);
+			printf_color(COLOR_BOLD_YELLOW, "%s %3u %-6s %-6s %3d, %3d %s %V%s%v\n",
 				mode, (unsigned int)s.st_nlink,
 				user, group, (int)MAJOR(s.st_rdev),
-				(int)MINOR(s.st_rdev), date, file);
+				(int)MINOR(s.st_rdev), date, name);
 			break;
 #endif
 #endif
 		case S_IFREG:
-#if defined _WIN32 && !defined _WIN32_WNT_NATIVE
-			// Some versions of Windows can't handle the type long long int properly in printf
-			printf("%s %3u %-6s %-6s %8ld %s %s\n", mode, (unsigned int)s.st_nlink, user, group, s.st_size, date, name);
-#else
 			if(is_color && access(path, X_OK) == 0) {
-				COLOR_PRINT(COLOR_BOLD_GREEN, file, name);
-				printf("%s %3u %-6s %-6s %8lld %s %s\n",
+				//COLOR_PRINT(COLOR_BOLD_GREEN, file, name);
+#if defined _WIN32 && !defined _WIN32_WNT_NATIVE
+				printf_color(COLOR_BOLD_GREEN, "%s %3u %-6s %-6s %8ld %s %V%s%v\n",
+					mode, (unsigned int)s.st_nlink, user, group, s.st_size, date, name);
+#else
+				printf_color(COLOR_BOLD_GREEN, "%s %3u %-6s %-6s %8lld %s %V%s%v\n",
 					mode, (unsigned int)s.st_nlink, user,
-					group, (long long int)s.st_size, date, file);
+					group, (long long int)s.st_size, date, name);
+#endif
 			} else {
-				//COLOR_PRINT("0;37", file, name);
+#if defined _WIN32 && !defined _WIN32_WNT_NATIVE
+				printf("%s %3u %-6s %-6s %8ld %s %s\n",
+					mode, (unsigned int)s.st_nlink, user, group, s.st_size, date, name);
+#else
 				printf("%s %3u %-6s %-6s %8lld %s %s\n",
 					mode, (unsigned int)s.st_nlink, user,
 					group, (long long int)s.st_size, date, name);
-			}
 #endif
+			}
 			break;
 #if !defined _WIN32 || defined _WIN32_WNT_NATIVE
 		case S_IFLNK: {
-			COLOR_PRINT(COLOR_BOLD_CRAN, file, name);
+			//COLOR_PRINT(COLOR_BOLD_CRAN, file, name);
 			char linkto[256];
 			int len;
 
@@ -573,8 +716,20 @@ static int listfile_long(const char *path, int flags) {
 				linkto[len] = 0;
 			}
 
-			printf("%s %3u %-6s %-6s          %s %s -> %s\n",
-				mode, (unsigned int)s.st_nlink, user, group, date, file, linkto);
+			printf_color(COLOR_BOLD_CRAN, "%s %3u %-6s %-6s          %s %V%s%v ",
+				mode, (unsigned int)s.st_nlink, user, group, date, name);
+			size_t path_buffer_len = ++len;
+			size_t path_len = strlen(path);
+			if(*linkto != '/') path_buffer_len += path_len/* + 1*/;
+			char path_buffer[path_buffer_len];
+			if(*linkto != '/') {
+				while(path_len && path[path_len] != '/') path_len--;
+				//sprintf(path_buffer, "%s/%s", path, linkto);
+				memcpy(path_buffer, path, ++path_len);
+				memcpy(path_buffer + path_len, linkto, len);
+			} else memcpy(path_buffer, linkto, path_buffer_len);
+			//puts(path_buffer);
+			printf_color(get_file_color(path_buffer), "-> %V%s%v\n", linkto);
 			break;
 		}
 #endif
@@ -630,7 +785,7 @@ static int listfile_maclabel(const char *path, int flags) {
 				linkto[len] = 0;
 			}
 
-			printf("%s %-8s %-8s          %s %s -> %s\n",
+			printf_color(COLOR_BOLD_CRAN, "%s %-8s %-8s          %s %V%s%v -> %s\n",
 				mode, user, group, maclabel, name, linkto);
 			break;
 		}
@@ -647,8 +802,8 @@ static int listfile_maclabel(const char *path, int flags) {
 #endif
 
 static int listfile(const char *dirname, const char *filename, int flags) {
-	struct stat s;
-	char file[4096];
+	//struct stat s;
+	//char file[4096];
 	char tmp[4096];
 	const char *name;
 	const char* pathname = filename;
@@ -663,38 +818,43 @@ static int listfile(const char *dirname, const char *filename, int flags) {
 	}
 
 	if ((flags & (LIST_LONG | LIST_SIZE | LIST_CLASSIFY)) == 0) {
-		/* There almost same with listfile_long() function, It should be replace use define or new function. */
 		/* name is anything after the final '/', or the whole path if none*/
 		if((flags & LIST_DIRECTORIES) || !(name = strrchr(pathname, '/'))) name = pathname;
 		else name++;
 
+#if 0
 		if(lstat(pathname, &s) < 0) {
 			return -1;
 		}
 		switch(s.st_mode & S_IFMT) {
 			case S_IFDIR:
-				COLOR_PRINT(COLOR_BOLD_BLUE, file, name);
-				puts(file);
+				//COLOR_PRINT(COLOR_BOLD_BLUE, file, name);
+				//puts(file);
+				printf_color(COLOR_BOLD_BLUE, "%V%s%v\n", name);
 				break;
 			case S_IFSOCK:
-				COLOR_PRINT(COLOR_BOLD_PURPLE, file, name);
-				puts(file);
+				//COLOR_PRINT(COLOR_BOLD_PURPLE, file, name);
+				//puts(file);
+				printf_color(COLOR_BOLD_PURPLE, "%V%s%v\n", name);
 				break;
 			case S_IFBLK:
 			case S_IFCHR:
-				COLOR_PRINT(COLOR_BOLD_YELLOW, file, name);
-				puts(file);
+				//COLOR_PRINT(COLOR_BOLD_YELLOW, file, name);
+				//puts(file);
+				printf_color(COLOR_BOLD_YELLOW, "%V%s%v\n", name);
 				break;
 #ifndef _WIN32
 			case S_IFLNK:
-				COLOR_PRINT("1;36", file, name);
-				puts(file);
+				//COLOR_PRINT("1;36", file, name);
+				//puts(file);
+				printf_color(COLOR_BOLD_CRAN, "%V%s%v\n", name);
 				break;
 #endif
 			case S_IFREG:
 				if(access(pathname, X_OK) == 0) {
-					COLOR_PRINT("1;32", file, name);
-					puts(file);
+					//COLOR_PRINT("1;32", file, name);
+					//puts(file);
+					printf_color(COLOR_BOLD_GREEN, "%V%s%v\n", name);
 					break;
 				}
 				// Fall
@@ -702,6 +862,10 @@ static int listfile(const char *dirname, const char *filename, int flags) {
 				puts(name);
 				break;
 		}
+#else
+		if(is_color) printf_color(get_file_color(pathname), "%V%s%v\n", name);
+		else puts(name);
+#endif
 		return 0;
 	}
 
