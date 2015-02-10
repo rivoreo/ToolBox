@@ -24,6 +24,9 @@ endif
 
 ifeq ($(CC),cc)
 export CC = gcc
+ifeq ($($(shell gcc --version | grep -E "gcc.+[0-9]\.[0-9]\.[0-9]" | grep -Eo " [0-9]\.[0-9]" | grep -Eo "\.[0-9]")),.9)
+NEED_LIBPCRE = 1
+endif
 ifeq ($(OS_NAME),Darwin)
 DARWIN = 1
 endif
@@ -42,7 +45,7 @@ endif
 # Note: Option --pie -Wl,-E replaces --shared
 ifdef SHARED_OBJECT
 CFLAGS += -fPIC
-# LDFLAGS += --shared
+#LDFLAGS += --shared
 LDFLAGS += --pie -Wl,-E
 OUTFILE = libtoolbox.so
 endif
@@ -63,6 +66,7 @@ ALL_TOOLS := \
 	iftop_u.o \
 	ioctl_u.o \
 	kill_u.o \
+	kill1_u.o \
 	ln_u.o \
 	ls_u.o \
 	lsof_u.o \
@@ -112,6 +116,7 @@ EXTRA_TOOLS := \
 	iftop \
 	ioctl \
 	kill \
+	kill1 \
 	ln \
 	lsof \
 	mtdread \
@@ -183,10 +188,14 @@ EXTRA_TOOLS += \
 	runcon \
 	setenforce \
 	setsebool
-SELINUX_LIBS = -lselinux -lpcre
+SELINUX_LIBS = -lselinux
 ifndef NO_STATIC
 SELINUX_LIBS += -lsepol
+else
+ifdef NEED_LIBPCRE
+SELINUX_LIBS += -lpcre
 endif
+endif		# NO_STATIC
 endif
 endif		# MINGW
 BASE_TOOLS := \

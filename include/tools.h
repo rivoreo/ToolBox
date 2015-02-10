@@ -40,6 +40,7 @@ TOOL(insmod)
 #endif
 TOOL(ioctl)
 TOOL(kill)
+TOOL(kill1)
 #endif
 TOOL(ln)
 TOOL(ls)
