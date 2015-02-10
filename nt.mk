@@ -1,7 +1,7 @@
 NATIVETOOLSDIR := ../WindowsNT-NativeTools/
 include $(NATIVETOOLSDIR)rules.mk
 
-CFLAGS += -Wall -O1 -D_WIN32_WNT_NATIVE -D_NO_SELINUX "-Dfprintf(F,...)=printf(__VA_ARGS__)" -Iconfig
+CFLAGS += -Wall -O1 -D_WIN32_WNT_NATIVE -D_NO_SELINUX "-Dfprintf(F,...)=printf(__VA_ARGS__)" -Iinclude
 #CFLAGS +=
 #RM = $(shell which rm)
 
@@ -16,6 +16,8 @@ TOOLS_OBJS = \
 	ls_u.o \
 	md5_u.o \
 	mkdir_u.o \
+	modexe_u.o \
+	modexeb_u.o \
 	mv_u.o \
 	printenv_u.o \
 	rmdir_u.o \
@@ -35,6 +37,8 @@ TOOLS = \
 	ls \
 	md5 \
 	mkdir \
+	modexe \
+	modexeb \
 	mv \
 	printenv \
 	rmdir \
@@ -52,6 +56,12 @@ separate:	$(TOOLS)
 
 toolbox:	$(NATIVETOOLSDIR)crtn.o toolbox.o $(TOOLS_OBJS)
 	$(LD) $(LDFLAGS) $^ -o $@ $(LIBS) -lcrypto
+
+toolbox.dll:	dllcrt.o $(TOOLS_OBJS)
+	$(LD) --shared -e _DllMainCRTStartup --subsystem 1 $^ -o $@ $(LIBS) -lcrypto
+
+libtoolbox.so:	dllcrt.o $(TOOLS_OBJS)
+	$(LD) --shared -e _DllMainCRTStartup --subsystem 1 $^ -o $@ $(LIBS) -lcrypto
 
 md5:	$(NATIVETOOLSDIR)crtn.o md5.o
 	$(LD) $(LDFLAGS) $^ -o $@ $(LIBS) -lcrypto

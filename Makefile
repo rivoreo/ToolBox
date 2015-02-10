@@ -34,21 +34,31 @@ ifeq ($(OS_NAME),GNU)
 GNU = 1
 endif
 endif
+
 CFLAGS += -Iinclude -O1 -Wall
+
+ifdef SHARED_OBJECT
+CFLAGS += -fPIC
+ifeq ($(SHARED_OBJECT),noexec)
+LDFLAGS += --shared
+else
+# Both shared library and executable
+# Option --pie replaces --shared, and passing a -E to the linker to export all symbols
+LDFLAGS += --pie -Wl,-E
+endif
+ifdef DARWIN
+OUTFILE = libtoolbox.dylib
+else
+OUTFILE = libtoolbox.so
+endif
+NO_STATIC = 1
+else
 ifndef DARWIN
 ifndef NO_STATIC
 UNITY_LDFLAGS = --static
 endif
-endif
-
-# Both shared library and executable
-# Note: Option --pie -Wl,-E replaces --shared
-ifdef SHARED_OBJECT
-CFLAGS += -fPIC
-#LDFLAGS += --shared
-LDFLAGS += --pie -Wl,-E
-OUTFILE = libtoolbox.so
-endif
+endif		# !NO_STATIC
+endif		# SHARED_OBJECT
 
 ALL_TOOLS := \
 	cat_u.o \
@@ -198,7 +208,7 @@ ifdef NEED_LIBPCRE
 SELINUX_LIBS += -lpcre
 endif
 endif		# NO_STATIC
-endif
+endif		# NO_SELINUX
 endif		# MINGW
 BASE_TOOLS := \
 	cat$(SUFFIX) \
@@ -266,7 +276,7 @@ cleanc:
 	/bin/rm -f $(TRAN_SRC)
 
 clean:	cleanc
-	/bin/rm -f toolbox libtoolbox.so $(BASE_TOOLS) $(EXTRA_TOOLS) *.o *.exe
+	/bin/rm -f toolbox toolbox.dll libtoolbox.so $(BASE_TOOLS) $(EXTRA_TOOLS) *.o *.exe
 	$(MAKE) -C posix-io-for-windows distclean
 
 help:
