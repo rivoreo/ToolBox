@@ -30,8 +30,6 @@
 #ifndef _NO_SELINUX
 #include <selinux/selinux.h>
 #endif
-
-
 #include <linux/kdev_t.h>
 #elif defined __MACH__
 #ifdef __APPLE__
@@ -67,7 +65,7 @@
 #define snprintf(D, S, ...) sprintf(D, __VA_ARGS__)
 #else
 // Using ntdll's _snprintf
-int _snprintf(char *, size_t, const char *, ...);
+extern int _snprintf(char *, size_t, const char *, ...);
 #define snprintf _snprintf
 #endif
 #else
@@ -108,6 +106,8 @@ bool is_color = false;
 #define COLOR_BOLD_PURPLE "1;35"
 #define COLOR_BOLD_CRAN "1;36"
 #define COLOR_BOLD_WRITE "1;37"
+
+//static int printf_color(int color, const char *format, ...)
 
 
 /* # Terminal Color
@@ -751,11 +751,9 @@ static int listdir(const char *name, int flags)
 			if(!list_all && (strcmp(de->d_name, ".") == 0 || strcmp(de->d_name, "..") == 0)) continue;
 			if(de->d_name[0] == '.' && !list_all && !(flags & LIST_ALL_ALMOST)) continue;
 
-			if(strcmp(name, "/") == 0) {
-				snprintf(tmp, sizeof(tmp), "/%s", de->d_name);
-			} else {
-				snprintf(tmp, sizeof(tmp), "%s/%s", name, de->d_name);
-			}
+			const char *slash = "/";
+			if(name[strlen(name) - 1] == '/') slash = "";
+			snprintf(tmp, sizeof(tmp), "%s%s%s", name, slash, de->d_name);
 
 			/*
 			 * If the name ends in a '/', use stat() so we treat it like a

@@ -21,7 +21,9 @@ Files
 	ifconfig*
 	insmod*,
 	ioctl*,
+	isptrace1allowed_u.c,
 	kill*,
+	kill1_u.c
 	link.c,
 	ln_u.c,
 	ls_u.c

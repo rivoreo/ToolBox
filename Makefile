@@ -65,6 +65,7 @@ ALL_TOOLS := \
 	ifconfig_u.o \
 	iftop_u.o \
 	ioctl_u.o \
+	isptrace1allowed_u.o \
 	kill_u.o \
 	kill1_u.o \
 	ln_u.o \
@@ -115,6 +116,7 @@ EXTRA_TOOLS := \
 	ifconfig \
 	iftop \
 	ioctl \
+	isptrace1allowed \
 	kill \
 	kill1 \
 	ln \

@@ -39,6 +39,7 @@ TOOL(iftop)
 TOOL(insmod)
 #endif
 TOOL(ioctl)
+TOOL(isptrace1allowed)
 TOOL(kill)
 TOOL(kill1)
 #endif
