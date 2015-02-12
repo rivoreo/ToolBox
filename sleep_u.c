@@ -17,15 +17,12 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-static void
-usage(const char *s)
-{
+static void usage(const char *s) {
     fprintf(stderr, "Usage: %s <seconds>\n", s);
     exit(-1);
 }
 
-int sleep_main(int argc, char *argv[])
-{
+int sleep_main(int argc, char *argv[]) {
     unsigned long seconds;
     char *endptr;
 
@@ -43,5 +40,3 @@ int sleep_main(int argc, char *argv[])
    
     return 0;
 }
-
-

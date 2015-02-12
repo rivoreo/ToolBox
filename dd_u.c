@@ -71,8 +71,7 @@ void def_close(void);
 void jcl(char **);
 void pos_in(void);
 void pos_out(void);
-void summary(void);
-void summaryx(int);
+static void summary(void);
 void terminate(int);
 void unblock(void);
 void unblock_close(void);
@@ -888,9 +887,7 @@ unblock_close(void)
 
 #define	tv2mS(tv) ((tv).tv_sec * 1000LL + ((tv).tv_usec + 500) / 1000)
 
-void
-summary(void)
-{
+static void summary(void) {
 	char buf[100];
 	int64_t mS;
 	struct timeval tv;

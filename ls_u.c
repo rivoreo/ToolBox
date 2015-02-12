@@ -13,7 +13,7 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include <errno.h>
-
+#include <stdarg.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <time.h>
@@ -115,37 +115,8 @@ static bool is_color = false;
 #define COLOR_BOLD_BLUE "1;34"
 #define COLOR_BOLD_PURPLE "1;35"
 #define COLOR_BOLD_CRAN "1;36"
-#define COLOR_BOLD_WRITE "1;37"
+#define COLOR_BOLD_WHITE "1;37"
 #endif
-
-/*
-static struct {
-	enum color {
-		COLOR_RESET,
-
-		COLOR_BLACK,
-		COLOR_RED,
-		COLOR_GREEN,
-		COLOR_YELLOW,
-		COLOR_BLUE,
-		COLOR_PURPLE,
-		COLOR_CRAN,
-		COLOR_GRAY,
-
-		COLOR_BOLD_BLACK,
-		COLOR_BOLD_RED,
-		COLOR_BOLD_GREEN,
-		COLOR_BOLD_YELLOW,
-		COLOR_BOLD_BLUE,
-		COLOR_BOLD_PURPLE,
-		COLOR_BOLD_CRAN,
-		COLOR_BOLD_WRITE
-	} color;
-	const char *string;
-} terminal_color_table[] = {
-	{ COLOR_RESET, "0" },
-};
-*/
 
 //#define TERMINAL_CONTROL_START "\e["
 //#define TERMINAL_CONTROL_END "m"
@@ -171,9 +142,10 @@ enum color {
 	COLOR_BOLD_BLUE,
 	COLOR_BOLD_PURPLE,
 	COLOR_BOLD_CRAN,
-	COLOR_BOLD_WRITE
+	COLOR_BOLD_WHITE
 };
 
+#if !defined _WIN32 || defined _WIN32_WNT_NATIVE
 static const char *terminal_colors[] = {
 	//[COLOR_RESET] = "0",
 	[COLOR_BLACK] = "0;30",
@@ -191,31 +163,122 @@ static const char *terminal_colors[] = {
 	[COLOR_BOLD_BLUE] = "1;34",
 	[COLOR_BOLD_PURPLE] = "1;35",
 	[COLOR_BOLD_CRAN] = "1;36",
-	[COLOR_BOLD_WRITE] = "1;37"
+	[COLOR_BOLD_WHITE] = "1;37"
 };
+#elif defined _WIN32_WCE && defined _USE_LIBPORT
+#if _USE_LIBPORT == 2
+static int (*_SetConsoleTextAttribute)(void *, unsigned short int);
+#define SetConsoleTextAttribute _SetConsoleTextAttribute
+#define GetProcAddress GetProcAddressA
+#endif
+#endif
 
 static int printf_color(int color, const char *format, ...) {
 	//fprintf(stderr, "function: printf_color(%d, %p<%s>, ...)\n", color, format, format);
 	char buffer[4096];
 	int i = 0;
+	int r = 0;
 	va_list ap;
 	va_start(ap, format);
+#if defined _WIN32 && !defined _WIN32_WNT_NATIVE && (!defined _WIN32_WCE || defined _USE_LIBPORT)
+	int j = 0;
+#ifdef _WIN32_WCE
+	//void *fh = (void *)fileno(stdout);
+	void *fh = (void *)STDOUT_FILENO;
+#else
+	void *fh = GetStdHandle(STD_OUTPUT_HANDLE);
+#endif
+	unsigned short int attrib;
+	switch(color) {
+		case COLOR_BLACK:
+		case COLOR_BOLD_BLACK:
+			attrib = 0;
+			break;
+		case COLOR_RED:
+		case COLOR_BOLD_RED:
+			attrib = FOREGROUND_RED;
+			break;
+		case COLOR_GREEN:
+		case COLOR_BOLD_GREEN:
+			attrib = FOREGROUND_GREEN;
+			break;
+		case COLOR_BLUE:
+		case COLOR_BOLD_BLUE:
+			attrib = FOREGROUND_BLUE;
+			break;
+		case COLOR_PURPLE:
+		case COLOR_BOLD_PURPLE:
+			attrib = FOREGROUND_RED | FOREGROUND_BLUE;
+			break;
+		case COLOR_YELLOW:
+		case COLOR_BOLD_YELLOW:
+			attrib = FOREGROUND_RED | FOREGROUND_GREEN;
+			break;
+		case COLOR_CRAN:
+		case COLOR_BOLD_CRAN:
+			attrib = FOREGROUND_BLUE | FOREGROUND_GREEN;
+			break;
+		case COLOR_BOLD_WHITE:
+			attrib = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
+			break;
+		case COLOR_GRAY:
+			attrib = FOREGROUND_INTENSITY;
+			break;
+		default:
+			fprintf(stderr, "toolbox warning: ls: printf_color: unknown color %d\n", color);
+			attrib = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
+			break;
+	}
+#endif
 	while(*format && i < sizeof buffer) {
 		if(*format == '%') {
 			if(is_color && color != NO_COLOR) switch(format[1]) {
 				case 'V':
+#if !defined _WIN32_WCE || defined _USE_LIBPORT
+#if defined _WIN32 && !defined _WIN32_WNT_NATIVE
+					buffer[i] = 0;
+					r += vprintf(buffer, ap);
+					i = 0;
+					while(j) {
+						(void)va_arg(ap, int);
+						j--;
+					}
+					SetConsoleTextAttribute(fh, attrib);
+#else
 					//memcpy(buffer + i, "\e[", sizeof "\e[" - 1);
 					//i += sizeof "\e[" - 1;
 					//memcpy(buffer + i, terminal_colors[color], len);
 					//i += len;
 					i += sprintf(buffer + i, "\e[%sm", terminal_colors[color]);
+#endif
+#endif
 					format += 2;
 					continue;
 				case 'v':
+#if !defined _WIN32_WCE || defined _USE_LIBPORT
+#if defined _WIN32 && !defined _WIN32_WNT_NATIVE
+					buffer[i] = 0;
+					r += vprintf(buffer, ap);
+					i = 0;
+					while(j) {
+						(void)va_arg(ap, int);
+						j--;
+					}
+					SetConsoleTextAttribute(fh, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+#else
 					memcpy(buffer + i, "\e[0m", 4);
 					i += 4;
+#endif
+#endif
 					format += 2;
 					continue;
+#if defined _WIN32 && !defined _WIN32_WNT_NATIVE && (!defined _WIN32_WCE || defined _USE_LIBPORT)
+				default:
+					//buffer[i] = 0;
+					//r += vprintf(buffer, ap + j++);
+					//i = 0;
+					j++;
+#endif
 			} else if(format[1] == 'V' || format[1] == 'v') {
 				format += 2;
 				continue;
@@ -225,7 +288,7 @@ static int printf_color(int color, const char *format, ...) {
 	}
 	buffer[i] = 0;
 
-	int r = vprintf(buffer, ap);
+	r = vprintf(buffer, ap);
 	va_end(ap);
 	return r;
 }
@@ -1066,6 +1129,15 @@ not_an_option:
 			}
 		}
 
+#if defined _WIN32_WCE && defined _USE_LIBPORT && _USE_LIBPORT == 2
+		if(is_color) {
+			HMODULE libport = LoadLibraryW(L"port.dll");
+			if(libport) {
+				*(void **)&_SetConsoleTextAttribute = GetProcAddress(libport, "SetConsoleTextAttribute");
+				if(!_SetConsoleTextAttribute) is_color = false;
+			} else is_color = false;
+		}
+#endif
 		if(files.count > 0) {
 			if(files.count > 1) flags |= MULTI_FILES;
 			STRLIST_FOREACH(&files, path, {

@@ -31,7 +31,7 @@
 		return 6;								\
 	} while(0)
 
-int save_file(const char *filename, const char *buffer, off_t offset, size_t len) {
+static int save_file(const char *filename, const char *buffer, off_t offset, size_t len) {
 	int fd = open(filename, O_WRONLY);
 	if(fd == -1) {
 		perror(filename);
@@ -42,7 +42,7 @@ int save_file(const char *filename, const char *buffer, off_t offset, size_t len
 	return write(fd, buffer, len) != -1;
 }
 
-int pe_file_rw(struct portable_executable *pe, const char *item, char readonly, ...) {
+static int pe_file_rw(struct portable_executable *pe, const char *item, char readonly, ...) {
 	va_list ap;
 	uint32_t *out;
 	uint32_t in;

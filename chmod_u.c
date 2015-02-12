@@ -10,7 +10,7 @@
 #include <unistd.h>
 #include <time.h>
 
-void recurse_chmod(const char *path, int mode)
+static void recurse_chmod(const char *path, int mode)
 {
     struct dirent *dp;
     DIR *dir = opendir(path);
