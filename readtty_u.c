@@ -32,8 +32,7 @@ struct {
     { '0', "*+&0@/#*" },
 };
 
-char next_char(char key, char current)
-{
+static char next_char(char key, char current) {
     int i;
     char *next;
     for(i = 0; i < sizeof(map) / sizeof(map[0]); i++) {
@@ -46,8 +45,7 @@ char next_char(char key, char current)
     return key;
 }
 
-char prev_char(char key, char current)
-{
+static char prev_char(char key, char current) {
     int i;
     char *next;
     for(i = 0; i < sizeof(map) / sizeof(map[0]); i++) {

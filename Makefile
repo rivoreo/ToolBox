@@ -37,6 +37,12 @@ endif
 
 CFLAGS += -Iinclude -O1 -Wall
 
+ifdef DARWIN
+LIB_NAME = libtoolbox.dylib
+else
+LIB_NAME = libtoolbox.so
+endif
+
 ifdef SHARED_OBJECT
 CFLAGS += -fPIC
 ifeq ($(SHARED_OBJECT),noexec)
@@ -46,11 +52,7 @@ else
 # Option --pie replaces --shared, and passing a -E to the linker to export all symbols
 LDFLAGS += --pie -Wl,-E
 endif
-ifdef DARWIN
-OUTFILE = libtoolbox.dylib
-else
-OUTFILE = libtoolbox.so
-endif
+OUTFILE = $(LIB_NAME)
 NO_STATIC = 1
 else
 ifndef DARWIN
@@ -203,11 +205,10 @@ EXTRA_TOOLS += \
 SELINUX_LIBS = -lselinux
 ifndef NO_STATIC
 SELINUX_LIBS += -lsepol
-else
 ifdef NEED_LIBPCRE
 SELINUX_LIBS += -lpcre
 endif
-endif		# NO_STATIC
+endif		# !NO_STATIC
 endif		# NO_SELINUX
 endif		# MINGW
 BASE_TOOLS := \
@@ -242,6 +243,7 @@ TRAN_SRC = \
 	exists.c \
 	getenforce.c \
 	getevent.c \
+	hd.c \
 	id.c \
 	ln.c \
 	ls.c \
@@ -259,12 +261,17 @@ TRAN_SRC = \
 	sync.c
 
 
-first:	unity
-
-unity:	$(ALL_TOOLS) toolbox.o
-	$(CC) $(LDFLAGS) $(UNITY_LDFLAGS) $(ALL_TOOLS) toolbox.o -o $(OUTFILE) $(LIBS) $(SELINUX_LIBS) $(TIMELIB) -lcrypto -lpthread
+unity:	$(OUTFILE)
 
 separate:	$(DEPEND) $(BASE_TOOLS) $(EXTRA_TOOLS)
+
+ifndef SHARED_OBJECT
+$(LIB_NAME):
+	SHARED_OBJECT=1 $(MAKE)
+endif
+
+$(OUTFILE):	$(ALL_TOOLS) toolbox.o
+	$(CC) $(LDFLAGS) $(UNITY_LDFLAGS) $^ -o $@ $(LIBS) $(SELINUX_LIBS) $(TIMELIB) -lcrypto -lpthread
 
 #separate-mingw:
 
@@ -277,7 +284,7 @@ cleanc:
 	/bin/rm -f $(TRAN_SRC)
 
 clean:	cleanc
-	/bin/rm -f toolbox toolbox.dll libtoolbox.so $(BASE_TOOLS) $(EXTRA_TOOLS) *.o *.exe
+	/bin/rm -f toolbox toolbox.dll $(LIB_NAME) $(BASE_TOOLS) $(EXTRA_TOOLS) *.o *.exe
 	$(MAKE) -C posix-io-for-windows distclean
 
 help:

@@ -243,7 +243,7 @@ static void update_table(DIR *d, uint32_t flags)
 	}
 }
 
-void sig(int signum) {
+static void sig(int signum) {
 	printf("\e[?47l");
 	exit(0);
 }

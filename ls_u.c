@@ -39,7 +39,6 @@
 #ifndef _NO_SELINUX
 #include <selinux/selinux.h>
 #endif
-#include <linux/kdev_t.h>
 #elif defined __MACH__
 #ifdef __APPLE__
 #ifndef MAJOR
@@ -80,7 +79,23 @@ extern int _snprintf(char *, size_t, const char *, ...);
 #else
 #include <windows.h>
 #define lstat stat
+#ifndef S_IXGRP
+#define S_IXGRP 00010
 #endif
+#ifndef S_IXOTH
+#define S_IXOTH 00001
+#endif
+#ifndef _WIN32_WCE
+#undef STDOUT_FILENO
+#if 0
+#define STDOUT_FILENO 1
+#define isatty _isatty
+#else
+#define STDOUT_FILENO ((int)GetStdHandle(STD_OUTPUT_HANDLE) ? : -1)
+#undef isatty
+#endif
+#endif		/* !_WIN32_WCE */
+#endif		/* _WIN32_WNT_NATIVE */
 #endif
 
 /* Test COLOR */
@@ -135,6 +150,7 @@ enum color {
 	COLOR_CRAN,
 	COLOR_GRAY,
 
+	COLOR_BOLD,
 	COLOR_BOLD_BLACK,
 	COLOR_BOLD_RED,
 	COLOR_BOLD_GREEN,
@@ -142,20 +158,30 @@ enum color {
 	COLOR_BOLD_BLUE,
 	COLOR_BOLD_PURPLE,
 	COLOR_BOLD_CRAN,
-	COLOR_BOLD_WHITE
+	COLOR_BOLD_WHITE,
+
+	COLOR_BACKGROUND_BLACK,
+	COLOR_BACKGROUND_RED,
+	COLOR_BACKGROUND_GREEN,
+	COLOR_BACKGROUND_YELLOW,
+	COLOR_BACKGROUND_BLUE,
+	COLOR_BACKGROUND_PURPLE,
+	COLOR_BACKGROUND_CRAN,
+	COLOR_BACKGROUND_GRAY
 };
 
 #if !defined _WIN32 || defined _WIN32_WNT_NATIVE
 static const char *terminal_colors[] = {
 	//[COLOR_RESET] = "0",
-	[COLOR_BLACK] = "0;30",
-	[COLOR_RED] = "0;31",
-	[COLOR_GREEN] = "0;32",
-	[COLOR_YELLOW] = "0;33",
-	[COLOR_BLUE] = "0;34",
-	[COLOR_PURPLE] = "0;35",
-	[COLOR_CRAN] = "0;36",
-	[COLOR_GRAY] = "0;37",
+	[COLOR_BLACK] = "30",
+	[COLOR_RED] = "31",
+	[COLOR_GREEN] = "32",
+	[COLOR_YELLOW] = "33",
+	[COLOR_BLUE] = "34",
+	[COLOR_PURPLE] = "35",
+	[COLOR_CRAN] = "36",
+	[COLOR_GRAY] = "37",
+	[COLOR_BOLD] = "1",
 	[COLOR_BOLD_BLACK] = "1;30",
 	[COLOR_BOLD_RED] = "1;31",
 	[COLOR_BOLD_GREEN] = "1;32",
@@ -163,7 +189,15 @@ static const char *terminal_colors[] = {
 	[COLOR_BOLD_BLUE] = "1;34",
 	[COLOR_BOLD_PURPLE] = "1;35",
 	[COLOR_BOLD_CRAN] = "1;36",
-	[COLOR_BOLD_WHITE] = "1;37"
+	[COLOR_BOLD_WHITE] = "1;37",
+	[COLOR_BACKGROUND_BLACK] = "40",
+	[COLOR_BACKGROUND_RED] = "41",
+	[COLOR_BACKGROUND_GREEN] = "42",
+	[COLOR_BACKGROUND_YELLOW] = "43",
+	[COLOR_BACKGROUND_BLUE] = "44",
+	[COLOR_BACKGROUND_PURPLE] = "45",
+	[COLOR_BACKGROUND_CRAN] = "46",
+	[COLOR_BACKGROUND_GRAY] = "47"
 };
 #elif defined _WIN32_WCE && defined _USE_LIBPORT
 #if _USE_LIBPORT == 2
@@ -180,6 +214,10 @@ static int printf_color(int color, const char *format, ...) {
 	int r = 0;
 	va_list ap;
 	va_start(ap, format);
+#if !defined _WIN32 || defined _WIN32_WNT_NATIVE
+	int high_color = color >> 16;
+#endif
+	color &= 0xffff;
 #if defined _WIN32 && !defined _WIN32_WNT_NATIVE && (!defined _WIN32_WCE || defined _USE_LIBPORT)
 	int j = 0;
 #ifdef _WIN32_WCE
@@ -225,7 +263,7 @@ static int printf_color(int color, const char *format, ...) {
 			attrib = FOREGROUND_INTENSITY;
 			break;
 		default:
-			fprintf(stderr, "toolbox warning: ls: printf_color: unknown color %d\n", color);
+			fprintf(stderr, "toolbox warning: ls: printf_color: color %d not supported\n", color);
 			attrib = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
 			break;
 	}
@@ -245,11 +283,10 @@ static int printf_color(int color, const char *format, ...) {
 					}
 					SetConsoleTextAttribute(fh, attrib);
 #else
-					//memcpy(buffer + i, "\e[", sizeof "\e[" - 1);
-					//i += sizeof "\e[" - 1;
-					//memcpy(buffer + i, terminal_colors[color], len);
-					//i += len;
 					i += sprintf(buffer + i, "\e[%sm", terminal_colors[color]);
+					if(high_color) {
+						i += sprintf(buffer + i, "\e[%sm", terminal_colors[high_color]);
+					}
 #endif
 #endif
 					format += 2;
@@ -588,9 +625,12 @@ static int get_file_color(const char *pathname) {
 			return COLOR_BOLD_CRAN;
 #endif
 		case S_IFREG:
-			if(access(pathname, X_OK) == 0) {
-				return COLOR_BOLD_GREEN;
-			}
+#ifndef _WIN32
+			if(st.st_mode & S_ISUID) return COLOR_BACKGROUND_RED | (COLOR_GRAY << 16);
+			if(st.st_mode & S_ISGID) return COLOR_BACKGROUND_YELLOW | (COLOR_BLACK << 16);
+#endif
+			//if(access(pathname, X_OK) == 0) return COLOR_BOLD_GREEN;
+			if(st.st_mode & (S_IXUSR | S_IXGRP | S_IXOTH)) return COLOR_BOLD_GREEN;
 			// Fall
 		default:
 			return NO_COLOR;
@@ -605,7 +645,7 @@ static int show_total_size(const char *dirname, DIR *d, int flags)
 	int sum = 0;
 
 	/* run through the directory and sum up the file block sizes */
-	while ((de = readdir(d)) != 0) {
+	while((de = readdir(d))) {
 		if(!(flags & LIST_ALL) && (strcmp(de->d_name, ".") == 0 || strcmp(de->d_name, "..") == 0)) continue;
 		if(de->d_name[0] == '.' && !(flags & LIST_ALL) && !(flags & LIST_ALL_ALMOST)) continue;
 		const char *slash = "/";
@@ -663,7 +703,7 @@ static int listfile_size(const char *path, const char *filename, int flags)
 		}
 	}
 
-	printf("%s\n", filename);
+	puts(filename);
 
 	return 0;
 }
@@ -740,17 +780,25 @@ static int listfile_long(const char *path, int flags) {
 #endif
 #endif
 		case S_IFREG:
-			if(is_color && access(path, X_OK) == 0) {
-				//COLOR_PRINT(COLOR_BOLD_GREEN, file, name);
+			if(is_color) {
+				int color;
+#ifndef _WIN32
+				if(s.st_mode & S_ISUID) color = COLOR_BACKGROUND_RED | (COLOR_GRAY << 16);
+				else if(s.st_mode & S_ISGID) color = COLOR_BACKGROUND_YELLOW | (COLOR_BLACK << 16);
+				else
+#endif
+				if(s.st_mode & (S_IXUSR | S_IXGRP | S_IXOTH)) color = COLOR_BOLD_GREEN;
+				else goto reg_nocolor;
 #if defined _WIN32 && !defined _WIN32_WNT_NATIVE
-				printf_color(COLOR_BOLD_GREEN, "%s %3u %-6s %-6s %8ld %s %V%s%v\n",
+				printf_color(color, "%s %3u %-6s %-6s %8ld %s %V%s%v\n",
 					mode, (unsigned int)s.st_nlink, user, group, s.st_size, date, name);
 #else
-				printf_color(COLOR_BOLD_GREEN, "%s %3u %-6s %-6s %8lld %s %V%s%v\n",
+				printf_color(color, "%s %3u %-6s %-6s %8lld %s %V%s%v\n",
 					mode, (unsigned int)s.st_nlink, user,
 					group, (long long int)s.st_size, date, name);
 #endif
 			} else {
+		reg_nocolor:
 #if defined _WIN32 && !defined _WIN32_WNT_NATIVE
 				printf("%s %3u %-6s %-6s %8ld %s %s\n",
 					mode, (unsigned int)s.st_nlink, user, group, s.st_size, date, name);
@@ -869,9 +917,9 @@ static int listfile(const char *dirname, const char *filename, int flags) {
 	//char file[4096];
 	char tmp[4096];
 	const char *name;
-	const char* pathname = filename;
+	const char *pathname = filename;
 
-	if (dirname != NULL) {
+	if(dirname != NULL) {
 		const char *slash = "/";
 		if(dirname[strlen(dirname) - 1] == '/') slash = "";
 		snprintf(tmp, sizeof(tmp), "%s%s%s", dirname, slash, filename);
@@ -880,7 +928,7 @@ static int listfile(const char *dirname, const char *filename, int flags) {
 		pathname = filename;
 	}
 
-	if ((flags & (LIST_LONG | LIST_SIZE | LIST_CLASSIFY)) == 0) {
+	if((flags & (LIST_LONG | LIST_SIZE | LIST_CLASSIFY)) == 0) {
 		/* name is anything after the final '/', or the whole path if none*/
 		if((flags & LIST_DIRECTORIES) || !(name = strrchr(pathname, '/'))) name = pathname;
 		else name++;
@@ -963,11 +1011,9 @@ static int listdir(const char *name, int flags)
 	}
 
 	while((de = readdir(d))) {
-		//printf("de = %p\n", de);
 		if(!list_all && (strcmp(de->d_name, ".") == 0 || strcmp(de->d_name, "..") == 0)) continue;
 		if(de->d_name[0] == '.' && !list_all && !(flags & LIST_ALL_ALMOST)) continue;
 
-		//fprintf(stderr, "toolbox debug: de->d_name = %p\"%s\"\n", de->d_name, de->d_name);
 		strlist_append_dup(&files, de->d_name);
 	}
 
@@ -975,12 +1021,12 @@ static int listdir(const char *name, int flags)
 	STRLIST_FOREACH(&files, filename, listfile(name, filename, flags));
 	strlist_done(&files);
 
-	if (flags & LIST_RECURSIVE) {
+	if(flags & LIST_RECURSIVE) {
 		strlist_t subdirs = STRLIST_INITIALIZER;
 
 		rewinddir(d);
 
-		while ((de = readdir(d)) != 0) {
+		while((de = readdir(d))) {
 			struct stat s;
 			int err;
 
@@ -1094,9 +1140,9 @@ int ls_main(int argc, char **argv)
 									} else if(strcmp(a, "auto") == 0) {
 										is_color = isatty(STDOUT_FILENO);
 									} else if(strcmp(a, "always") == 0 || strcmp(a, "force") == 0) {
-										is_color = 1;
+										is_color = true;
 									} else if(strcmp(a, "never") == 0 || strcmp(a, "none") == 0) {
-										is_color = 0;
+										is_color = false;
 									} else {
 										fprintf(stderr, "%s: Unknown argument '%s' for --color\n",
 											argv[0], a);
@@ -1141,7 +1187,7 @@ not_an_option:
 		if(files.count > 0) {
 			if(files.count > 1) flags |= MULTI_FILES;
 			STRLIST_FOREACH(&files, path, {
-				if (listpath(path, flags) != 0) {
+				if(listpath(path, flags) < 0) {
 					err = EXIT_FAILURE;
 				}
 			});
@@ -1155,6 +1201,6 @@ not_an_option:
 	return 1;
 #else
 	// list working directory if no files or directories were specified    
-	return listpath(".", flags);
+	return -listpath(".", flags);
 #endif
 }

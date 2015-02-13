@@ -16,7 +16,7 @@ Files
 	exists_u.c,
 	getenforce_u.c,
 	getevent*,
-	hd*,
+	hd_u.c,
 	id_u.c,
 	ifconfig*
 	insmod*,

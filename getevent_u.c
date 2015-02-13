@@ -319,12 +319,12 @@ static int open_device(const char *device, int print_flags)
         return -1;
     }
 
-    if(ioctl(fd, EVIOCGVERSION, &version)) {
+    if(ioctl(fd, EVIOCGVERSION, &version) < 0) {
         if(print_flags & PRINT_DEVICE_ERRORS)
             fprintf(stderr, "could not get driver version for %s, %s\n", device, strerror(errno));
         return -1;
     }
-    if(ioctl(fd, EVIOCGID, &id)) {
+    if(ioctl(fd, EVIOCGID, &id) < 0) {
         if(print_flags & PRINT_DEVICE_ERRORS)
             fprintf(stderr, "could not get driver id for %s, %s\n", device, strerror(errno));
         return -1;
@@ -394,7 +394,7 @@ static int open_device(const char *device, int print_flags)
     return 0;
 }
 
-int close_device(const char *device, int print_flags)
+static int close_device(const char *device, int print_flags)
 {
     int i;
     for(i = 1; i < nfds; i++) {

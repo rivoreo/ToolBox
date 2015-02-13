@@ -64,20 +64,20 @@ extern int fdatasync(int);
 //#define NO_CONV
 
 //#include "extern.h"
-void block(void);
-void block_close(void);
-void dd_out(int);
-void def(void);
-void def_close(void);
-void jcl(char **);
-void pos_in(void);
-void pos_out(void);
+static void block(void);
+static void block_close(void);
+static void dd_out(int);
+static void def(void);
+static void def_close(void);
+static void jcl(char **);
+static void pos_in(void);
+static void pos_out(void);
 static void summary(void);
 //void summaryx(int);
-void terminate(int);
-void unblock(void);
-void unblock_close(void);
-ssize_t bwrite(int, const void *, size_t);
+static void terminate(int);
+static void unblock(void);
+static void unblock_close(void);
+static ssize_t bwrite(int, const void *, size_t);
 
 extern IO		in, out;
 extern STAT		st;
@@ -321,9 +321,7 @@ redup_clean_fd(int fd)
 	return newfd;
 }
 
-static void
-dd_in(void)
-{
+static void dd_in(void) {
 	int flags;
 	int64_t n;
 
@@ -423,9 +421,7 @@ dd_in(void)
  * Cleanup any remaining I/O and flush output.  If necesssary, output file
  * is truncated.
  */
-static void
-dd_close(void)
-{
+static void dd_close(void) {
 
 	if(cfunc == def) def_close();
 	else if(cfunc == block) block_close();
@@ -464,9 +460,7 @@ dd_close(void)
 	}
 }
 
-void
-dd_out(int force)
-{
+static void dd_out(int force) {
 	static int warned;
 	int64_t cnt, n, nw;
 	uint8_t *outp;
@@ -571,9 +565,7 @@ dd_out(int force)
 /*
  * A protected against SIGINFO write
  */
-ssize_t
-bwrite(int fd, const void *buf, size_t len)
-{
+static ssize_t bwrite(int fd, const void *buf, size_t len) {
 	sigset_t oset;
 	ssize_t rv;
 	int oerrno;
@@ -592,9 +584,7 @@ bwrite(int fd, const void *buf, size_t len)
  * Seeking past the end of file can cause null blocks to be written to the
  * output.
  */
-void
-pos_in(void)
-{
+static void pos_in(void) {
 	int bcnt, cnt, nr, warned;
 
 	/* If not a pipe or tape device, try to seek on it. */
@@ -654,9 +644,7 @@ pos_in(void)
 	}
 }
 
-void
-pos_out(void)
-{
+static void pos_out(void) {
 //	struct mtop t_op;
 	int cnt, n;
 
@@ -728,9 +716,7 @@ pos_out(void)
  * output until less than obs remains.  Only a single buffer is used.
  * Worst case buffer calculation is (ibs + obs - 1).
  */
-void
-def(void)
-{
+static void def(void) {
 	uint64_t cnt;
 	const uint8_t *t;
 
@@ -757,9 +743,7 @@ def(void)
 	}
 }
 
-void
-def_close(void)
-{
+static void def_close(void) {
 	if(ddflags & C_FDATASYNC) {
 		fdatasync(out.fd);
 	}
@@ -772,10 +756,10 @@ def_close(void)
 /* Build a smaller version (i.e. for a miniroot) */
 /* These can not be called, but just in case...  */
 static const char no_block[] = "unblock and -DNO_CONV?\n";
-void block(void)		{ fprintf(stderr, "%s", no_block + 2); exit(1); }
-void block_close(void)		{ fprintf(stderr, "%s", no_block + 2); exit(1); }
-void unblock(void)		{ fprintf(stderr, "%s", no_block); exit(1); }
-void unblock_close(void)	{ fprintf(stderr, "%s", no_block); exit(1); }
+static void block(void)		{ fprintf(stderr, "%s", no_block + 2); exit(1); }
+static void block_close(void)	{ fprintf(stderr, "%s", no_block + 2); exit(1); }
+static void unblock(void)	{ fprintf(stderr, "%s", no_block); exit(1); }
+static void unblock_close(void)	{ fprintf(stderr, "%s", no_block); exit(1); }
 #else	/* NO_CONV */
 
 /*
@@ -785,9 +769,7 @@ void unblock_close(void)	{ fprintf(stderr, "%s", no_block); exit(1); }
  * max in buffer:  MAX(ibs, cbsz)
  * max out buffer: obs + cbsz
  */
-void
-block(void)
-{
+static void block(void) {
 	static int intrunc;
 	int ch = 0;	/* pacify gcc */
 	uint64_t cnt, maxlen;
@@ -860,9 +842,7 @@ block(void)
 	in.dbp = in.db + in.dbcnt;
 }
 
-void
-block_close(void)
-{
+static void block_close(void) {
 
 	/*
 	 * Copy any remaining data into the output buffer and pad to a record.
@@ -887,9 +867,7 @@ block_close(void)
  * max in buffer:  MAX(ibs, cbsz) + cbsz
  * max out buffer: obs + cbsz
  */
-void
-unblock(void)
-{
+static void unblock(void) {
 	uint64_t cnt;
 	uint8_t *inp;
 	const uint8_t *t;
@@ -920,9 +898,7 @@ unblock(void)
 	in.dbp = in.db + in.dbcnt;
 }
 
-void
-unblock_close(void)
-{
+static void unblock_close(void) {
 	uint64_t cnt;
 	uint8_t *t;
 
@@ -944,7 +920,7 @@ unblock_close(void)
 
 #define	tv2mS(tv) ((tv).tv_sec * 1000LL + ((tv).tv_usec + 500) / 1000)
 
-void summary(void) {
+static void summary(void) {
 	char buf[100];
 	int64_t mS;
 	struct timeval tv;
@@ -986,9 +962,7 @@ void summary(void) {
 	(void)write(STDERR_FILENO, buf, strlen(buf));
 }
 
-void
-terminate(int notused)
-{
+static void terminate(int notused) {
 
 	exit(0);
 	/* NOTREACHED */
@@ -1035,9 +1009,7 @@ static const struct arg {
 /*
  * args -- parse JCL syntax of dd.
  */
-void
-jcl(char **argv)
-{
+static void jcl(char **argv) {
 	struct arg *ap, tmp;
 	char *oper, *arg;
 
@@ -1140,8 +1112,7 @@ c_arg(const void *a, const void *b)
 	    ((const struct arg *)b)->name));
 }
 
-static long long strsuftoll(const char *name, const char *arg, int def, unsigned long long int max)
-{
+static long long int strsuftoll(const char *name, const char *arg, int def, unsigned long long int max) {
 	long long int result;
 	
 	if(sscanf(arg, "%lld", &result) == 0) result = def;

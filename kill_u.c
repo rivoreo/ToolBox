@@ -54,7 +54,7 @@ static struct {
 };
 
 /* To indicate a matching signal was not found */
-static const unsigned int SENTINEL = (unsigned int) -1;
+#define SENTINEL (-1)
 
 void list_signals()
 {

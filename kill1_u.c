@@ -23,7 +23,7 @@ static const char *signals[] = {
 	"URG", "XCPU", "XFSZ", "VTALRM", "PROF", "WINCH", "IO", "PWR", "SYS"
 };
 
-int get_signal_from_name(const char *signal_name) {
+static int get_signal_from_name(const char *signal_name) {
 	if(!signal_name || !*signal_name) return -1;
 	int i;
 	for(i=1; i<32; i++) if(strcmp(signal_name, signals[i]) == 0) return i;
@@ -31,7 +31,7 @@ int get_signal_from_name(const char *signal_name) {
 	return atoi(signal_name);
 }
 
-void print_signals() {
+static void print_signals() {
 	int i;
 	for(i=1; i<32; i++) {
 		printf("%2d %s%s", i, signals[i], (i % 4 && i != 31) ? (strlen(signals[i]) > 4 ? "	" : "		") : "\n");
@@ -39,7 +39,7 @@ void print_signals() {
 	}
 }
 
-void print_usage() {
+static void print_usage() {
 	fprintf(stderr, "Usage: kill1 [<options>]\n\n"
 			"options:\n"
 			"	-s <signal>	Specify the <signal> to send\n"

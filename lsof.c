@@ -29,13 +29,12 @@
 #include <pwd.h>
 #include <sys/stat.h>
 
-void print_header() {
+static void print_header() {
 	printf("%-16s %5s %10s %4s %9s %12s %10s %8s %s\n",
 	"COMMAND", "PID", "USER", "FD", "TYPE", "DEVICE", "SIZE/OFF", "NODE", "NAME");
 }
 
-void print_type(const char *type, pid_info_t *info)
-{
+static void print_type(const char *type, pid_info_t *info) {
 	static ssize_t link_dest_size;
 	static char link_dest[PATH_MAX];
 
@@ -60,7 +59,7 @@ out:
 }
 
 // Prints out all file that have been memory mapped
-void print_maps(pid_info_t *info) {
+static void print_maps(pid_info_t *info) {
 	FILE *maps;
 	//char buffer[PATH_MAX + 100];
 
@@ -92,7 +91,7 @@ out:
 }
 
 // Prints out all open file descriptors
-void print_fds(pid_info_t *info) {
+static void print_fds(pid_info_t *info) {
 	static char *fd_path = "fd/";
 	strncat(info->path, fd_path, sizeof(info->path));
 
@@ -132,7 +131,7 @@ void lsof_dumpinfo(pid_t pid) {
 	info.parent_length = strlen(info.path);
 
 	// Get the UID by calling stat on the proc/pid directory.
-	if(!stat(info.path, &pidstat)) {
+	if(stat(info.path, &pidstat) == 0) {
 		pw = getpwuid(pidstat.st_uid);
 		if(pw) {
 			strcpy(info.user, pw->pw_name);
@@ -184,11 +183,11 @@ int main(int argc, char *argv[]) {
 
 	print_header();
 
-	if (pid) {
+	if(pid) {
 		lsof_dumpinfo(pid);
 	} else {
 		DIR *dir = opendir("/proc");
-		if (dir == NULL) {
+		if(dir == NULL) {
 			fprintf(stderr, "Couldn't open /proc\n");
 			return -1;
 		}

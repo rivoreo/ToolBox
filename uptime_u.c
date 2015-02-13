@@ -37,10 +37,9 @@ static void format_time(int time, char* buffer) {
     else sprintf(buffer, "%02d:%02d:%02d", hours, minutes, seconds);
 }
 
-int uptime_main(int argc, char *argv[])
-{
-    float up_time;
-    char up_string[100];
+int uptime_main() {
+	float up_time;
+	char up_string[100];
 #ifdef __APPLE__
 	struct timeval boot_tv;
 	size_t len = sizeof boot_tv;

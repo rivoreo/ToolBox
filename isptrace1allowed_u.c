@@ -16,18 +16,20 @@
 #include <string.h>
 #include <signal.h>
 
-int isptrace1allowed_main() {
+int isptrace1allowed_main(int argc, char **argv) {
+	int quiet = 0;
 	if(getuid()) {
 		fprintf(stderr, "You are not root, test aborted\n");
 		return -2;
 	}
+	if(argc > 1 && (strcmp(argv[1], "-q") == 0 || strcmp(argv[1], "--quiet") == 0)) quiet = 1;
 
 	errno = 0;
 	if(ptrace(PT_ATTACH, 1, NULL, 0) < 0) {
 		int e = errno;
 		if(e) {
 			if(e == EPERM) {
-				puts("No");
+				if(!quiet) puts("No");
 				return 1;
 			}
 			fprintf(stderr, "ptrace: %s\n", strerror(e));
@@ -37,6 +39,6 @@ int isptrace1allowed_main() {
 	waitpid(1, NULL, 0);
 	kill(1, SIGCONT);
 	ptrace(PT_DETACH, 1, NULL, 0);
-	puts("Yes");
+	if(!quiet) puts("Yes");
 	return 0;
 }

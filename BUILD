@@ -3,7 +3,7 @@ Build tool:
 
 Supported targets:
 GNU/Linux:
-	linux (>=2.28)
+	linux (>=2.6.28)
 	glibc (>2.2)
 GNU/Hurd:
 	hurd (>=0.5)
