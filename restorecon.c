@@ -16,7 +16,7 @@ static int nochange;
 static int verbose;
 
 static void usage() {
-	fprintf(stderr, "Usage: %s [-nrRv] <pathname> [<pathname> ...]\n", progname);
+	fprintf(stderr, "Usage: %s [-nrRv] <pathname> [<pathname>] [...]\n", progname);
 	//exit(1);
 }
 

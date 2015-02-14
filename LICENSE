@@ -34,7 +34,7 @@ Files
 	mtd.h,
 	mtdread*,
 	mv_u.c,
-	notify*,
+	notify_u.c,
 	nt.mk,
 	printenv*,
 	ps_u.c,

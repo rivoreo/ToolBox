@@ -10,7 +10,7 @@ int chcon_main(int argc, char **argv)
     int rc, i;
 
     if (argc < 3) {
-        fprintf(stderr, "Usage:  %s <context> <path> ...\n", argv[0]);
+        fprintf(stderr, "Usage:  %s <context> <path> [...]\n", argv[0]);
         exit(1);
     }
 

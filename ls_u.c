@@ -316,9 +316,6 @@ static int printf_color(int color, const char *format, ...) {
 					continue;
 #if defined _WIN32 && !defined _WIN32_WNT_NATIVE && (!defined _WIN32_WCE || defined _USE_LIBPORT)
 				default:
-					//buffer[i] = 0;
-					//r += vprintf(buffer, ap + j++);
-					//i = 0;
 					j++;
 #endif
 			} else if(format[1] == 'V' || format[1] == 'v') {
@@ -631,6 +628,7 @@ static int get_file_color_by_mode(mode_t mode, const char *pathname) {
 #endif
 		case S_IFIFO:
 			return COLOR_YELLOW | (COLOR_BACKGROUND_BLACK << 16);
+			//return COLOR_PURPLE;
 		case S_IFREG:
 #ifndef _WIN32
 			if(mode & S_ISUID) return COLOR_BACKGROUND_RED | (COLOR_GRAY << 16);
@@ -852,7 +850,7 @@ static int listfile_long(const char *path, int flags) {
 				putchar('\n');
 				break;
 			}
-			if(color == COLOR_BOLD_CRAN) color = get_file_color_by_mode(st_linkto.st_mode, path);
+			if(color == COLOR_BOLD_CRAN) color = get_file_color_by_mode(st_linkto.st_mode, NULL);
 			printf_color(color, " -> %V%s%v\n", linkto);
 			break;
 		}
@@ -882,10 +880,12 @@ static int listfile_maclabel(const char *path, int flags) {
 	}
 
 	lgetfilecon(path, &maclabel);
-	if(!maclabel) {
-		//return -1;
-		//maclabel = "?";
-		if(!(flags & LIST_LONG)) return -1;
+
+	if(!(flags & LIST_LONG)) {
+		printf_color(get_file_color_by_mode(s.st_mode, path),
+			"%s %V%s%v\n", maclabel ? : "?", name);
+		free(maclabel);
+		return 0;
 	}
 
 	mode2str(s.st_mode, mode);
@@ -914,19 +914,19 @@ static int listfile_maclabel(const char *path, int flags) {
 			}
 
 			printf_color(color, "%s %-8s %-8s          %s %V%s%v",
-				mode, user, group, maclabel, name);
+				mode, user, group, maclabel ? : "?", name);
 			if(len < 0) {
 				putchar('\n');
 				break;
 			}
-			if(color == COLOR_BOLD_CRAN) color = get_file_color_by_mode(st_linkto.st_mode, path);
+			if(color == COLOR_BOLD_CRAN) color = get_file_color_by_mode(st_linkto.st_mode, NULL);
 			printf_color(color, " -> %V%s%v\n", linkto);
 			break;
 		}
 		default:
 			printf_color(get_file_color_by_mode(s.st_mode, NULL),
 				"%s %-8s %-8s          %s %V%s%v\n",
-				mode, user, group, maclabel, name);
+				mode, user, group, maclabel ? : "?", name);
 			break;
 	}
 
@@ -952,7 +952,7 @@ static int listfile(const char *dirname, const char *filename, int flags) {
 		pathname = filename;
 	}
 
-	if((flags & (LIST_LONG | LIST_SIZE | LIST_CLASSIFY | LIST_PATH_SLASH)) == 0) {
+	if((flags & (LIST_LONG | LIST_SIZE | LIST_CLASSIFY | LIST_PATH_SLASH | LIST_MACLABEL)) == 0) {
 		/* name is anything after the final '/', or the whole path if none*/
 		if((flags & LIST_DIRECTORIES) || !(name = strrchr(pathname, '/'))) name = pathname;
 		else name++;
@@ -1131,11 +1131,14 @@ int ls_main(int argc, char **argv) {
 										return 1;
 									}
 								} else if(strcmp(long_arg, "help") == 0) {
-									fprintf(stderr, "Usage: %s [-" SHORT_OPTIONS "] [--color[=<when>]]"
+									fprintf(stderr, "Usage: %s [-" SHORT_OPTIONS "]"
+#if !defined _WIN32_WCE || defined _USE_LIBPORT
+										" [--color[=<when>]]"
+#endif
 #ifdef _WIN32_WCE
 										" <file>"
 #endif
-										" [<file>] ...\n", argv[0]);
+										" [<file>] [...]\n", argv[0]);
 									return 0;
 								} else {
 									fprintf(stderr, "%s: Unknown option '%s'. Aborting.\n", argv[0], argv[i]);

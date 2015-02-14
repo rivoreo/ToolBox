@@ -260,6 +260,7 @@ TRAN_SRC = \
 	mv.c \
 	netstat.c \
 	nohup.c \
+	notify.c \
 	ps.c \
 	readtty.c \
 	route.c \
