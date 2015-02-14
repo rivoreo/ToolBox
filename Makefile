@@ -23,7 +23,7 @@ TOUCH = $(shell [ -x /usr/bin/touch ] && echo /usr/bin/touch || echo /bin/touch)
 endif
 
 ifeq ($(CC),cc)
-export CC = gcc
+CC = gcc
 CC_VERSION = $(shell gcc --version | grep -E "gcc.+[0-9]\.[0-9]\.[0-9]" | grep -Eo "[0-9]\.[0-9]" | grep -Eo "\.[0-9]" | sed "2d")
 ifeq ($(CC_VERSION),.9)
 NEED_LIBPCRE = 1
@@ -46,6 +46,10 @@ endif
 
 ifdef SHARED_OBJECT
 CFLAGS += -fPIC
+ifdef DARWIN
+CFLAGS += -D_SHARED
+LDFLAGS += --shared
+else
 ifeq ($(SHARED_OBJECT),noexec)
 LDFLAGS += --shared
 else
@@ -53,6 +57,7 @@ else
 # Option --pie replaces --shared, and passing a -E to the linker to export all symbols
 LDFLAGS += --pie -Wl,-E
 endif
+endif		# DARWIN
 OUTFILE = $(LIB_NAME)
 NO_STATIC = 1
 else
@@ -92,7 +97,6 @@ ALL_TOOLS := \
 	mv_u.o \
 	netstat_u.o \
 	nohup_u.o \
-	printenv_u.o \
 	ps_u.o \
 	r_u.o \
 	readtty_u.o \
@@ -147,9 +151,13 @@ ifdef DARWIN
 NO_SELINUX = 1
 CFLAGS += -D_NO_UTIMENSAT
 LIBS += -Lmaclib
+ifndef SHARED_OBJECT
+ALL_TOOLS += printenv_u.o
+endif
 else
 ALL_TOOLS += \
 	dmesg_u.o \
+	printenv_u.o \
 	renice_u.o \
 	vmstat_u.o
 EXTRA_TOOLS += \
@@ -345,7 +353,7 @@ ls:	ls.c
 	$(CC) $(CFLAGS) $(LDFLAGS) ls.c -o $@ $(LIBS) $(SELINUX_LIBS)
 
 ls.exe:	ls.c
-	$(CC) $(CFLAGS) $(LDFLAGS) ls.c -o $@ $(LIBS)
+	$(CC) -D_USE_LIBPORT=2 $(CFLAGS) $(LDFLAGS) ls.c -o $@ $(LIBS)
 
 md5$(SUFFIX):	md5.c
 	$(CC) $(CFLAGS) $(LDFLAGS) md5.c -o $@ $(LIBS) -lcrypto

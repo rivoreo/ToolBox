@@ -11,15 +11,28 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define PROGRAM_NAME "libdll.so ToolBox"
+#define VERSION "1.3"
+
 static void help(void);
 int main(int, char **);
-int i;
 
 static int toolbox_main(int argc, char **argv) {
 	if(argc > 1) {
 		if(strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0 ||
 		strcmp(argv[1], "-l") == 0 || strcmp(argv[1], "--list") == 0) {
 			help();
+			return 0;
+		}
+		if(strcmp(argv[1], "--version") == 0) {
+			puts(PROGRAM_NAME);
+			puts("Version " VERSION);
+			puts("Copyright 2007-2015 PC GO Ld.");
+			puts("Copyright 2015 libdll.so");
+			puts("This is free software; you are free to change and redistribute it;\n"
+				"see the source for copying conditions.");
+			puts("There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A\n"
+				"PARTICULAR PURPOSE.");
 			return 0;
 		}
 
@@ -44,30 +57,32 @@ static struct {
 #define TOOL(name) { #name, name##_main },
 #include "tools.h"
 #undef TOOL
-	{ 0, 0 }
+	{ NULL, NULL }
 };
 
 static void help() {
-	puts("libdll.so ToolBox 1.3\nCopyright 2007-2015 PC GO Ld.\n\nUsage: \n	toolbox <tool> [<tool-arguments>]\n	<tool> [<tool-arguments>]\n\nList of tools:");
+	int i;
+	puts(PROGRAM_NAME " " VERSION "\nCopyright 2015 libdll.so\n\n"
+		"Usage: \n	toolbox <tool> [<tool-arguments>]\n	<tool> [<tool-arguments>]\n\nList of tools:");
 	for(i = 2; tools[i].name; i++) printf("	%s\n", tools[i].name);
 	putchar('\n');
 }
 
-int main(int argc, char **argv)
-{
-	char *name = argv[0];
+int main(int argc, char **argv) {
+	const char *name = argv[0];
+	int i;
 
 	if((argc > 1) && (argv[1][0] == '@')) {
 		name = argv[1] + 1;
 		argc--;
 		argv++;
 	} else {
-		char *command = strrchr(argv[0], '/');
+		const char *command = strrchr(argv[0], '/');
 		if(command) name = command + 1;
 	}
 
 	for(i = 0; tools[i].name; i++) {
-		if(!strcmp(tools[i].name, name)) {
+		if(strcmp(tools[i].name, name) == 0) {
 			return tools[i].func(argc, argv);
 		}
 	}

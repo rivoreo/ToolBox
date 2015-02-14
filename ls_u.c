@@ -212,9 +212,7 @@ static int printf_color(int color, const char *format, ...) {
 	int r = 0;
 	va_list ap;
 	va_start(ap, format);
-//#if !defined _WIN32 || defined _WIN32_WNT_NATIVE
 	int high_color = color >> 16;
-//#endif
 	color &= 0xffff;
 #if defined _WIN32 && !defined _WIN32_WNT_NATIVE && (!defined _WIN32_WCE || defined _USE_LIBPORT)
 	int j = 0;
@@ -522,7 +520,7 @@ static int strlist_compare_strings(const void *a, const void *b)
 {
 	const char *sa = *(const char **)a;
 	const char *sb = *(const char **)b;
-	return strcmp(sa, sb);
+	return strcasecmp(sa, sb);
 }
 
 static void strlist_sort(strlist_t *list) {
@@ -614,12 +612,8 @@ static void group2str(unsigned int gid, char *out)
 }
 #endif
 
-static int get_file_color(const char *pathname) {
-	struct stat st;
-	if(lstat(pathname, &st) < 0) {
-		return NO_COLOR;
-	}
-	switch(st.st_mode & S_IFMT) {
+static int get_file_color_by_mode(mode_t mode, const char *pathname) {
+	switch(mode & S_IFMT) {
 		case S_IFDIR:
 			return COLOR_BOLD_BLUE;
 #if !defined _WIN32 || defined _WIN32_WNT_NATIVE
@@ -629,21 +623,30 @@ static int get_file_color(const char *pathname) {
 		case S_IFCHR:
 			return COLOR_BOLD_YELLOW | (COLOR_BACKGROUND_BLACK << 16);
 		case S_IFLNK:
+			if(pathname) {
+				struct stat st;
+				if(stat(pathname, &st) < 0) return COLOR_BOLD_RED;
+			}
 			return COLOR_BOLD_CRAN;
 #endif
 		case S_IFIFO:
-			return COLOR_YELLOW;
+			return COLOR_YELLOW | (COLOR_BACKGROUND_BLACK << 16);
 		case S_IFREG:
 #ifndef _WIN32
-			if(st.st_mode & S_ISUID) return COLOR_BACKGROUND_RED | (COLOR_GRAY << 16);
-			if(st.st_mode & S_ISGID) return COLOR_BACKGROUND_YELLOW | (COLOR_BLACK << 16);
+			if(mode & S_ISUID) return COLOR_BACKGROUND_RED | (COLOR_GRAY << 16);
+			if(mode & S_ISGID) return COLOR_BACKGROUND_YELLOW | (COLOR_BLACK << 16);
 #endif
-			//if(access(pathname, X_OK) == 0) return COLOR_BOLD_GREEN;
-			if(st.st_mode & (S_IXUSR | S_IXGRP | S_IXOTH)) return COLOR_BOLD_GREEN;
+			if(mode & (S_IXUSR | S_IXGRP | S_IXOTH)) return COLOR_BOLD_GREEN;
 			// Fall
 		default:
 			return NO_COLOR;
 	}
+}
+
+static int get_file_color(const char *pathname) {
+	struct stat st;
+	if(lstat(pathname, &st) < 0) return NO_COLOR;
+	return get_file_color_by_mode(st.st_mode, pathname);
 }
 
 static int show_total_size(const char *dirname, DIR *d, int flags)
@@ -714,7 +717,7 @@ static int listfile_size(const char *path, const char *filename, int flags) {
 	char *suffix = "";
 	if((flags & LIST_PATH_SLASH) && filetype == 'd') suffix = "/";
 
-	if(is_color) printf_color(get_file_color(path), "%V%s%v%s\n", filename, suffix);
+	if(is_color) printf_color(get_file_color_by_mode(s.st_mode, path), "%V%s%v%s\n", filename, suffix);
 	else printf("%s%s\n", filename, suffix);
 
 	return 0;
@@ -728,12 +731,6 @@ static int listfile_long(const char *path, int flags) {
 	char user[16];
 	char group[16];
 	const char *name;
-
-	/* name is anything after the final '/', or the whole path if none*/
-	//if(flags & LIST_DIRECTORIES) name = path;
-	//else if((name = strrchr(path, '/')) name++;
-	//else name = path;
-	//char file[4096];
 
 	if((flags & LIST_DIRECTORIES) || !(name = strrchr(path, '/'))) name = path;
 	else name++;
@@ -830,36 +827,33 @@ static int listfile_long(const char *path, int flags) {
 			break;
 #if !defined _WIN32 || defined _WIN32_WNT_NATIVE
 		case S_IFLNK: {
-			//COLOR_PRINT(COLOR_BOLD_CRAN, file, name);
 			char linkto[256];
 			int len;
+			int color = COLOR_BOLD_CRAN;
+			struct stat st_linkto;
 
 			len = readlink(path, linkto, 256);
-			if(len < 0) return -1;
-
-			if(len > 255) {
-				linkto[252] = '.';
-				linkto[253] = '.';
-				linkto[254] = '.';
-				linkto[255] = 0;
-			} else {
-				linkto[len] = 0;
+			if(len < 0) color = COLOR_BOLD_RED;
+			else {
+				if(len > 255) {
+					linkto[252] = '.';
+					linkto[253] = '.';
+					linkto[254] = '.';
+					linkto[255] = 0;
+				} else {
+					linkto[len] = 0;
+				}
+				if(stat(path, &st_linkto) < 0) color = COLOR_BOLD_RED;
 			}
 
-			printf_color(COLOR_BOLD_CRAN, "%s %3u %-6s %-6s          %s %V%s%v ",
+			printf_color(color, "%s %3u %-6s %-6s          %s %V%s%v",
 				mode, (unsigned int)s.st_nlink, user, group, date, name);
-			size_t path_buffer_len = ++len;
-			size_t path_len = strlen(path);
-			if(*linkto != '/') path_buffer_len += path_len/* + 1*/;
-			char path_buffer[path_buffer_len];
-			if(*linkto != '/') {
-				while(path_len && path[path_len] != '/') path_len--;
-				//sprintf(path_buffer, "%s/%s", path, linkto);
-				memcpy(path_buffer, path, ++path_len);
-				memcpy(path_buffer + path_len, linkto, len);
-			} else memcpy(path_buffer, linkto, path_buffer_len);
-			//puts(path_buffer);
-			printf_color(get_file_color(path_buffer), "-> %V%s%v\n", linkto);
+			if(len < 0) {
+				putchar('\n');
+				break;
+			}
+			if(color == COLOR_BOLD_CRAN) color = get_file_color_by_mode(st_linkto.st_mode, path);
+			printf_color(color, " -> %V%s%v\n", linkto);
 			break;
 		}
 #endif
@@ -902,27 +896,38 @@ static int listfile_maclabel(const char *path, int flags) {
 		case S_IFLNK: {
 			char linkto[256];
 			ssize_t len;
+			int color = COLOR_BOLD_CRAN;
+			struct stat st_linkto;
 
 			len = readlink(path, linkto, sizeof(linkto));
-			if(len < 0) return -1;
-
-			if((size_t)len > sizeof(linkto)-1) {
-				linkto[sizeof(linkto)-4] = '.';
-				linkto[sizeof(linkto)-3] = '.';
-				linkto[sizeof(linkto)-2] = '.';
-				linkto[sizeof(linkto)-1] = 0;
-			} else {
-				linkto[len] = 0;
+			if(len < 0) color = COLOR_BOLD_RED;
+			else {
+				if((size_t)len > sizeof(linkto)-1) {
+					linkto[sizeof(linkto)-4] = '.';
+					linkto[sizeof(linkto)-3] = '.';
+					linkto[sizeof(linkto)-2] = '.';
+					linkto[sizeof(linkto)-1] = 0;
+				} else {
+					linkto[len] = 0;
+				}
+				if(stat(path, &st_linkto) < 0) color = COLOR_BOLD_RED;
 			}
 
-			printf_color(COLOR_BOLD_CRAN, "%s %-8s %-8s          %s %V%s%v -> %s\n",
-				mode, user, group, maclabel, name, linkto);
+			printf_color(color, "%s %-8s %-8s          %s %V%s%v",
+				mode, user, group, maclabel, name);
+			if(len < 0) {
+				putchar('\n');
+				break;
+			}
+			if(color == COLOR_BOLD_CRAN) color = get_file_color_by_mode(st_linkto.st_mode, path);
+			printf_color(color, " -> %V%s%v\n", linkto);
 			break;
 		}
 		default:
-			printf("%s %-8s %-8s          %s %s\n",
+			printf_color(get_file_color_by_mode(s.st_mode, NULL),
+				"%s %-8s %-8s          %s %V%s%v\n",
 				mode, user, group, maclabel, name);
-
+			break;
 	}
 
 	free(maclabel);

@@ -66,7 +66,9 @@ TOOL(nohup)
 TOOL(notify)
 #endif
 #endif
+#if !defined __APPLE__ || !defined _SHARED 
 TOOL(printenv)
+#endif
 #ifndef _WIN32_WNT_NATIVE
 TOOL(ps)
 TOOL(r)
