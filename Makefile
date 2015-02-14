@@ -24,7 +24,8 @@ endif
 
 ifeq ($(CC),cc)
 export CC = gcc
-ifeq ($($(shell gcc --version | grep -E "gcc.+[0-9]\.[0-9]\.[0-9]" | grep -Eo " [0-9]\.[0-9]" | grep -Eo "\.[0-9]")),.9)
+CC_VERSION = $(shell gcc --version | grep -E "gcc.+[0-9]\.[0-9]\.[0-9]" | grep -Eo "[0-9]\.[0-9]" | grep -Eo "\.[0-9]" | sed "2d")
+ifeq ($(CC_VERSION),.9)
 NEED_LIBPCRE = 1
 endif
 ifeq ($(OS_NAME),Darwin)
