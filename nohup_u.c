@@ -15,9 +15,14 @@ int nohup_main(int argc, char *argv[]) {
 
 	if(argc == 1) {
 		fprintf(stderr, "%s: missing operand\n"
-				"Try 'nohup -h' for more information.\n", argv[0]);
+				"Try '%s -h' for more information.\n",
+				argv[0], argv[0]);
 		return -1;
 	}
+
+#if 0
+	// We should reduce the options check.
+	// The options of this tool are so simple, and needn't to use getopt.
 
 	while(1) {
 		c = getopt(argc, argv, "h");
@@ -32,6 +37,28 @@ int nohup_main(int argc, char *argv[]) {
 				return 1;
 		}
 	}
+#else
+	if(argv[1][0] == '-') {
+		switch(argv[1][1]) {
+			case 0:
+				break;
+			case '-':
+				if(!argv[1][2]) break;
+				fprintf(stdout, "%s: invalid option '%s'\n"
+					"Try '%s -h' for more information.\n",
+					argv[0], argv[1], argv[0]);
+				return 1;
+			case 'h':
+				fprintf(stdout, "Usage: %s <command> [<arg>] [...]\n", argv[0]);
+				return 0;
+			default:
+				fprintf(stdout, "%s: invalid option '-%c'\n"
+					"Try '%s -h' for more information.\n",
+					argv[0], argv[1][1], argv[0]);
+				return 1;
+		}
+	}
+#endif
 
 	check = fork();
 	/* fprintf(stdout, "1pid is = %d\n", check); */
@@ -57,4 +84,3 @@ int nohup_main(int argc, char *argv[]) {
 	}
 	return 0;
 }
-
