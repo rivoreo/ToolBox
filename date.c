@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
 				break;
 			case '?':
 				//fprintf(stderr, "%s: Invalid option -%c\n", argv[0], optopt);
-				exit(1);
+				return 1;
 		}
 	}
 

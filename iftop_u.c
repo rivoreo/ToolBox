@@ -213,44 +213,41 @@ int iftop_main(int argc, char *argv[])
     int count = 0, header_interval = 22, delay = 1, i;
     unsigned int toggle = 0;
 
-    for (i = 1; i < argc; i++) {
-        if (!strcmp(argv[i], "-d")) {
-            if (i >= argc - 1) {
+    for(i = 1; i < argc; i++) {
+        if(strcmp(argv[i], "-d") == 0) {
+            if(i >= argc - 1) {
                 fprintf(stderr, "Option -d requires an argument.\n");
                 exit(EXIT_FAILURE);
             }
             delay = atoi(argv[i++]);
-            if (!delay)
-                delay = 1;
+            if(!delay) delay = 1;
             continue;
         }
-        if (!strcmp(argv[i], "-r")) {
-            if (i >= argc - 1) {
+        if(strcmp(argv[i], "-r") == 0) {
+            if(i >= argc - 1) {
                 fprintf(stderr, "Option -r requires an argument.\n");
                 exit(EXIT_FAILURE);
             }
             header_interval = atoi(argv[i++]);
-            if (header_interval < MAX_IF)
-                header_interval = MAX_IF;
+            if(header_interval < MAX_IF) header_interval = MAX_IF;
             continue;
         }
-        if (!strcmp(argv[i], "-h")) {
+        if(strcmp(argv[i], "-h") == 0) {
             usage(argv[0]);
-            exit(EXIT_SUCCESS);
+            return EXIT_SUCCESS;
         }
         usage(argv[0]);
-        exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
 
     get_interfaces(ifs[!toggle]);
-    if (header_interval)
-        print_header();
+    if(header_interval) print_header();
     while (1) {
         int nr;
 
         sleep(delay);
         nr = get_interfaces(ifs[toggle]);
-        if (header_interval && count + nr > header_interval) {
+        if(header_interval && count + nr > header_interval) {
             print_header();
             count = 0;
         }

@@ -1,15 +1,23 @@
+/*	cmp - toolbox
+	Copyright 2015 libdll.so
+
+	This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
+
+	This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+//#include <stdint.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
 
-int cmp_main(int argc, char *argv[])
-{
-    int fd1, fd2;
+int cmp_main(int argc, char *argv[]) {
+	int fd1, fd2;
 	char buf1[4096], buf2[4096];
-    int res, res1, res2;
+	int res, res1, res2;
 	int rv = 0;
 	int i;
 	int filepos = 0;
@@ -18,48 +26,50 @@ int cmp_main(int argc, char *argv[])
 	int show_all = 0;
 	int limit = 0;
 
-    while(1) {
-        int c = getopt(argc, argv, "bln:");
-        if(c == EOF) break;
-        switch (c) {
-        case 'b':
-            show_byte = 1;
-            break;
-        case 'l':
-            show_all = 1;
-            break;
-        case 'n':
-            limit = atoi(optarg);
-            break;
-        case '?':
-            fprintf(stderr, "%s: invalid option -%c\n",
-                argv[0], optopt);
-            exit(1);
-        }
-    }
+	while(1) {
+		int c = getopt(argc, argv, "bln:");
+		if(c == EOF) break;
+		switch(c) {
+			case 'b':
+				show_byte = 1;
+				break;
+			case 'l':
+				show_all = 1;
+				break;
+			case 'n':
+				limit = atoi(optarg);
+				break;
+			case '?':
+				fprintf(stderr, "%s: invalid option -%c\n", argv[0], optopt);
+				return 1;
+		}
+	}
 
-    if (optind + 2 != argc) {
-        fprintf(stderr, "Usage: %s [-b] [-l] [-n count] file1 file2\n", argv[0]);
-        exit(1);
-    }
+	if (optind + 2 != argc) {
+		fprintf(stderr, "Usage: %s [-b] [-l] [-n <count>] <file1> <file2>\n", argv[0]);
+		//exit(1);
+		return -1;
+	}
 
-    fd1 = open(argv[optind], O_RDONLY);
-    if(fd1 < 0) {
-        fprintf(stderr, "could not open %s, %s\n", argv[optind], strerror(errno));
-        return 1;
-    }
+	fd1 = open(argv[optind], O_RDONLY);
+	if(fd1 == -1) {
+		fprintf(stderr, "could not open %s, %s\n", argv[optind], strerror(errno));
+		return 1;
+	}
 
-    fd2 = open(argv[optind+1], O_RDONLY);
-    if(fd2 < 0) {
-        fprintf(stderr, "could not open %s, %s\n", argv[optind+1], strerror(errno));
-        return 1;
-    }
+	fd2 = open(argv[optind+1], O_RDONLY);
+	if(fd2 == -1) {
+		fprintf(stderr, "could not open %s, %s\n", argv[optind+1], strerror(errno));
+		return 1;
+	}
 
 	while(1) {
 		res1 = read(fd1, &buf1, sizeof(buf1));
 		res2 = read(fd2, &buf2, sizeof(buf2));
 		res = res1 < res2 ? res1 : res2;
-		if(res1 == 0 && res2 == 0) return rv;
+		if(res1 == 0 && res2 == 0) {
+			return rv;
+		}
 		for(i = 0; i < res; i++) {
 			if(buf1[i] != buf2[i]) {
 				printf("%s %s differ byte %d", argv[optind], argv[optind+1], filepos + i);
@@ -68,7 +78,10 @@ int cmp_main(int argc, char *argv[])
 				if(!show_all) return 1;
 				rv = 1;
 			}
-			if(limit && --limit == 0) return rv;
+			if(limit) {
+				limit--;
+				if(limit == 0) return rv;
+			}
 		}
 		if(res1 != res2 || res < 0) {
 			printf("%s on %s\n", res < 0 ? "Read error" : "EOF", res1 < res2 ? argv[optind] : argv[optind+1]);

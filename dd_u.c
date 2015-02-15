@@ -144,8 +144,7 @@ int dd_main(int argc, char *argv[])
 	while(files_cnt--) dd_in();
 
 	dd_close();
-	exit(0);
-	/* NOTREACHED */
+	return 0;
 }
 
 static void

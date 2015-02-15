@@ -32,7 +32,7 @@ static int do_setsebool(char *name, const char *value) {
 }
 
 int main(int argc, char **argv) {
-	if (argc != 3) {
+	if(argc != 3) {
 		fprintf(stderr, "Usage: %s <name> <value>\n", argv[0]);
 		//exit(1);
 		return -1;

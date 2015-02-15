@@ -572,7 +572,7 @@ int getevent_main(int argc, char *argv[])
             fprintf(stderr, "%s: invalid option -%c\n", argv[0], optopt);
         case 'h':
             usage(argv[0]);
-            exit(0);
+            return 0;
         }
     }
     if(dont_block == -1) dont_block = 0;
@@ -583,7 +583,7 @@ int getevent_main(int argc, char *argv[])
     }
     if (optind != argc) {
         usage(argv[0]);
-        exit(1);
+        return 1;
     }
     nfds = 1;
     ufds = calloc(1, sizeof(ufds[0]));

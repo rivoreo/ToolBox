@@ -52,13 +52,13 @@ int ioctl_main(int argc, char *argv[])
             return -1;
         case '?':
             fprintf(stderr, "%s: invalid option -%c\n", argv[0], optopt);
-            exit(1);
+            return 1;
         }
     }
 
     if(optind + 2 > argc) {
         fprintf(stderr, "%s: too few arguments\n", argv[0]);
-        exit(1);
+        return 1;
     }
 
     fd = open(argv[optind], (read_only ? O_RDWR : O_RDONLY) | O_SYNC);
@@ -88,7 +88,7 @@ int ioctl_main(int argc, char *argv[])
             uint64_t tmp = strtoull(argv[optind], NULL, 0);
             if(rem < arg_size) {
                 fprintf(stderr, "%s: too many arguments\n", argv[0]);
-                exit(1);
+                return 1;
             }
             memcpy(ioctl_argp, &tmp, arg_size);
             ioctl_argp += arg_size;

@@ -23,21 +23,18 @@ int main(int argc, char **argv)
 	 * to convert to "blah", just for convenience
 	 */
 	modname = strrchr(argv[1], '/');
-	if (!modname)
-		modname = argv[1];
+	if(!modname) modname = argv[1];
 	else modname++;
 
 	dot = strchr(argv[1], '.');
-	if (dot)
-		*dot = '\0';
+	if(dot) *dot = '\0';
 
 	/* Replace "-" with "_". This would keep rmmod
 	 * compatible with module-init-tools version of
 	 * rmmod
 	 */
 	for (i = 0; modname[i] != '\0'; i++) {
-		if (modname[i] == '-')
-			modname[i] = '_';
+		if (modname[i] == '-') modname[i] = '_';
 	}
 
 	/* pass it to the kernel */
@@ -50,4 +47,3 @@ int main(int argc, char **argv)
 
 	return 0;
 }
-

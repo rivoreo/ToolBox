@@ -248,6 +248,7 @@ TRAN_SRC = \
 	cat.c \
 	chcon.c \
 	chown.c \
+	cmp.c \
 	du.c \
 	exists.c \
 	getenforce.c \

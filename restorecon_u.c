@@ -14,10 +14,8 @@ static const char *progname;
 static int nochange;
 static int verbose;
 
-static void usage(void)
-{
+static void usage(void) {
     fprintf(stderr, "Usage:  %s [-nrRv] pathname...\n", progname);
-    exit(1);
 }
 
 static int restore(const char *pathname, const struct stat *sb)
@@ -72,12 +70,16 @@ int restorecon_main(int argc, char **argv)
             break;
         default:
             usage();
+	    return -1;
         }
     }
 
-    argc -= optind;
-    argv += optind;
-    if (!argc) usage();
+	argc -= optind;
+	argv += optind;
+	if(!argc) {
+		usage();
+		return -1;
+	}
 
     if (recurse) {
         FTS *fts;

@@ -51,7 +51,7 @@ int hd_main(int argc, char *argv[]) {
 
 	if(optind + 1 != argc) {
 		fprintf(stderr, "Usage: %s [-b <base>] [-c <count>] [-r <delay>] <file>\n", argv[0]);
-		exit(1);
+		return -1;
 	}
 
 	fd = open(argv[optind], O_RDONLY);

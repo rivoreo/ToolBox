@@ -33,7 +33,8 @@ static void recurse_chmod(const char *path, int mode) {
 
         if(strlen(dp->d_name) + pathlen + 2/*NUL and slash*/ > PATH_MAX) {
             fprintf(stderr, "Invalid path specified: too long\n");
-            exit(1);
+            //exit(1);
+	    return;
         }
 
         strcpy(subpath, path);
@@ -42,7 +43,7 @@ static void recurse_chmod(const char *path, int mode) {
 
         if(chmod(subpath, mode) < 0) {
             fprintf(stderr, "Unable to chmod %s: %s\n", subpath, strerror(errno));
-            exit(1);
+            //exit(1);
         }
 
         recurse_chmod(subpath, mode);
@@ -90,7 +91,7 @@ int main(int argc, char **argv) {
         if(*s >= '0' && *s <= '7') {
             mode = (mode<<3) | (*s-'0');
         } else {
-            fprintf(stderr, "Bad mode\n");
+            fprintf(stderr, "chmod: Bad mode '%s'\n", argv[1]);
             return 10;
         }
         s++;

@@ -109,7 +109,8 @@ int main(int argc, char *argv[]) {
 			if(i + 1 >= argc) {
 				fprintf(stderr, "Option -m expects an argument.\n");
 				usage(argv[0]);
-				exit(EXIT_FAILURE);
+				//exit(EXIT_FAILURE);
+				return EXIT_FAILURE;
 			}
 			max_procs = atoi(argv[++i]);
 			continue;
@@ -118,7 +119,8 @@ int main(int argc, char *argv[]) {
 			if(i + 1 >= argc) {
 				fprintf(stderr, "Option -n expects an argument.\n");
 				usage(argv[0]);
-				exit(EXIT_FAILURE);
+				//exit(EXIT_FAILURE);
+				return EXIT_FAILURE;
 			}
 			iterations = atoi(argv[++i]);
 			continue;
@@ -127,7 +129,8 @@ int main(int argc, char *argv[]) {
 			if(i + 1 >= argc) {
 				fprintf(stderr, "Option -d expects an argument.\n");
 				usage(argv[0]);
-				exit(EXIT_FAILURE);
+				//exit(EXIT_FAILURE);
+				return EXIT_FAILURE;
 			}
 			delay = atoi(argv[++i]);
 			continue;
@@ -136,7 +139,8 @@ int main(int argc, char *argv[]) {
 			if(i + 1 >= argc) {
 				fprintf(stderr, "Option -s expects an argument.\n");
 				usage(argv[0]);
-				exit(EXIT_FAILURE);
+				//exit(EXIT_FAILURE);
+				return EXIT_FAILURE;
 			}
 			i++;
 			if(strcmp(argv[i], "cpu") == 0) { proc_cmp = &proc_cpu_cmp; continue; }
@@ -144,21 +148,28 @@ int main(int argc, char *argv[]) {
 			if(strcmp(argv[i], "rss") == 0) { proc_cmp = &proc_rss_cmp; continue; }
 			if(strcmp(argv[i], "thr") == 0) { proc_cmp = &proc_thr_cmp; continue; }
 			fprintf(stderr, "Invalid argument \"%s\" for option -s.\n", argv[i]);
-			exit(EXIT_FAILURE);
+			//exit(EXIT_FAILURE);
+			return EXIT_FAILURE;
 		}
-		if(strcmp(argv[i], "-t") == 0) { threads = 1; continue; }
+		if(strcmp(argv[i], "-t") == 0) {
+			threads = 1;
+			continue;
+		}
 		if(strcmp(argv[i], "-h") == 0) {
 			usage(argv[0]);
-			exit(EXIT_SUCCESS);
+			//exit(EXIT_SUCCESS);
+			return EXIT_SUCCESS;
 		}
 		fprintf(stderr, "Invalid argument \"%s\".\n", argv[i]);
 		usage(argv[0]);
-		exit(EXIT_FAILURE);
+		//exit(EXIT_FAILURE);
+		return EXIT_FAILURE;
 	}
 
-	if (threads && proc_cmp == &proc_thr_cmp) {
+	if(threads && proc_cmp == &proc_thr_cmp) {
 		fprintf(stderr, "Sorting by threads per thread makes no sense!\n");
-		exit(EXIT_FAILURE);
+		//exit(EXIT_FAILURE);
+		return EXIT_FAILURE;
 	}
 
 	free_procs = NULL;
@@ -232,8 +243,7 @@ static void read_procs(void) {
 
 	proc_num = 0;
 	while ((pid_dir = readdir(proc_dir))) {
-		if (!isdigit(pid_dir->d_name[0]))
-			continue;
+		if(!isdigit(pid_dir->d_name[0])) continue;
 
 		pid = atoi(pid_dir->d_name);
 

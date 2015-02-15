@@ -8,7 +8,7 @@ int exists_main(int argc, char *argv[])
 
     if(argc < 2) return 1;
 
-    if(stat(argv[1], &s)) {
+    if(stat(argv[1], &s) < 0) {
         return 1;
     } else {
         return 0;

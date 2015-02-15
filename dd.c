@@ -175,7 +175,7 @@ end_of_options_processing:
 	while(files_cnt--) dd_in();
 
 	dd_close();
-	exit(0);
+	return 0;
 	/* NOTREACHED */
 }
 

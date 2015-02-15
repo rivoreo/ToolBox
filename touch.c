@@ -30,7 +30,7 @@ static void usage(void) {
 		"l"
 #endif
 		"] [-t <time_t>] <file>\n");
-	exit(255);
+	//exit(255);
 }
 
 int main(int argc, char *argv[]) {
@@ -61,11 +61,15 @@ int main(int argc, char *argv[]) {
 					case 'a': aflag = 1; break;
 					case 'm': mflag = 1; break;
 					case 't':
-						if(i + 1 >= argc) usage();
+						if(i + 1 >= argc) {
+							usage();
+							return 1;
+						}
 						specified_time.tv_sec = atol(argv[++i]);
 						if(specified_time.tv_sec == 0) {
 							fprintf(stderr, "touch: invalid time_t\n");
-							exit(1);
+							//exit(1);
+							return 1;
 						}
 #ifdef _NO_UTIMENSAT
 						tflag = 1;
@@ -81,19 +85,23 @@ int main(int argc, char *argv[]) {
 //#endif
 					default:
 						usage();
+						return -1;
 				}
 				arg++;
 			}
 		} else {
 			/* not an option, and only accept one filename */
-			if(i + 1 != argc) usage();
+			if(i + 1 != argc) {
+				usage();
+				return -1;
+			}
 			file = argv[i];
 		}
 	}
 
 	if(!file) {
 		fprintf(stderr, "touch: no file specified\n");
-		exit(1);
+		return 1;
 	}
 
 	if(access(file, F_OK) < 0) {

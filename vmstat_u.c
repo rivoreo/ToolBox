@@ -67,55 +67,53 @@ int vmstat_main(int argc, char *argv[]) {
     delay = 1;
     header_interval = 20;
 
-    for (i = 1; i < argc; i++) {
-        if (!strcmp(argv[i], "-n")) { 
-            if (i >= argc - 1) {
+    for(i = 1; i < argc; i++) {
+        if(strcmp(argv[i], "-n") == 0) { 
+            if(i >= argc - 1) {
                 fprintf(stderr, "Option -n requires an argument.\n");
-                exit(EXIT_FAILURE);
+                return EXIT_FAILURE;
             }
             iterations = atoi(argv[++i]);
             continue;
         }
-        if (!strcmp(argv[i], "-d")) {
-            if (i >= argc - 1) {
+        if(strcmp(argv[i], "-d") == 0) {
+            if(i >= argc - 1) {
                 fprintf(stderr, "Option -d requires an argument.\n");
-                exit(EXIT_FAILURE);
+                return EXIT_FAILURE;
             }
             delay = atoi(argv[++i]);
             continue;
         }
-        if (!strcmp(argv[i], "-r")) {
-            if (i >= argc - 1) {
+        if(strcmp(argv[i], "-r") == 0) {
+            if(i >= argc - 1) {
                 fprintf(stderr, "Option -r requires an argument.\n");
-                exit(EXIT_FAILURE);
+                return EXIT_FAILURE;
             }
             header_interval = atoi(argv[++i]);
             continue;
         }
-        if (!strcmp(argv[i], "-h")) {
+        if(strcmp(argv[i], "-h") == 0) {
             usage(argv[0]);
-            exit(EXIT_SUCCESS);
+            return EXIT_SUCCESS;
         }
         fprintf(stderr, "Invalid argument \"%s\".\n", argv[i]);
         usage(argv[0]);
-	exit(EXIT_FAILURE);
+	return EXIT_FAILURE;
     }
 
     toggle = 0;
     count = 0;
 
-    if (!header_interval)
-        print_header();
+    if(!header_interval) print_header();
     read_state(&s[1 - toggle]);
-    while ((iterations < 0) || (iterations-- > 0)) {
+    while(iterations < 0 || iterations-- > 0) {
         sleep(delay);
         read_state(&s[toggle]);
-        if (header_interval) {
-            if (count == 0)
-                print_header();
+        if(header_interval) {
+            if(count == 0) print_header();
             count = (count + 1) % header_interval;
         }
-        print_line(&s[1 - toggle], &s[toggle]);
+        print_line(s + (1 - toggle), s + toggle);
         toggle = 1 - toggle;
     }
 
@@ -126,19 +124,19 @@ static void read_state(struct state *s) {
     int error;
 
     error = read_meminfo(s);
-    if (error) {
+    if(error) {
         fprintf(stderr, "vmstat: could not read /proc/meminfo: %s\n", strerror(error));
         exit(EXIT_FAILURE);
     }
 
     error = read_stat(s);
-    if (error) {
+    if(error) {
         fprintf(stderr, "vmstat: could not read /proc/stat: %s\n", strerror(error));
         exit(EXIT_FAILURE);
     }
 
     error = read_vmstat(s);
-    if (error) {
+    if(error) {
         fprintf(stderr, "vmstat: could not read /proc/vmstat: %s\n", strerror(error));
         exit(EXIT_FAILURE);
     }
@@ -148,9 +146,9 @@ static int read_meminfo(struct state *s) {
     FILE *f;
 
     f = fopen("/proc/meminfo", "r");
-    if (!f) return errno;
+    if(!f) return errno;
 
-    while (fgets(line, MAX_LINE, f)) {
+    while(fgets(line, MAX_LINE, f)) {
         sscanf(line, "MemFree: %ld kB", &s->mem_free);
         sscanf(line, "AnonPages: %ld kB", &s->mem_anon);
         sscanf(line, "Mapped: %ld kB", &s->mem_mapped);
@@ -166,13 +164,12 @@ static int read_stat(struct state *s) {
     FILE *f;
 
     f = fopen("/proc/stat", "r");
-    if (!f) return errno;
+    if(!f) return errno;
 
-    while (fgets(line, MAX_LINE, f)) {
-        if (!strncmp(line, "cpu ", 4)) {
+    while(fgets(line, MAX_LINE, f)) {
+        if(strncmp(line, "cpu ", 4) == 0) {
             sscanf(line, "cpu  %ld %ld %ld %ld %ld %ld %ld",
-                &s->cpu_us, &s->cpu_ni, &s->cpu_sy, &s->cpu_id, &s->cpu_wa,
-                &s->cpu_ir, &s->cpu_si);
+                &s->cpu_us, &s->cpu_ni, &s->cpu_sy, &s->cpu_id, &s->cpu_wa, &s->cpu_ir, &s->cpu_si);
         }
         sscanf(line, "intr %ld", &s->sys_in);
         sscanf(line, "ctxt %ld", &s->sys_cs);
@@ -189,9 +186,9 @@ static int read_vmstat(struct state *s) {
     FILE *f;
 
     f = fopen("/proc/vmstat", "r");
-    if (!f) return errno;
+    if(!f) return errno;
 
-    while (fgets(line, MAX_LINE, f)) {
+    while(fgets(line, MAX_LINE, f)) {
         sscanf(line, "pgmajfault %ld", &s->sys_flt);
     }
 
@@ -230,6 +227,5 @@ static void usage(char *command) {
                     "    -d delay          How long to sleep between rows.\n"
                     "    -r header_repeat  How many rows to print before repeating\n"
                     "                      the header.  Zero means never repeat.\n"
-                    "    -h                Displays this help screen.\n",
-        command);
+                    "    -h                Displays this help screen.\n", command);
 }

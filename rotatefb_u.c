@@ -27,13 +27,13 @@ int rotatefb_main(int argc, char *argv[])
             break;
         case '?':
             fprintf(stderr, "%s: invalid option -%c\n", argv[0], optopt);
-            exit(1);
+            return 1;
         }
     }
 
     if(optind + 1 != argc) {
         fprintf(stderr, "%s: specify rotation\n", argv[0]);
-        exit(1);
+        return 1;
     }
     rotation = atoi(argv[optind]);
 
@@ -54,8 +54,7 @@ int rotatefb_main(int argc, char *argv[])
         fbinfo.xres = xres;
         fbinfo.xres_virtual = fbinfo.xres;
         fbinfo.yres_virtual = fbinfo.yres * 2;
-        if(fbinfo.yoffset == xres)
-            fbinfo.yoffset = fbinfo.yres;
+        if(fbinfo.yoffset == xres) fbinfo.yoffset = fbinfo.yres;
     }
     fbinfo.rotate = rotation; 
     res = ioctl(fd, FBIOPUT_VSCREENINFO, &fbinfo);

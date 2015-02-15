@@ -21,11 +21,8 @@
 #include <sys/resource.h>
 #include <sched.h>
 
-static void
-usage(const char *s)
-{
+static void usage(const char *s) {
     fprintf(stderr, "Usage: %s [[-r] priority pids ...] [-g pid]\n", s);
-    exit(EXIT_FAILURE);
 }
 
 void print_prio(pid_t pid)
@@ -55,8 +52,7 @@ void print_prio(pid_t pid)
     }
 
     sched_getparam(pid, &sp);
-    printf("RT prio: %d (of %d to %d)\n", sp.sched_priority,
-           sched_get_priority_min(sched), sched_get_priority_max(sched));
+    printf("RT prio: %d (of %d to %d)\n", sp.sched_priority, sched_get_priority_min(sched), sched_get_priority_max(sched));
 }
 
 int renice_main(int argc, char *argv[])
@@ -69,7 +65,10 @@ int renice_main(int argc, char *argv[])
     argc--;
     argv++;
 
-    if(argc < 1) usage(cmd);
+	if(argc < 1) {
+		usage(cmd);
+		return -1;
+	}
 
     if(strcmp("-r", argv[0]) == 0) {
         // do realtime priority adjustment
@@ -79,18 +78,26 @@ int renice_main(int argc, char *argv[])
     }
 
 	if(strcmp("-g", argv[0]) == 0) {
-        if(argc < 2) usage(cmd);
-        print_prio(atoi(argv[1]));
-        return 0;
-    }
-
-    if(argc < 1) usage(cmd);
+		if(argc < 2) {
+			usage(cmd);
+			return -1;
+		}
+		print_prio(atoi(argv[1]));
+		return 0;
+	}
+	if(argc < 1) {
+		usage(cmd);
+		return -1;
+	}
 
     prio = atoi(argv[0]);
     argc--;
     argv++;
 
-    if(argc < 1) usage(cmd);
+	if(argc < 1) {
+		usage(cmd);
+		return -1;
+	}
 
     while(argc) {
         pid_t pid;
@@ -99,27 +106,21 @@ int renice_main(int argc, char *argv[])
         argc--;
         argv++;
 
-        if (realtime) {
+        if(realtime) {
             struct sched_param sp = { .sched_priority = prio };
-            int ret;
-
-            ret = sched_setscheduler(pid, SCHED_RR, &sp);
-            if (ret) {
+            int ret = sched_setscheduler(pid, SCHED_RR, &sp);
+            if(ret) {
                 perror("sched_set_scheduler");
-                exit(EXIT_FAILURE);
+                return EXIT_FAILURE;
             }
         } else {
-            int ret;
-
-            ret = setpriority(PRIO_PROCESS, pid, prio);
-            if (ret) {
+            int ret = setpriority(PRIO_PROCESS, pid, prio);
+            if(ret) {
                 perror("setpriority");
-                exit(EXIT_FAILURE);
+                return EXIT_FAILURE;
             }
         }
     }
    
     return 0;
 }
-
-

@@ -225,16 +225,17 @@ int main(int argc, char *argv[]) {
 				exit(EXIT_FAILURE);
 			}
 			header_interval = atoi(argv[i++]);
-			if (header_interval < MAX_IF)
-				header_interval = MAX_IF;
+			if(header_interval < MAX_IF) header_interval = MAX_IF;
 			continue;
 		}
 		if(strcmp(argv[i], "-h") == 0) {
 			usage(argv[0]);
-			exit(EXIT_SUCCESS);
+			//exit(EXIT_SUCCESS);
+			return EXIT_SUCCESS;
 		}
 		usage(argv[0]);
-		exit(EXIT_FAILURE);
+		//exit(EXIT_FAILURE);
+		return EXIT_FAILURE;
 	}
 
 	get_interfaces(ifs[!toggle]);

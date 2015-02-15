@@ -274,7 +274,7 @@ int cat_main(int argc, char *argv[]) {
 				".exe"
 #endif
 				" [-" FLAGS "] [-] [<file>] [...]\n");
-			exit(EXIT_FAILURE);
+			return -1;
 	}
 	argv += optind;
 #ifndef _WIN32
@@ -285,7 +285,7 @@ int cat_main(int argc, char *argv[]) {
 		stdout_lock.l_whence = SEEK_SET;
 		if(fcntl(STDOUT_FILENO, F_SETLKW, &stdout_lock) == -1) {
 			perror("fcntl");
-			exit(EXIT_FAILURE);
+			return EXIT_FAILURE;
 		}
 	}
 #endif
@@ -293,8 +293,8 @@ int cat_main(int argc, char *argv[]) {
 	else raw_args(argv);
 
 	if(fflush(stdout)) {
-		perror("fclose");
-		exit(EXIT_FAILURE);
+		perror("fflush");
+		return EXIT_FAILURE;
 	}
 	return rval;
 }

@@ -49,14 +49,14 @@ int setconsole_main(int argc, char *argv[])
         case 'g':
             if(mode == KD_TEXT) {
                 fprintf(stderr, "%s: cannot specify both -g and -t\n", argv[0]);
-                exit(1);
+                return 1;
             }
             mode = KD_GRAPHICS;
             break;
         case 't':
             if(mode == KD_GRAPHICS) {
                 fprintf(stderr, "%s: cannot specify both -g and -t\n", argv[0]);
-                exit(1);
+                return 1;
             }
             mode = KD_TEXT;
             break;
@@ -88,9 +88,8 @@ int setconsole_main(int argc, char *argv[])
                     "  -h         Print help\n", argv[0]);
             return -1;
         case '?':
-            fprintf(stderr, "%s: invalid option -%c\n",
-                argv[0], optopt);
-            exit(1);
+            fprintf(stderr, "%s: invalid option -%c\n", argv[0], optopt);
+            return 1;
         }
     }
     if(mode == -1 && new_vc == 0 && close_vc == 0 && switch_vc == -1 && printvc == 0) {
@@ -100,8 +99,8 @@ int setconsole_main(int argc, char *argv[])
 
     fd = open(ttydev, O_RDWR | O_SYNC);
     if(fd == -1) {
-        fprintf(stderr, "cannot open %s\n", ttydev);
-        return -1;
+        fprintf(stderr, "cannot open %s, %s\n", ttydev, strerror(errno));
+        return 1;
     }
 
     if((printvc && !new_vc) || (printvc & 2)) {

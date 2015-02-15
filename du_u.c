@@ -131,7 +131,6 @@ static int linkchk(dev_t dev, ino_t ino) {
 
 static void usage(void) {
 	fprintf(stderr, "Usage: du [-H | -L | -P] [-a | -d <depth> | -s] [-cgkmrx] [<file> ...]\n");
-	exit(1);
 }
 
 int du_main(int argc, char *argv[]) {
@@ -172,6 +171,7 @@ int du_main(int argc, char *argv[]) {
 				if (depth < 0 || depth > SHRT_MAX) {
 					warnx("invalid argument to option d: %s", optarg);
 					usage();
+					return 1;
 				}
 				break;
 			case 'g':
@@ -197,6 +197,7 @@ int du_main(int argc, char *argv[]) {
 			case '?':
 			default:
 				usage();
+				return -1;
 		}
 	argc -= optind;
 	argv += optind;
@@ -222,10 +223,16 @@ int du_main(int argc, char *argv[]) {
 
 	listfiles = 0;
 	if(aflag) {
-		if(sflag || dflag) usage();
+		if(sflag || dflag) {
+			usage();
+			return 1;
+		}
 		listfiles = 1;
 	} else if(sflag) {
-		if(dflag) usage();
+		if(dflag) {
+			usage();
+			return 1;
+		}
 		depth = 0;
 	}
 

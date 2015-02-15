@@ -103,7 +103,7 @@ int top_main(int argc, char *argv[]) {
             if (i + 1 >= argc) {
                 fprintf(stderr, "Option -m expects an argument.\n");
                 usage(argv[0]);
-                exit(EXIT_FAILURE);
+                return EXIT_FAILURE;
             }
             max_procs = atoi(argv[++i]);
             continue;
@@ -112,7 +112,7 @@ int top_main(int argc, char *argv[]) {
             if (i + 1 >= argc) {
                 fprintf(stderr, "Option -n expects an argument.\n");
                 usage(argv[0]);
-                exit(EXIT_FAILURE);
+                return EXIT_FAILURE;
             }
             iterations = atoi(argv[++i]);
             continue;
@@ -121,7 +121,7 @@ int top_main(int argc, char *argv[]) {
             if (i + 1 >= argc) {
                 fprintf(stderr, "Option -d expects an argument.\n");
                 usage(argv[0]);
-                exit(EXIT_FAILURE);
+                return EXIT_FAILURE;
             }
             delay = atoi(argv[++i]);
             continue;
@@ -130,29 +130,29 @@ int top_main(int argc, char *argv[]) {
             if (i + 1 >= argc) {
                 fprintf(stderr, "Option -s expects an argument.\n");
                 usage(argv[0]);
-                exit(EXIT_FAILURE);
+                return EXIT_FAILURE;
             }
             ++i;
-            if (!strcmp(argv[i], "cpu")) { proc_cmp = &proc_cpu_cmp; continue; }
-            if (!strcmp(argv[i], "vss")) { proc_cmp = &proc_vss_cmp; continue; }
-            if (!strcmp(argv[i], "rss")) { proc_cmp = &proc_rss_cmp; continue; }
-            if (!strcmp(argv[i], "thr")) { proc_cmp = &proc_thr_cmp; continue; }
+            if(strcmp(argv[i], "cpu") == 0) { proc_cmp = &proc_cpu_cmp; continue; }
+            if(strcmp(argv[i], "vss") == 0) { proc_cmp = &proc_vss_cmp; continue; }
+            if(strcmp(argv[i], "rss") == 0) { proc_cmp = &proc_rss_cmp; continue; }
+            if(strcmp(argv[i], "thr") == 0) { proc_cmp = &proc_thr_cmp; continue; }
             fprintf(stderr, "Invalid argument \"%s\" for option -s.\n", argv[i]);
-            exit(EXIT_FAILURE);
+            return EXIT_FAILURE;
         }
-        if (!strcmp(argv[i], "-t")) { threads = 1; continue; }
-        if (!strcmp(argv[i], "-h")) {
+        if(strcmp(argv[i], "-t") == 0) { threads = 1; continue; }
+        if(strcmp(argv[i], "-h") == 0) {
             usage(argv[0]);
-            exit(EXIT_SUCCESS);
+            return EXIT_SUCCESS;
         }
         fprintf(stderr, "Invalid argument \"%s\".\n", argv[i]);
         usage(argv[0]);
-        exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
 
-    if (threads && proc_cmp == &proc_thr_cmp) {
+    if(threads && proc_cmp == &proc_thr_cmp) {
         fprintf(stderr, "Sorting by threads per thread makes no sense!\n");
-        exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
 
     free_procs = NULL;
@@ -161,7 +161,7 @@ int top_main(int argc, char *argv[]) {
     new_procs = old_procs = NULL;
 
     read_procs();
-    while ((iterations == -1) || (iterations-- > 0)) {
+    while(iterations == -1 || iterations-- > 0) {
         old_procs = new_procs;
         num_old_procs = num_new_procs;
         memcpy(&old_cpu, &new_cpu, sizeof(old_cpu));
@@ -177,13 +177,13 @@ int top_main(int argc, char *argv[]) {
 static struct proc_info *alloc_proc(void) {
     struct proc_info *proc;
 
-    if (free_procs) {
+    if(free_procs) {
         proc = free_procs;
         free_procs = free_procs->next;
         num_free_procs--;
     } else {
         proc = malloc(sizeof(*proc));
-        if (!proc) die("Could not allocate struct process_info.\n");
+        if(!proc) die("Could not allocate struct process_info.\n");
     }
 
     num_used_procs++;
@@ -213,25 +213,25 @@ static void read_procs(void) {
     int i;
 
     proc_dir = opendir("/proc");
-    if (!proc_dir) die("Could not open /proc.\n");
+    if(!proc_dir) die("Could not open /proc.\n");
 
     new_procs = calloc(INIT_PROCS * (threads ? THREAD_MULT : 1), sizeof(struct proc_info *));
     num_new_procs = INIT_PROCS * (threads ? THREAD_MULT : 1);
 
     file = fopen("/proc/stat", "r");
-    if (!file) die("Could not open /proc/stat.\n");
+    if(!file) die("Could not open /proc/stat.\n");
     fscanf(file, "cpu  %lu %lu %lu %lu %lu %lu %lu", &new_cpu.utime, &new_cpu.ntime, &new_cpu.stime,
             &new_cpu.itime, &new_cpu.iowtime, &new_cpu.irqtime, &new_cpu.sirqtime);
     fclose(file);
 
     proc_num = 0;
-    while ((pid_dir = readdir(proc_dir))) {
-        if (!isdigit(pid_dir->d_name[0])) continue;
+    while((pid_dir = readdir(proc_dir))) {
+        if(!isdigit(pid_dir->d_name[0])) continue;
         pid = atoi(pid_dir->d_name);
 
         struct proc_info cur_proc;
 
-        if (!threads) {
+        if(!threads) {
             proc = alloc_proc();
 
             proc->pid = proc->tid = pid;
@@ -258,13 +258,12 @@ static void read_procs(void) {
 
         sprintf(filename, "/proc/%d/task", pid);
         task_dir = opendir(filename);
-        if (!task_dir) continue;
+        if(!task_dir) continue;
 
-        while ((tid_dir = readdir(task_dir))) {
-            if (!isdigit(tid_dir->d_name[0]))
-                continue;
+        while((tid_dir = readdir(task_dir))) {
+            if(!isdigit(tid_dir->d_name[0])) continue;
 
-            if (threads) {
+            if(threads) {
                 tid = atoi(tid_dir->d_name);
 
                 proc = alloc_proc();
@@ -285,13 +284,10 @@ static void read_procs(void) {
         }
 
         closedir(task_dir);
-        
-        if (!threads)
-            add_proc(proc_num++, proc);
+        if(!threads) add_proc(proc_num++, proc);
     }
 
-    for (i = proc_num; i < num_new_procs; i++)
-        new_procs[i] = NULL;
+    for(i = proc_num; i < num_new_procs; i++) new_procs[i] = NULL;
 
     closedir(proc_dir);
 }
@@ -412,10 +408,8 @@ static void print_procs(void) {
             new_cpu.sirqtime - old_cpu.sirqtime,
             total_delta_time);
     printf("\n");
-    if (!threads) 
-        printf("%5s %2s %4s %1s %5s %7s %7s %3s %-8s %s\n", "PID", "PR", "CPU%", "S", "#THR", "VSS", "RSS", "PCY", "UID", "Name");
-    else
-        printf("%5s %5s %2s %4s %1s %7s %7s %3s %-8s %-15s %s\n", "PID", "TID", "PR", "CPU%", "S", "VSS", "RSS", "PCY", "UID", "Thread", "Proc");
+    if(!threads) printf("%5s %2s %4s %1s %5s %7s %7s %3s %-8s %s\n", "PID", "PR", "CPU%", "S", "#THR", "VSS", "RSS", "PCY", "UID", "Name");
+    else printf("%5s %5s %2s %4s %1s %7s %7s %3s %-8s %-15s %s\n", "PID", "TID", "PR", "CPU%", "S", "VSS", "RSS", "PCY", "UID", "Thread", "Proc");
 
     for (i = 0; i < num_new_procs; i++) {
         proc = new_procs[i];
@@ -458,9 +452,9 @@ static int proc_cpu_cmp(const void *a, const void *b) {
 
     pa = *((struct proc_info **)a); pb = *((struct proc_info **)b);
 
-    if (!pa && !pb) return 0;
-    if (!pa) return 1;
-    if (!pb) return -1;
+    if(!pa && !pb) return 0;
+    if(!pa) return 1;
+    if(!pb) return -1;
 
     return -numcmp(pa->delta_time, pb->delta_time);
 }
@@ -470,9 +464,9 @@ static int proc_vss_cmp(const void *a, const void *b) {
 
     pa = *((struct proc_info **)a); pb = *((struct proc_info **)b);
 
-    if (!pa && !pb) return 0;
-    if (!pa) return 1;
-    if (!pb) return -1;
+    if(!pa && !pb) return 0;
+    if(!pa) return 1;
+    if(!pb) return -1;
 
     return -numcmp(pa->vss, pb->vss);
 }
@@ -482,9 +476,9 @@ static int proc_rss_cmp(const void *a, const void *b) {
 
     pa = *((struct proc_info **)a); pb = *((struct proc_info **)b);
 
-    if (!pa && !pb) return 0;
-    if (!pa) return 1;
-    if (!pb) return -1;
+    if(!pa && !pb) return 0;
+    if(!pa) return 1;
+    if(!pb) return -1;
 
     return -numcmp(pa->rss, pb->rss);
 }
@@ -494,16 +488,16 @@ static int proc_thr_cmp(const void *a, const void *b) {
 
     pa = *((struct proc_info **)a); pb = *((struct proc_info **)b);
 
-    if (!pa && !pb) return 0;
-    if (!pa) return 1;
-    if (!pb) return -1;
+    if(!pa && !pb) return 0;
+    if(!pa) return 1;
+    if(!pb) return -1;
 
     return -numcmp(pa->num_threads, pb->num_threads);
 }
 
 static int numcmp(long long a, long long b) {
-    if (a < b) return -1;
-    if (a > b) return 1;
+    if(a < b) return -1;
+    if(a > b) return 1;
     return 0;
 }
 

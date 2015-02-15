@@ -7,7 +7,7 @@ Files
 	chcon_u.c,
 	chmod*,
 	chown_u.c,
-	cmp*,
+	cmp_u.c,
 	date*,
 	defmain.sh,
 	df*,

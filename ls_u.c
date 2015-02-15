@@ -663,7 +663,7 @@ static int show_total_size(const char *dirname, DIR *d, int flags)
 		snprintf(tmp, sizeof(tmp), "%s%s%s", dirname, slash, de->d_name);
 
 		if(lstat(tmp, &s) < 0) {
-			fprintf(stderr, "stat failed on %s: %s\n", tmp, strerror(errno));
+			fprintf(stderr, "ls: stat '%s' failed: %s\n", tmp, strerror(errno));
 			rewinddir(d);
 			return -1;
 		}
@@ -679,25 +679,27 @@ static int show_total_size(const char *dirname, DIR *d, int flags)
 	return 0;
 }
 
-static int listfile_size(const char *path, const char *filename, int flags) {
+static int listfile_size(const char *path, const char *filename, const struct stat *st, int flags) {
 	struct stat s;
-
-	if(lstat(path, &s) < 0) {
-		fprintf(stderr, "lstat '%s' failed: %s\n", path, strerror(errno));
-		return -1;
+	if(!st) {
+		if(lstat(path, &s) < 0) {
+			fprintf(stderr, "ls: lstat '%s' failed: %s\n", path, strerror(errno));
+			return -1;
+		}
+		st = &s;
 	}
 
 	/* blocks are 512 bytes, we want output to be KB */
 	if((flags & LIST_SIZE) != 0) {
 #if defined _WIN32 && !defined _WIN32_WNT_NATIVE
-		long int size = s.st_size / 1024;		// XXX
+		long int size = st->st_size / 1024;		// XXX
 #else
-		long int size = s.st_blocks / 2;
+		long int size = st->st_blocks / 2;
 #endif
 		printf("%ld ", size);
 	}
 
-	char filetype = mode2kind(s.st_mode);
+	char filetype = mode2kind(st->st_mode);
 	if((flags & LIST_CLASSIFY) != 0) {
 		if(filetype != 'l') {
 			printf("%c ", filetype);
@@ -706,17 +708,17 @@ static int listfile_size(const char *path, const char *filename, int flags) {
 			if(stat(path, &link_dest) == 0) {
 				printf("l%c ", mode2kind(link_dest.st_mode));
 			} else {
-				fprintf(stderr, "stat '%s' failed: %s\n", path, strerror(errno));
+				fprintf(stderr, "ls: stat '%s' failed: %s\n", path, strerror(errno));
 				printf("l? ");
 			}
 		}
 	}
 
-	char *suffix = "";
-	if((flags & LIST_PATH_SLASH) && filetype == 'd') suffix = "/";
+	int suffix = 0;
+	if((flags & LIST_PATH_SLASH) && filetype == 'd') suffix = '/';
 
-	if(is_color) printf_color(get_file_color_by_mode(s.st_mode, path), "%V%s%v%s\n", filename, suffix);
-	else printf("%s%s\n", filename, suffix);
+	if(is_color) printf_color(get_file_color_by_mode(st->st_mode, path), "%V%s%v%c\n", filename, suffix);
+	else printf("%s%c\n", filename, suffix);
 
 	return 0;
 }
@@ -736,7 +738,7 @@ static int listfile_long(const char *path, int flags) {
 	if(lstat(path, &s) < 0) {
 		int e = errno;
 		//perror(path);
-		fprintf(stderr, "lstat '%s' failed: %s\n", path, strerror(e));
+		fprintf(stderr, "ls: lstat '%s' failed: %s\n", path, strerror(e));
 		if(e != ENOENT) {
 			printf("??????????   ? ?      ?      ?        \?\?\?\?-\?\?-\?\? \?\?:\?\? %s\n", name);
 		}
@@ -876,14 +878,17 @@ static int listfile_maclabel(const char *path, int flags) {
 	else name++;
 
 	if(lstat(path, &s) < 0) {
+		perror(path);
 		return -1;
 	}
 
+	int suffix = ((flags & LIST_PATH_SLASH) && S_ISDIR(s.st_mode)) ? '/' : 0;
 	lgetfilecon(path, &maclabel);
 
 	if(!(flags & LIST_LONG)) {
-		printf_color(get_file_color_by_mode(s.st_mode, path),
-			"%s %V%s%v\n", maclabel ? : "?", name);
+		printf("%s ", maclabel ? : "?");
+		if(flags & (LIST_SIZE | LIST_CLASSIFY)) listfile_size(path, name, &s, flags);
+		else printf_color(get_file_color_by_mode(s.st_mode, path), "%V%s%v%c\n", name, suffix);
 		free(maclabel);
 		return 0;
 	}
@@ -913,8 +918,12 @@ static int listfile_maclabel(const char *path, int flags) {
 				if(stat(path, &st_linkto) < 0) color = COLOR_BOLD_RED;
 			}
 
-			printf_color(color, "%s %-8s %-8s          %s %V%s%v",
-				mode, user, group, maclabel ? : "?", name);
+			if(flags & LIST_SIZE) {
+				printf("%s %8u %8lld", mode, (unsigned int)s.st_nlink, (long long int)s.st_size);
+			} else {
+				printf("%s %-8s %-8s", mode, user, group);
+			}
+			printf_color(color, " %s %V%s%v%c", maclabel ? : "?", name, suffix);
 			if(len < 0) {
 				putchar('\n');
 				break;
@@ -924,9 +933,13 @@ static int listfile_maclabel(const char *path, int flags) {
 			break;
 		}
 		default:
+			if(flags & LIST_SIZE) {
+				printf("%s %8u %8lld", mode, (unsigned int)s.st_nlink, (long long int)s.st_size);
+			} else {
+				printf("%s %-8s %-8s", mode, user, group);
+			}
 			printf_color(get_file_color_by_mode(s.st_mode, NULL),
-				"%s %-8s %-8s          %s %V%s%v\n",
-				mode, user, group, maclabel ? : "?", name);
+				" %s %V%s%v%c\n", maclabel ? : "?", name, suffix);
 			break;
 	}
 
@@ -971,7 +984,7 @@ static int listfile(const char *dirname, const char *filename, int flags) {
 	if ((flags & LIST_LONG) != 0) {
 		return listfile_long(pathname, flags);
 	} else /*((flags & LIST_SIZE) != 0)*/ {
-		return listfile_size(pathname, filename, flags);
+		return listfile_size(pathname, filename, NULL, flags);
 	}
 }
 
@@ -985,7 +998,7 @@ static int listdir(const char *name, int flags)
 
 	d = opendir(name);
 	if(!d) {
-		fprintf(stderr, "opendir failed, %s\n", strerror(errno));
+		fprintf(stderr, "ls: opendir '%s' failed, %s\n", name, strerror(errno));
 		return -1;
 	}
 
@@ -1059,7 +1072,8 @@ static int listpath(const char *name, int flags)
 	err = (name[strlen(name)-1] == '/' ? stat : lstat)(name, &s);
 
 	if(err < 0) {
-		perror(name);
+		//perror(name);
+		fprintf(stderr, "ls: %s: %s\n", name, strerror(errno));
 		return -1;
 	}
 

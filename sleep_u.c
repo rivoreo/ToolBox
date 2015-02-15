@@ -18,25 +18,25 @@
 #include <stdlib.h>
 
 static void usage(const char *s) {
-    fprintf(stderr, "Usage: %s <seconds>\n", s);
-    exit(-1);
+	fprintf(stderr, "Usage: %s <seconds>\n", s);
 }
 
 int sleep_main(int argc, char *argv[]) {
-    unsigned long seconds;
-    char *endptr;
+	unsigned long int seconds;
+	char *endptr;
 
-    if (argc != 2) {
-        usage(argv[0]);
-    }
+	if (argc != 2) {
+		usage(argv[0]);
+		return -1;
+	}
 
-    seconds = strtoul(argv[1], &endptr, 10);
+	seconds = strtoul(argv[1], &endptr, 10);
 
-    if (endptr == argv[1]) {
-        usage(argv[0]);
-    }
+	if(endptr == argv[1]) {
+		usage(argv[0]);
+		return -1;
+	}
 
-    sleep((unsigned int)seconds);
-   
-    return 0;
+	sleep(seconds);
+	return 0;
 }

@@ -101,7 +101,7 @@ int readtty_main(int argc, char *argv[]) {
             break;
         case '?':
             fprintf(stderr, "%s: invalid option -%c\n", argv[0], optopt);
-            exit(1);
+            return 1;
         }
     }
 
