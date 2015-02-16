@@ -51,8 +51,8 @@ int route_main(int argc, char *argv[])
     };
 
     errno = EINVAL;
-    if (argc > 2 && !strcmp(argv[1], "add")) {
-        if (!strcmp(argv[2], "default")) {
+    if (argc > 2 && strcmp(argv[1], "add") == 0) {
+        if (strcmp(argv[2], "default") == 0) {
             /* route add default dev wlan0 */
             if (argc > 4 && !strcmp(argv[3], "dev")) {
                 rt.rt_flags = RTF_UP;

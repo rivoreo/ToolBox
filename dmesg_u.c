@@ -28,7 +28,7 @@ int dmesg_main(int argc, char **argv) {
 	ssize_t ret;
 	int n, op;
 
-	if(argc == 2 && strcmp(argv[1],"-c") == 0) {
+	if(argc == 2 && (strcmp(argv[1], "-c") == 0 || strcmp(argv[1], "--read-clear") == 0)) {
 		op = KLOG_READ_CLEAR;
 	} else {
 		op = KLOG_READ_ALL;

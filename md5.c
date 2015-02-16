@@ -1,3 +1,12 @@
+/*	md5 - toolbox
+	Copyright 2007-2015 PC GO Ld.
+	Copyright 2015 libdll.so
+
+	This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
+
+	This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+*/
+
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -34,13 +43,11 @@ static int do_md5(const char *path) {
 		return -1;
 	}
 
-	/* Note that bionic's MD5_* functions return void. */
 	MD5_Init(&md5_ctx);
 
 	while(1) {
 		char buf[4096];
-		ssize_t rlen;
-		rlen = read(fd, buf, sizeof(buf));
+		ssize_t rlen = read(fd, buf, sizeof buf);
 		if(rlen == 0) break;
 		if(rlen < 0) {
 			int e = errno;
@@ -69,9 +76,8 @@ int main(int argc, char *argv[]) {
 	if(argc < 2) return usage();
 
 	if(strcmp(argv[1], "-c") == 0) {
-		if (argc < 3) return usage();
+		if(argc < 3) return usage();
 		c = 1;
-		argv[1] = argv[0];
 		argc--;
 		argv++;
 	}

@@ -26,22 +26,21 @@ static int do_md5(const char *path)
         return -1;
     }
 
-    /* Note that bionic's MD5_* functions return void. */
     MD5_Init(&md5_ctx);
 
-    while(1) {
-        char buf[4096];
-        ssize_t rlen;
-        rlen = read(fd, buf, sizeof(buf));
-        if(rlen == 0) break;
-        else if(rlen < 0) {
+	while(1) {
+		char buf[4096];
+		ssize_t rlen;
+		rlen = read(fd, buf, sizeof buf);
+		if(rlen == 0) break;
+		if(rlen < 0) {
 			int e = errno;
-            close(fd);
-            fprintf(stderr,"could not read %s, %s\n", path, strerror(e));
-            return -1;
-        }
-        MD5_Update(&md5_ctx, buf, rlen);
-    }
+			close(fd);
+			fprintf(stderr,"could not read %s, %s\n", path, strerror(e));
+			return -1;
+		}
+		MD5_Update(&md5_ctx, buf, rlen);
+	}
     if(close(fd) < 0) {
         fprintf(stderr,"could not close %s, %s\n", path, strerror(errno));
         return -1;

@@ -18,14 +18,18 @@
 #include <unistd.h>
 #include <time.h>
 
-#ifdef _NO_SELINUX
-#define SHORT_OPTIONS "lsRdAaFp"
-#else
-#define SHORT_OPTIONS "lsRdZAaFp"
-#endif
-
 #if !defined __linux__ && !defined _NO_SELINUX
 #define _NO_SELINUX
+#endif
+
+#ifdef _NO_SELINUX
+#ifdef _WIN32
+#define SHORT_OPTIONS "lsRdAaFpi"
+#else
+#define SHORT_OPTIONS "lsRdAaFpni"
+#endif
+#else
+#define SHORT_OPTIONS "lsRdZAaFpni"
 #endif
 
 #ifndef _WIN32
@@ -212,9 +216,10 @@ static int printf_color(int color, const char *format, ...) {
 	int r = 0;
 	va_list ap;
 	va_start(ap, format);
+#if !defined _WIN32_WCE || defined _USE_LIBPORT
 	int high_color = color >> 16;
 	color &= 0xffff;
-#if defined _WIN32 && !defined _WIN32_WNT_NATIVE && (!defined _WIN32_WCE || defined _USE_LIBPORT)
+#if defined _WIN32 && !defined _WIN32_WNT_NATIVE
 	int j = 0;
 #ifdef _WIN32_WCE
 	//void *fh = (void *)fileno(stdout);
@@ -272,6 +277,7 @@ static int printf_color(int color, const char *format, ...) {
 	}
 	unsigned short int attrib = get_console_attribute(color);
 	if(high_color) attrib |= get_console_attribute(high_color);
+#endif
 #endif
 	while(*format && i < sizeof buffer) {
 		if(*format == '%') {
@@ -418,11 +424,13 @@ typedef struct {
 
 #define DYNARRAY_INITIALIZER { 0, 0, NULL }
 
+/*
 static void dynarray_init(dynarray_t *a)
 {
 	a->count = a->capacity = 0;
 	a->items = NULL;
 }
+*/
 
 static void dynarray_reserve_more(dynarray_t *a, int count)
 {
@@ -482,17 +490,19 @@ static void dynarray_done(dynarray_t *a)
 
 // string arrays
 
-typedef dynarray_t  strlist_t;
+typedef dynarray_t strlist_t;
 
 #define  STRLIST_INITIALIZER  DYNARRAY_INITIALIZER
 
 #define  STRLIST_FOREACH(_list,_string,_stmnt) \
 	DYNARRAY_FOREACH_TYPE(_list,char *,_string,_stmnt)
 
+/*
 static void strlist_init(strlist_t *list)
 {
 	dynarray_init(list);
 }
+*/
 
 static void strlist_append_b(strlist_t *list, const void *str, size_t slen)
 {
@@ -539,7 +549,9 @@ static void strlist_sort(strlist_t *list) {
 #define LIST_ALL_ALMOST		(1 << 7)
 #define LIST_MACLABEL		(1 << 8)
 #define LIST_PATH_SLASH		(1 << 9)
-#define MULTI_FILES		(1 << 10)
+#define LIST_NUMERIC_ID		(1 << 10)
+#define LIST_INODE		(1 << 11)
+#define MULTI_FILES		(1 << 15)
 
 // fwd
 static int listpath(const char *name, int flags);
@@ -679,6 +691,15 @@ static int show_total_size(const char *dirname, DIR *d, int flags)
 	return 0;
 }
 
+static void show_inode(const struct stat *st) {
+	if(!st) return;
+#if defined _WIN32 && !defined _WIN32_WNT_NATIVE
+	printf("%8lu ", (unsigned long int)st->st_ino);
+#else
+	printf("%8llu ", (unsigned long long int)st->st_ino);
+#endif
+}
+
 static int listfile_size(const char *path, const char *filename, const struct stat *st, int flags) {
 	struct stat s;
 	if(!st) {
@@ -688,6 +709,8 @@ static int listfile_size(const char *path, const char *filename, const struct st
 		}
 		st = &s;
 	}
+
+	if(flags & LIST_INODE) show_inode(st);
 
 	/* blocks are 512 bytes, we want output to be KB */
 	if((flags & LIST_SIZE) != 0) {
@@ -745,16 +768,22 @@ static int listfile_long(const char *path, int flags) {
 		return -1;
 	}
 
+	if(flags & LIST_INODE) show_inode(&s);
+
 	mode2str(s.st_mode, mode);
-#ifdef _WIN32
-	sprintf(user, "%u", s.st_uid);
-	sprintf(group, "%u", s.st_gid);
-#else
-	user2str(s.st_uid, user);
-	group2str(s.st_gid, group);
+#ifndef _WIN32
+	if(flags & LIST_NUMERIC_ID) {
+#endif
+		sprintf(user, "%u", s.st_uid);
+		sprintf(group, "%u", s.st_gid);
+#ifndef _WIN32
+	} else {
+		user2str(s.st_uid, user);
+		group2str(s.st_gid, group);
+	}
 #endif
 
-	strftime(date, 32, "%Y-%m-%d %H:%M", localtime((const time_t *)&s.st_mtime));
+	strftime(date, 32, "%Y-%m-%d %H:%M", localtime(&s.st_mtime));
 	date[31] = 0;
 
 	// 12345678901234567890123456789012345678901234567890123456789012345678901234567890
@@ -882,6 +911,8 @@ static int listfile_maclabel(const char *path, int flags) {
 		return -1;
 	}
 
+	if(flags & LIST_INODE) show_inode(&s);
+
 	int suffix = ((flags & LIST_PATH_SLASH) && S_ISDIR(s.st_mode)) ? '/' : 0;
 	lgetfilecon(path, &maclabel);
 
@@ -894,9 +925,17 @@ static int listfile_maclabel(const char *path, int flags) {
 	}
 
 	mode2str(s.st_mode, mode);
-	user2str(s.st_uid, user);
-	group2str(s.st_gid, group);
-
+#ifndef _WIN32
+	if(flags & LIST_NUMERIC_ID) {
+#endif
+		sprintf(user, "%u", s.st_uid);
+		sprintf(group, "%u", s.st_gid);
+#ifndef _WIN32
+	} else {
+		user2str(s.st_uid, user);
+		group2str(s.st_gid, group);
+	}
+#endif
 	switch(s.st_mode & S_IFMT) {
 		case S_IFLNK: {
 			char linkto[256];
@@ -965,7 +1004,7 @@ static int listfile(const char *dirname, const char *filename, int flags) {
 		pathname = filename;
 	}
 
-	if((flags & (LIST_LONG | LIST_SIZE | LIST_CLASSIFY | LIST_PATH_SLASH | LIST_MACLABEL)) == 0) {
+	if((flags & (LIST_LONG | LIST_SIZE | LIST_CLASSIFY | LIST_PATH_SLASH | LIST_MACLABEL | LIST_INODE)) == 0) {
 		/* name is anything after the final '/', or the whole path if none*/
 		if((flags & LIST_DIRECTORIES) || !(name = strrchr(pathname, '/'))) name = pathname;
 		else name++;
@@ -1121,6 +1160,8 @@ int ls_main(int argc, char **argv) {
 							break;
 						case 'F': flags |= LIST_CLASSIFY; break;
 						case 'p': flags |= LIST_PATH_SLASH; break;
+						case 'n': flags |= LIST_NUMERIC_ID; break;
+						case 'i': flags |= LIST_INODE; break;
 						case '-':
 							if(!arg[1]) end_of_options = 1;
 							else {
@@ -1154,6 +1195,8 @@ int ls_main(int argc, char **argv) {
 #endif
 										" [<file>] [...]\n", argv[0]);
 									return 0;
+								} else if(strcmp(long_arg, "numeric-uid-gid") == 0) {
+									flags |= LIST_NUMERIC_ID;
 								} else {
 									fprintf(stderr, "%s: Unknown option '%s'. Aborting.\n", argv[0], argv[i]);
 									return 1;

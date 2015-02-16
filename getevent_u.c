@@ -476,21 +476,20 @@ static int scan_dir(const char *dirname, int print_flags)
     return 0;
 }
 
-static void usage(const char *name)
-{
-    fprintf(stderr, "Usage: %s [-t] [-n] [-s switchmask] [-S] [-v [mask]] [-d] [-p] [-i] [-l] [-q] [-c count] [-r] [device]\n", name);
-    fprintf(stderr, "    -t: show time stamps\n");
-    fprintf(stderr, "    -n: don't print newlines\n");
-    fprintf(stderr, "    -s: print switch states for given bits\n");
-    fprintf(stderr, "    -S: print all switch states\n");
-    fprintf(stderr, "    -v: verbosity mask (errs=1, dev=2, name=4, info=8, vers=16, pos. events=32, props=64)\n");
-    fprintf(stderr, "    -d: show HID descriptor, if available\n");
-    fprintf(stderr, "    -p: show possible events (errs, dev, name, pos. events)\n");
-    fprintf(stderr, "    -i: show all device info and possible events\n");
-    fprintf(stderr, "    -l: label event types and names in plain text\n");
-    fprintf(stderr, "    -q: quiet (clear verbosity mask)\n");
-    fprintf(stderr, "    -c: print given number of events then exit\n");
-    fprintf(stderr, "    -r: print rate events are received\n");
+static void usage(const char *name) {
+	fprintf(stderr, "Usage: %s [-t] [-n] [-s <switchmask>] [-S] [-v [<mask>]] [-d] [-p] [-i] [-l] [-q] [-c <count>] [-r] [<device>]\n", name);
+	fprintf(stderr, "    -t: show time stamps\n");
+	fprintf(stderr, "    -n: don't print newlines\n");
+	fprintf(stderr, "    -s: print switch states for given bits\n");
+	fprintf(stderr, "    -S: print all switch states\n");
+	fprintf(stderr, "    -v: verbosity mask (errs=1, dev=2, name=4, info=8, vers=16, pos. events=32, props=64)\n");
+	fprintf(stderr, "    -d: show HID descriptor, if available\n");
+	fprintf(stderr, "    -p: show possible events (errs, dev, name, pos. events)\n");
+	fprintf(stderr, "    -i: show all device info and possible events\n");
+	fprintf(stderr, "    -l: label event types and names in plain text\n");
+	fprintf(stderr, "    -q: quiet (clear verbosity mask)\n");
+	fprintf(stderr, "    -c: print given number of events then exit\n");
+	fprintf(stderr, "    -r: print rate events are received\n");
 }
 
 int getevent_main(int argc, char *argv[])
@@ -499,7 +498,8 @@ int getevent_main(int argc, char *argv[])
     int res;
     int get_time = 0;
     int print_device = 0;
-    char *newline = "\n";
+    const char *newline = "\n";
+    //int newline = '\n';
     uint16_t get_switch = 0;
     struct input_event event;
     //int version;
@@ -512,90 +512,88 @@ int getevent_main(int argc, char *argv[])
     const char *device = NULL;
     const char *device_path = "/dev/input";
 
-    opterr = 0;
-    while(1) {
-        int c = getopt(argc, argv, "tns:Sv::dpilqc:rh");
-        if(c == EOF) break;
-        switch (c) {
-        case 't':
-            get_time = 1;
-            break;
-        case 'n':
-            newline = "";
-            break;
-        case 's':
-            get_switch = strtoul(optarg, NULL, 0);
-            if(dont_block == -1) dont_block = 1;
-            break;
-        case 'S':
-            get_switch = ~0;
-            if(dont_block == -1) dont_block = 1;
-            break;
-        case 'v':
-            if(optarg) {
-                print_flags |= strtoul(optarg, NULL, 0);
-	    } else {
-                print_flags |= PRINT_DEVICE | PRINT_DEVICE_NAME | PRINT_DEVICE_INFO | PRINT_VERSION;
-	    }
-            print_flags_set = 1;
-            break;
-        case 'd':
-            print_flags |= PRINT_HID_DESCRIPTOR;
-            break;
-        case 'p':
-            print_flags |= PRINT_DEVICE_ERRORS | PRINT_DEVICE
-                    | PRINT_DEVICE_NAME | PRINT_POSSIBLE_EVENTS | PRINT_INPUT_PROPS;
-            print_flags_set = 1;
-            if(dont_block == -1)
-                dont_block = 1;
-            break;
-        case 'i':
-            print_flags |= PRINT_ALL_INFO;
-            print_flags_set = 1;
-            if(dont_block == -1)
-                dont_block = 1;
-            break;
-        case 'l':
-            print_flags |= PRINT_LABELS;
-            break;
-        case 'q':
-            print_flags_set = 1;
-            break;
-        case 'c':
-            event_count = atoi(optarg);
-            dont_block = 0;
-            break;
-        case 'r':
-            sync_rate = 1;
-            break;
-        case '?':
-            fprintf(stderr, "%s: invalid option -%c\n", argv[0], optopt);
-        case 'h':
-            usage(argv[0]);
-            return 0;
-        }
-    }
-    if(dont_block == -1) dont_block = 0;
+	opterr = 0;
+	while(1) {
+		int c = getopt(argc, argv, "tns:Sv::dpilqc:rh");
+		if(c == EOF) break;
+		switch (c) {
+			case 't':
+				get_time = 1;
+				break;
+			case 'n':
+				newline = "";
+				break;
+			case 's':
+				get_switch = strtoul(optarg, NULL, 0);
+				if(dont_block == -1) dont_block = 1;
+				break;
+			case 'S':
+				get_switch = ~0;
+				if(dont_block == -1) dont_block = 1;
+				break;
+			case 'v':
+				if(optarg) {
+					print_flags |= strtoul(optarg, NULL, 0);
+				} else {
+					print_flags |= PRINT_DEVICE | PRINT_DEVICE_NAME | PRINT_DEVICE_INFO | PRINT_VERSION;
+				}
+				print_flags_set = 1;
+				break;
+			case 'd':
+				print_flags |= PRINT_HID_DESCRIPTOR;
+				break;
+			case 'p':
+				print_flags |= PRINT_DEVICE_ERRORS | PRINT_DEVICE |
+					PRINT_DEVICE_NAME | PRINT_POSSIBLE_EVENTS | PRINT_INPUT_PROPS;
+				print_flags_set = 1;
+				if(dont_block == -1)
+				dont_block = 1;
+				break;
+			case 'i':
+				print_flags |= PRINT_ALL_INFO;
+				print_flags_set = 1;
+				if(dont_block == -1)
+				dont_block = 1;
+				break;
+			case 'l':
+				print_flags |= PRINT_LABELS;
+				break;
+			case 'q':
+				print_flags_set = 1;
+				break;
+			case 'c':
+				event_count = atoi(optarg);
+				dont_block = 0;
+				break;
+			case 'r':
+				sync_rate = 1;
+				break;
+			case '?':
+				fprintf(stderr, "%s: invalid option -%c\n", argv[0], optopt);
+			case 'h':
+				usage(argv[0]);
+				return -1;
+		}
+	}
+	if(dont_block == -1) dont_block = 0;
 
-    if (optind + 1 == argc) {
-        device = argv[optind];
-        optind++;
-    }
-    if (optind != argc) {
-        usage(argv[0]);
-        return 1;
-    }
-    nfds = 1;
-    ufds = calloc(1, sizeof(ufds[0]));
-    ufds[0].fd = inotify_init();
-    ufds[0].events = POLLIN;
-    if(device) {
-        if(!print_flags_set) print_flags |= PRINT_DEVICE_ERRORS;
-        res = open_device(device, print_flags);
-        if(res < 0) {
-            return 1;
-        }
-    } else {
+	if (optind + 1 == argc) {
+		device = argv[optind];
+		optind++;
+	}
+	if (optind != argc) {
+		usage(argv[0]);
+		return 1;
+	}
+	nfds = 1;
+	ufds = calloc(1, sizeof(ufds[0]));
+	ufds[0].fd = inotify_init();
+	ufds[0].events = POLLIN;
+	if(device) {
+		if(!print_flags_set) print_flags |= PRINT_DEVICE_ERRORS;
+		res = open_device(device, print_flags);
+		if(res < 0) return 1;
+	} else {
 		if(!print_flags_set) print_flags |= PRINT_DEVICE_ERRORS | PRINT_DEVICE | PRINT_DEVICE_NAME;
 		print_device = 1;
 		res = inotify_add_watch(ufds[0].fd, device_path, IN_DELETE | IN_CREATE);
@@ -608,56 +606,53 @@ int getevent_main(int argc, char *argv[])
 			fprintf(stderr, "scan dir failed for %s\n", device_path);
 			return 1;
 		}
-    }
+	}
 
-    if(get_switch) {
-        for(i = 1; i < nfds; i++) {
-            uint16_t sw;
-            res = ioctl(ufds[i].fd, EVIOCGSW(1), &sw);
-            if(res < 0) {
-                fprintf(stderr, "could not get switch state, %s\n", strerror(errno));
-                return 1;
-            }
-            sw &= get_switch;
-            printf("%04x%s", sw, newline);
-        }
-    }
-
-    if(dont_block) return 0;
-
-    while(1) {
-        int pollres = poll(ufds, nfds, -1);
-        //printf("poll %d, returned %d\n", nfds, pollres);
-        if(ufds[0].revents & POLLIN) {
-            read_notify(device_path, ufds[0].fd, print_flags);
-        }
-        for(i = 1; i < nfds; i++) {
-            if(ufds[i].revents) {
-                if(ufds[i].revents & POLLIN) {
-                    res = read(ufds[i].fd, &event, sizeof(event));
-                    if(res < (int)sizeof(event)) {
-                        fprintf(stderr, "could not get event\n");
-                        return 1;
-                    }
-                    if(get_time) {
-                        printf("[%8ld.%06ld] ", event.time.tv_sec, event.time.tv_usec);
-                    }
-                    if(print_device) printf("%s: ", device_names[i]);
-                    print_event(event.type, event.code, event.value, print_flags);
-                    if(sync_rate && event.type == 0 && event.code == 0) {
-                        int64_t now = event.time.tv_sec * 1000000LL + event.time.tv_usec;
-                        if(last_sync_time) {
-                            printf(" rate %lld", 1000000LL / (now - last_sync_time));
+	if(get_switch) {
+		for(i = 1; i < nfds; i++) {
+			uint16_t sw;
+			res = ioctl(ufds[i].fd, EVIOCGSW(1), &sw);
+			if(res < 0) {
+				fprintf(stderr, "could not get switch state, %s\n", strerror(errno));
+				return 1;
 			}
-                        last_sync_time = now;
-                    }
-                    printf("%s", newline);
-                    if(event_count && --event_count == 0)
-                        return 0;
-                }
-            }
-        }
-    }
+			sw &= get_switch;
+			printf("%04x%s", sw, newline);
+		}
+	}
 
-    return 0;
+	if(dont_block) return 0;
+
+	while(1) {
+		int pollres = poll(ufds, nfds, -1);
+		//printf("poll %d, returned %d\n", nfds, pollres);
+		if(ufds[0].revents & POLLIN) {
+			read_notify(device_path, ufds[0].fd, print_flags);
+		}
+		for(i = 1; i < nfds; i++) {
+			if(ufds[i].revents & POLLIN) {
+				res = read(ufds[i].fd, &event, sizeof(event));
+				if(res < (int)sizeof(event)) {
+					fprintf(stderr, "could not get event\n");
+					return 1;
+				}
+				if(get_time) {
+					printf("[%8ld.%06ld] ", event.time.tv_sec, event.time.tv_usec);
+				}
+				if(print_device) printf("%s: ", device_names[i]);
+				print_event(event.type, event.code, event.value, print_flags);
+				if(sync_rate && event.type == 0 && event.code == 0) {
+					int64_t now = event.time.tv_sec * 1000000LL + event.time.tv_usec;
+					if(last_sync_time) {
+						printf(" rate %lld", 1000000LL / (now - last_sync_time));
+					}
+					last_sync_time = now;
+				}
+				printf("%s", newline);
+				if(event_count && --event_count == 0) return 0;
+			}
+		}
+	}
+
+	return 0;
 }

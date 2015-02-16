@@ -70,7 +70,7 @@ Files
 	iftop*,
 	lsof*,
 	netstat*,
-	renice*,
+	renice_u.c,
 	route*,
 	sleep_u.c,
 	top*,

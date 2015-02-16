@@ -11,7 +11,6 @@
 
 int nohup_main(int argc, char *argv[]) {
 	pid_t check;
-	int c;
 
 	if(argc == 1) {
 		fprintf(stderr, "%s: missing operand\n"

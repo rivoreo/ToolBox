@@ -77,7 +77,7 @@ int readtty_main(int argc, char *argv[]) {
     while(1) {
         int c = getopt(argc, argv, "nt:fa:r:pe:");
         if(c == EOF) break;
-        switch (c) {
+        switch(c) {
         case 't':
             timeout = atoi(optarg);
             break;
@@ -143,7 +143,7 @@ int readtty_main(int argc, char *argv[]) {
             //if(!isprint(buf[0])) {
             //  fprintf(stderr, "got unprintable character 0x%x\n", buf[0]);
             //}
-            if(buf[0] == '\0') {
+            if(!buf[0]) {
                 if(current_char) {
                     current_char = prev_char(last_char_in, current_char);
                     write(STDERR_FILENO, &current_char, 1);

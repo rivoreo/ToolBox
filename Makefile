@@ -264,6 +264,7 @@ TRAN_SRC = \
 	notify.c \
 	ps.c \
 	readtty.c \
+	renice.c \
 	route.c \
 	schedtop.c \
 	setconsole.c \
