@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
 						"	-h            Print help\n", argv[0]);
 				return -1;
 			case '?':
-				fprintf(stderr, "%s: invalid option -%c\n", argv[0], optopt);
+				//fprintf(stderr, "%s: invalid option -%c\n", argv[0], optopt);
 				//exit(1);
 				return 1;
 		}

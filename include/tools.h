@@ -105,6 +105,10 @@ TOOL(setsebool)
 #endif
 #endif
 TOOL(sleep)
+#ifdef __linux__
+TOOL(swapoff)
+TOOL(swapon)
+#endif
 #ifndef _WIN32_WNT_NATIVE
 TOOL(sync)
 TOOL(top)

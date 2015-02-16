@@ -54,6 +54,8 @@ Files
 	setenforce_u.c,
 	setkey*,
 	setsebool*,
+	swapoff_u.c,
+	swapon_u.c,
 	sync_u.c,
 	timefunc.h,
 	toolbox.c,

@@ -51,7 +51,6 @@ int ioctl_main(int argc, char *argv[])
                     "  -h            Print help\n", argv[0]);
             return -1;
         case '?':
-            fprintf(stderr, "%s: invalid option -%c\n", argv[0], optopt);
             return 1;
         }
     }
