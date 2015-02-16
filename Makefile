@@ -274,7 +274,8 @@ TRAN_SRC = \
 	setconsole.c \
 	setenforce.c \
 	sleep.c \
-	sync.c
+	sync.c \
+	touch.c
 
 
 unity:	$(OUTFILE)

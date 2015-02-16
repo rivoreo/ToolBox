@@ -289,5 +289,5 @@ int du_main(int argc, char *argv[]) {
 	}
 	if(errno) err(1, "fts_read");
 	if(cflag) prstat("total", totalblocks);
-	exit(rval);
+	return rval;
 }
