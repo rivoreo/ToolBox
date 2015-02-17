@@ -257,6 +257,7 @@ TRAN_SRC = \
 	id.c \
 	ln.c \
 	ls.c \
+	md5.c \
 	modexe.c \
 	mv.c \
 	netstat.c \

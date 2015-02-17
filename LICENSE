@@ -29,7 +29,7 @@ Files
 	ls_u.c
 	lsmod*,
 	Makefile,
-	md5*,
+	md5_u.c,
 	mkdir*,
 	mtd.h,
 	mtdread*,
