@@ -44,8 +44,6 @@ int notify_main(int argc, char *argv[]) {
 				width = atoi(optarg);
 				break;
 			case '?':
-				fprintf(stderr, "%s: invalid option -%c\n",
-						argv[0], optopt);
 				return 1;
 		}
 	}

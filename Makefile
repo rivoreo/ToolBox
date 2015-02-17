@@ -72,6 +72,7 @@ ALL_TOOLS := \
 	cat_u.o \
 	chmod_u.o \
 	chown_u.o \
+	clear_u.o \
 	cmp_u.o \
 	date_u.o \
 	dd_u.o \
@@ -228,6 +229,7 @@ endif		# MINGW
 BASE_TOOLS := \
 	cat$(SUFFIX) \
 	chmod$(SUFFIX) \
+	clear$(SUFFIX) \
 	cmp$(SUFFIX) \
 	date$(SUFFIX) \
 	df$(SUFFIX) \
@@ -254,6 +256,7 @@ TRAN_SRC = \
 	cat.c \
 	chcon.c \
 	chown.c \
+	clear.c \
 	cmp.c \
 	du.c \
 	exists.c \
@@ -266,6 +269,7 @@ TRAN_SRC = \
 	kill1.c \
 	ln.c \
 	ls.c \
+	md5.c \
 	mkswap.c \
 	modexe.c \
 	mv.c \
@@ -277,6 +281,7 @@ TRAN_SRC = \
 	renice.c \
 	route.c \
 	schedtop.c \
+	sendevent.c \
 	setconsole.c \
 	setenforce.c \
 	sleep.c \
@@ -346,6 +351,9 @@ chmod.exe:	chmod.c
 
 cmp.exe:	cmp.c
 	$(CC) $(CFLAGS) $(LDFLAGS) cmp.c -o cmp.exe $(LIBS)
+
+clear.exe:	clear.c
+	$(CC) $(CFLAGS) $(LDFLAGS) clear.c -o $@ $(LIBS)
 
 date.exe:	date.c
 	$(CC) $(CFLAGS) $(LDFLAGS) date.c -o $@ $(LIBS)

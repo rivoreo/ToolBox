@@ -17,6 +17,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <time.h>
+#include <math.h>
 
 #if !defined __linux__ && !defined _NO_SELINUX
 #define _NO_SELINUX
@@ -24,12 +25,12 @@
 
 #ifdef _NO_SELINUX
 #ifdef _WIN32
-#define SHORT_OPTIONS "lsRdAaFpi"
+#define SHORT_OPTIONS "lsRdAaFpih"
 #else
-#define SHORT_OPTIONS "lsRdAaFpni"
+#define SHORT_OPTIONS "lsRdAaFpnih"
 #endif
 #else
-#define SHORT_OPTIONS "lsRdZAaFpni"
+#define SHORT_OPTIONS "lsRdZAaFpnih"
 #endif
 
 #ifndef _WIN32
@@ -551,6 +552,7 @@ static void strlist_sort(strlist_t *list) {
 #define LIST_PATH_SLASH		(1 << 9)
 #define LIST_NUMERIC_ID		(1 << 10)
 #define LIST_INODE		(1 << 11)
+#define LIST_HUMAN_READABLE	(1 << 12)
 #define MULTI_FILES		(1 << 15)
 
 // fwd
@@ -659,8 +661,32 @@ static int get_file_color(const char *pathname) {
 	return get_file_color_by_mode(st.st_mode, pathname);
 }
 
-static int show_total_size(const char *dirname, DIR *d, int flags)
-{
+static double human_readable_d(double n, int *unit) {
+	if(!unit) return NAN;
+	switch(*unit) {
+		case 0:
+			if(n < 1024) return n;
+			n /= 1024;
+			*unit = 'K';
+		case 'K':
+			if(n < 1024) return n;
+			n /= 1024;
+			*unit = 'M';
+		case 'M':
+			if(n < 1024) return n;
+			n /= 1024;
+			*unit = 'G';
+		case 'G':
+			if(n < 1024) return n;
+			n /= 1024;
+			*unit = 'T';
+			return n;
+		default:
+			return NAN;
+	}
+}
+
+static int show_total_size(const char *dirname, DIR *d, int flags) {
 	struct dirent *de;
 	char tmp[1024];
 	struct stat s;
@@ -686,7 +712,12 @@ static int show_total_size(const char *dirname, DIR *d, int flags)
 #endif
 	}
 
-	printf("total %d\n", sum);
+	if(flags & LIST_HUMAN_READABLE) {
+		int unit = 'K';
+		double n = human_readable_d(sum, &unit);
+		if(isnan(n)) return -1;
+		printf("total %.1f%ci\n", n, unit);
+	} else printf("total %d\n", sum);
 	rewinddir(d);
 	return 0;
 }
@@ -719,7 +750,12 @@ static int listfile_size(const char *path, const char *filename, const struct st
 #else
 		long int size = st->st_blocks / 2;
 #endif
-		printf("%ld ", size);
+		if(size && (flags & LIST_HUMAN_READABLE)) {
+			int unit = 'K';
+			double n = human_readable_d(size, &unit);
+			if(isnan(n)) printf("? ");
+			else printf("%.1f%c%c ", n, unit, unit ? 'i' : 0);
+		} else printf("%ld ", size);
 	}
 
 	char filetype = mode2kind(st->st_mode);
@@ -754,6 +790,7 @@ static int listfile_long(const char *path, int flags) {
 	char user[16];
 	char group[16];
 	const char *name;
+	char size[16];
 
 	if((flags & LIST_DIRECTORIES) || !(name = strrchr(path, '/'))) name = path;
 	else name++;
@@ -763,7 +800,7 @@ static int listfile_long(const char *path, int flags) {
 		//perror(path);
 		fprintf(stderr, "ls: lstat '%s' failed: %s\n", path, strerror(e));
 		if(e != ENOENT) {
-			printf("??????????   ? ?      ?      ?        \?\?\?\?-\?\?-\?\? \?\?:\?\? %s\n", name);
+			printf("??????????   ? ?      ?             ? \?\?\?\?-\?\?-\?\? \?\?:\?\? %s\n", name);
 		}
 		return -1;
 	}
@@ -783,6 +820,22 @@ static int listfile_long(const char *path, int flags) {
 	}
 #endif
 
+	if(flags & LIST_HUMAN_READABLE) {
+		int unit = 0;
+		double n = human_readable_d(s.st_size, &unit);
+		if(isnan(n)) *size = 0;
+		else {
+			if(unit) sprintf(size, "%.1f%ci", n, unit);
+			else sprintf(size, "%u", (unsigned int)s.st_size);
+		}
+	} else {
+#if defined _WIN32 && !defined _WIN32_WNT_NATIVE
+		sprintf(size, "%8ld", s.st_size);
+#else
+		sprintf(size, "%8lld", (long long int)s.st_size);
+#endif
+	}
+
 	strftime(date, 32, "%Y-%m-%d %H:%M", localtime(&s.st_mtime));
 	date[31] = 0;
 
@@ -791,16 +844,9 @@ static int listfile_long(const char *path, int flags) {
 
 	switch(s.st_mode & S_IFMT) {
 		case S_IFDIR:
-			//COLOR_PRINT(COLOR_BOLD_BLUE, file, name);
-#if defined _WIN32 && !defined _WIN32_WNT_NATIVE
-			printf_color(COLOR_BOLD_BLUE, "%s %3u %-6s %-6s %8ld %s %V%s%v%c\n",
-				mode, (unsigned int)s.st_nlink, user, group, s.st_size, date,
+			printf_color(COLOR_BOLD_BLUE, "%s %3u %-6s %-6s %8s %s %V%s%v%c\n",
+				mode, (unsigned int)s.st_nlink, user, group, size, date,
 				name, flags & LIST_PATH_SLASH ? '/' : 0);
-#else
-			printf_color(COLOR_BOLD_BLUE, "%s %3u %-6s %-6s %8lld %s %V%s%v%c\n",
-				mode, (unsigned int)s.st_nlink, user, group, (long long int)s.st_size, date,
-				name, flags & LIST_PATH_SLASH ? '/' : 0);
-#endif
 			break;
 #if !defined _WIN32 || defined _WIN32_WNT_NATIVE
 		case S_IFSOCK:
@@ -834,24 +880,12 @@ static int listfile_long(const char *path, int flags) {
 #endif
 				if(s.st_mode & (S_IXUSR | S_IXGRP | S_IXOTH)) color = COLOR_BOLD_GREEN;
 				else goto reg_nocolor;
-#if defined _WIN32 && !defined _WIN32_WNT_NATIVE
-				printf_color(color, "%s %3u %-6s %-6s %8ld %s %V%s%v\n",
-					mode, (unsigned int)s.st_nlink, user, group, s.st_size, date, name);
-#else
-				printf_color(color, "%s %3u %-6s %-6s %8lld %s %V%s%v\n",
-					mode, (unsigned int)s.st_nlink, user,
-					group, (long long int)s.st_size, date, name);
-#endif
+				printf_color(color, "%s %3u %-6s %-6s %8s %s %V%s%v\n",
+					mode, (unsigned int)s.st_nlink, user, group, size, date, name);
 			} else {
 		reg_nocolor:
-#if defined _WIN32 && !defined _WIN32_WNT_NATIVE
-				printf("%s %3u %-6s %-6s %8ld %s %s\n",
-					mode, (unsigned int)s.st_nlink, user, group, s.st_size, date, name);
-#else
-				printf("%s %3u %-6s %-6s %8lld %s %s\n",
-					mode, (unsigned int)s.st_nlink, user,
-					group, (long long int)s.st_size, date, name);
-#endif
+				printf("%s %3u %-6s %-6s %8s %s %s\n",
+					mode, (unsigned int)s.st_nlink, user, group, size, date, name);
 			}
 			break;
 #if !defined _WIN32 || defined _WIN32_WNT_NATIVE
@@ -875,8 +909,8 @@ static int listfile_long(const char *path, int flags) {
 				if(stat(path, &st_linkto) < 0) color = COLOR_BOLD_RED;
 			}
 
-			printf_color(color, "%s %3u %-6s %-6s          %s %V%s%v",
-				mode, (unsigned int)s.st_nlink, user, group, date, name);
+			printf_color(color, "%s %3u %-6s %-6s %8s %s %V%s%v",
+				mode, (unsigned int)s.st_nlink, user, group, size, date, name);
 			if(len < 0) {
 				putchar('\n');
 				break;
@@ -902,6 +936,7 @@ static int listfile_maclabel(const char *path, int flags) {
 	char group[16];
 	char *maclabel = NULL;
 	const char *name;
+	char size[16];
 
 	if((flags & LIST_DIRECTORIES) || !(name = strrchr(path, '/'))) name = path;
 	else name++;
@@ -918,7 +953,7 @@ static int listfile_maclabel(const char *path, int flags) {
 
 	if(!(flags & LIST_LONG)) {
 		printf("%s ", maclabel ? : "?");
-		if(flags & (LIST_SIZE | LIST_CLASSIFY)) listfile_size(path, name, &s, flags);
+		if(flags & (LIST_SIZE | LIST_CLASSIFY)) listfile_size(path, name, &s, flags & ~LIST_INODE);
 		else printf_color(get_file_color_by_mode(s.st_mode, path), "%V%s%v%c\n", name, suffix);
 		free(maclabel);
 		return 0;
@@ -936,6 +971,17 @@ static int listfile_maclabel(const char *path, int flags) {
 		group2str(s.st_gid, group);
 	}
 #endif
+
+	if((flags & LIST_SIZE) && (flags & LIST_HUMAN_READABLE)) {
+		int unit = 0;
+		double n = human_readable_d(s.st_size, &unit);
+		if(isnan(n)) *size = 0;
+		else {
+			if(unit) sprintf(size, "%.1f%ci", n, unit);
+			else sprintf(size, "%u", (unsigned int)s.st_size);
+		}
+	} else sprintf(size, "%lu", (unsigned long int)s.st_size);
+
 	switch(s.st_mode & S_IFMT) {
 		case S_IFLNK: {
 			char linkto[256];
@@ -958,7 +1004,7 @@ static int listfile_maclabel(const char *path, int flags) {
 			}
 
 			if(flags & LIST_SIZE) {
-				printf("%s %8u %8lld", mode, (unsigned int)s.st_nlink, (long long int)s.st_size);
+				printf("%s %8u %8s", mode, (unsigned int)s.st_nlink, size);
 			} else {
 				printf("%s %-8s %-8s", mode, user, group);
 			}
@@ -973,7 +1019,7 @@ static int listfile_maclabel(const char *path, int flags) {
 		}
 		default:
 			if(flags & LIST_SIZE) {
-				printf("%s %8u %8lld", mode, (unsigned int)s.st_nlink, (long long int)s.st_size);
+				printf("%s %8u %8s", mode, (unsigned int)s.st_nlink, size);
 			} else {
 				printf("%s %-8s %-8s", mode, user, group);
 			}
@@ -1162,6 +1208,7 @@ int ls_main(int argc, char **argv) {
 						case 'p': flags |= LIST_PATH_SLASH; break;
 						case 'n': flags |= LIST_NUMERIC_ID; break;
 						case 'i': flags |= LIST_INODE; break;
+						case 'h': flags |= LIST_HUMAN_READABLE; break;
 						case '-':
 							if(!arg[1]) end_of_options = 1;
 							else {

@@ -9,7 +9,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-//#include <stdint.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -47,7 +46,6 @@ int cmp_main(int argc, char *argv[]) {
 
 	if (optind + 2 != argc) {
 		fprintf(stderr, "Usage: %s [-b] [-l] [-n <count>] <file1> <file2>\n", argv[0]);
-		//exit(1);
 		return -1;
 	}
 
