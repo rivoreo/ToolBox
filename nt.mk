@@ -16,6 +16,7 @@ TOOLS_OBJS = \
 	ls_u.o \
 	md5_u.o \
 	mkdir_u.o \
+	mkswap_u.o \
 	modexe_u.o \
 	modexeb_u.o \
 	mv_u.o \
@@ -37,6 +38,7 @@ TOOLS = \
 	ls \
 	md5 \
 	mkdir \
+	mkswap \
 	modexe \
 	modexeb \
 	mv \

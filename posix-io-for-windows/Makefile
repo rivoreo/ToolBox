@@ -14,6 +14,7 @@ CFLAGS = -O1 -Wall
 OBJS = \
 	close.o \
 	fileno.o \
+	fsync.o \
 	isatty.o \
 	lseek.o \
 	open.o \

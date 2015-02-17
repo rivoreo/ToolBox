@@ -1,5 +1,5 @@
 Files
-	maclib/*
+	maclib/*,
 	posix-io-for-windows/*
 are placed in the Public Domain.
 
@@ -32,7 +32,7 @@ Files
 	Makefile,
 	md5_u.c,
 	mkdir*,
-	mkswap*,
+	mkswap_u.c,
 	mtd.h,
 	mtdread*,
 	mv_u.c,

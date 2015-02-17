@@ -28,12 +28,12 @@
 
 void usage(const char *name) {
 	fprintf(stderr, "Usage: %s [-p prio] <filename>\n", name);
-#ifdef __linux__
+#ifdef __linux__ || defined __gnu_hurd__
 	fprintf(stderr, "	prio must be between 0 and %d\n", SWAP_FLAG_PRIO_MASK);
 #endif
 }
 
-#ifdef __linux__
+#ifdef __linux__ || defined __gnu_hurd__
 int parse_prio(const char *prio_str) {
 	unsigned long int p = strtoul(prio_str, NULL, 10);
 	return (p > SWAP_FLAG_PRIO_MASK)? -1 : (int)p;
@@ -47,13 +47,13 @@ int swapon_main(int argc, char **argv) {
 
 	while(1) {
 		int c = getopt(argc, argv, "h"
-#ifdef __linux__
+#ifdef __linux__ || defined __gnu_hurd__
 			"p"
 #endif
 			":");
 		if(c == -1) break;
 		switch(c) {
-#ifdef __linux__
+#ifdef __linux__ || defined __gnu_hurd__
 			case 'p':
 				if(!optarg) {
 					usage(argv[0]);
@@ -86,4 +86,3 @@ int swapon_main(int argc, char **argv) {
 
 	return 0;
 }
-
