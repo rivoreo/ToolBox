@@ -72,6 +72,7 @@ ALL_TOOLS := \
 	cat_u.o \
 	chmod_u.o \
 	chown_u.o \
+	clear_u.o \
 	cmp_u.o \
 	date_u.o \
 	dd_u.o \
@@ -126,6 +127,7 @@ endif
 else
 EXTRA_TOOLS := \
 	chown \
+	clear \
 	dd \
 	df \
 	du \
@@ -252,6 +254,7 @@ TRAN_SRC = \
 	cat.c \
 	chcon.c \
 	chown.c \
+	clear.c \
 	cmp.c \
 	du.c \
 	exists.c \
@@ -272,6 +275,7 @@ TRAN_SRC = \
 	renice.c \
 	route.c \
 	schedtop.c \
+	sendevent.c \
 	setconsole.c \
 	setenforce.c \
 	sleep.c \
