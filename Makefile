@@ -180,7 +180,9 @@ ALL_TOOLS += \
 	route_u.o \
 	sendevent_u.o \
 	setconsole_u.o \
-	setkey_u.o
+	setkey_u.o \
+	swapoff_u.o \
+	swapon_u.o
 EXTRA_TOOLS +=  \
 	getevent \
 	insmod \
@@ -191,7 +193,9 @@ EXTRA_TOOLS +=  \
 	route \
 	sendevent \
 	setconsole \
-	setkey
+	setkey \
+	swapoff \
+	swapon
 endif		# GNU
 endif		# DARWIN
 ifdef NO_SELINUX
@@ -271,7 +275,8 @@ TRAN_SRC = \
 	setconsole.c \
 	setenforce.c \
 	sleep.c \
-	sync.c
+	sync.c \
+	touch.c
 
 
 unity:	$(OUTFILE)

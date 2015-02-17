@@ -54,17 +54,19 @@ Files
 	setenforce_u.c,
 	setkey*,
 	setsebool*,
+	swapoff_u.c,
+	swapon_u.c,
 	sync_u.c,
 	timefunc.h,
 	toolbox.c,
-	touch*,
+	touch_u.c,
 	unlink.c,
 	vmstat*,
 	wcelib/*
 are under the GNU-GPL-2+; the full text of GNU-GPL-2 can be found in the GPL-2 file.
 
 Files
-	cat*,
+	cat_u.c,
 	dd*,
 	du_u.c,
 	iftop*,

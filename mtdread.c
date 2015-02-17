@@ -9,6 +9,7 @@
 
 #include "mtd.h"
 //#include <mtd/mtd-user.h>
+
 #include <sys/ioctl.h>
 
 #ifdef __APPLE__
@@ -18,6 +19,7 @@ static loff_t lseek64(int fd, loff_t offset, int whence) {
 	}
 	while(offset > INT32_MAX) {
 		if(lseek(fd, INT32_MAX, SEEK_CUR) < 0) return -1;
+		//r += INT32_MAX;
 		offset -= INT32_MAX;
 	}
 	return lseek(fd, offset, SEEK_CUR);
@@ -62,41 +64,41 @@ int main(int argc, char **argv) {
 		int c = getopt(argc, argv, "d:f:s:S:L:Rhv");
 		if(c == EOF) break;
 		switch (c) {
-		case 'd':
-			devname = optarg;
-			break;
-		case 'f':
-			filename = optarg;
-			break;
-		case 's':
-			spare_size = atoi(optarg);
-			break;
-		case 'S':
-			start = strtoll(optarg, NULL, 0);
-			break;
-		case 'L':
-			len = strtoll(optarg, NULL, 0);
-			break;
-		case 'R':
-			rawmode = 1;
-			break;
-		case 'v':
-			verbose++;
-			break;
-		case 'h':
-			fprintf(stderr, "%s [-d <dev>] [-f <file>] [-s <sparesize>] [-vh]\n\n"
-					"	-d <dev>   Read from <dev>\n"
-					"	-f <file>  Write to <file>\n"
-					"	-s <size>  Number of spare bytes in file (default 64)\n"
-					"	-R         Raw mode\n"
-					"	-S <start> Start offset (default 0)\n"
-					"	-L <len>   Length (default 0)\n"
-					"	-v         Print info\n"
-					"	-h         Print help\n", argv[0]);
-			return -1;
-		case '?':
-			fprintf(stderr, "%s: invalid option -%c\n", argv[0], optopt);
-			return 1;
+			case 'd':
+				devname = optarg;
+				break;
+			case 'f':
+				filename = optarg;
+				break;
+			case 's':
+				spare_size = atoi(optarg);
+				break;
+			case 'S':
+				start = strtoll(optarg, NULL, 0);
+				break;
+			case 'L':
+				len = strtoll(optarg, NULL, 0);
+				break;
+			case 'R':
+				rawmode = 1;
+				break;
+			case 'v':
+				verbose++;
+				break;
+			case 'h':
+				fprintf(stderr, "%s [-d <dev>] [-f <file>] [-s <sparesize>] [-vh]\n\n"
+						"	-d <dev>   Read from <dev>\n"
+						"	-f <file>  Write to <file>\n"
+						"	-s <size>  Number of spare bytes in file (default 64)\n"
+						"	-R         Raw mode\n"
+						"	-S <start> Start offset (default 0)\n"
+						"	-L <len>   Length (default 0)\n"
+						"	-v         Print info\n"
+						"	-h         Print help\n", argv[0]);
+				return -1;
+			case '?':
+				//fprintf(stderr, "%s: invalid option -%c\n", argv[0], optopt);
+				return 1;
 		}
 	}
 
@@ -129,7 +131,7 @@ int main(int argc, char **argv) {
 		strcpy(statusfilename, filename);
 		strcat(statusfilename, statusext);
 		statusfile = fopen(statusfilename, "w+");
-		if (!statusfile) {
+		if(!statusfile) {
 			fprintf(stderr, "cannot open %s, %s\n", statusfilename, strerror(errno));
 			return 1;
 		}
@@ -231,10 +233,10 @@ int main(int argc, char **argv) {
 		if(ecc.failed != last_ecc.failed) {
 			printf("ecc failed, %u, at %llx\n", ecc.failed - last_ecc.failed, (long long int)pos);
 		}
-		if (ecc.badblocks != last_ecc.badblocks) {
+		if(ecc.badblocks != last_ecc.badblocks) {
 			printf("ecc badblocks, %u, at %llx\n", ecc.badblocks - last_ecc.badblocks, (long long int)pos);
 		}
-		if (ecc.bbtblocks != last_ecc.bbtblocks) {
+		if(ecc.bbtblocks != last_ecc.bbtblocks) {
 			printf("ecc bbtblocks, %u, at %llx\n", ecc.bbtblocks - last_ecc.bbtblocks, (long long int)pos);
 		}
 
