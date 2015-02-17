@@ -91,6 +91,7 @@ ALL_TOOLS := \
 	lsof_u.o \
 	md5_u.o \
 	mkdir_u.o \
+	mkswap_u.o \
 	modexe_u.o \
 	modexeb_u.o \
 	mtdread_u.o \
@@ -236,6 +237,7 @@ BASE_TOOLS := \
 	ls$(SUFFIX) \
 	md5$(SUFFIX) \
 	mkdir$(SUFFIX) \
+	mkswap$(SUFFIX) \
 	modexe$(SUFFIX) \
 	modexeb$(SUFFIX) \
 	mv$(SUFFIX) \
@@ -259,8 +261,12 @@ TRAN_SRC = \
 	getevent.c \
 	hd.c \
 	id.c \
+	isptrace1allowed.c \
+	kill.c \
+	kill1.c \
 	ln.c \
 	ls.c \
+	mkswap.c \
 	modexe.c \
 	mv.c \
 	netstat.c \
@@ -274,6 +280,8 @@ TRAN_SRC = \
 	setconsole.c \
 	setenforce.c \
 	sleep.c \
+	swapoff.c \
+	swapon.c \
 	sync.c \
 	touch.c
 
@@ -368,6 +376,9 @@ md5$(SUFFIX):	md5.c
 
 mkdir.exe:	mkdir.c
 	$(CC) $(CFLAGS) $(LDFLAGS) mkdir.c -o mkdir.exe $(LIBS)
+
+mkswap.exe:	mkswap.c
+	$(CC) $(CFLAGS) $(LDFLAGS) mkswap.c -o $@ $(LIBS)
 
 modexe.exe:	modexe.c
 	$(CC) $(CFLAGS) $(LDFLAGS) modexe.c -o $@ $(LIBS)
