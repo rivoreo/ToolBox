@@ -28,7 +28,7 @@ Files
 	link.c,
 	ln_u.c,
 	ls_u.c,
-	lsmod*,
+	lsmod_u.c,
 	Makefile,
 	md5_u.c,
 	mkdir*,

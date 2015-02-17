@@ -26,12 +26,13 @@
 
 #ifdef _NO_SELINUX
 #ifdef _WIN32
-#define SHORT_OPTIONS "lsRdAaFpih"
+#define SHORT_OPTIONS "AadFhilpRs"
 #else
-#define SHORT_OPTIONS "lsRdAaFpnih"
+#define SHORT_OPTIONS "AadFhilnpRs"
 #endif
 #else
-#define SHORT_OPTIONS "lsRdZAaFpnih"
+//#define SHORT_OPTIONS "lsRdZAaFpnih"
+#define SHORT_OPTIONS "AadFhilnpRsZ"
 #endif
 
 #ifndef _WIN32
@@ -490,6 +491,7 @@ static void dynarray_done(dynarray_t *a)
 #define DYNARRAY_FOREACH(_array,_item,_stmnt) \
 	DYNARRAY_FOREACH_TYPE(_array,void *,_item,_stmnt)
 
+
 // string arrays
 
 typedef dynarray_t strlist_t;
@@ -498,13 +500,6 @@ typedef dynarray_t strlist_t;
 
 #define  STRLIST_FOREACH(_list,_string,_stmnt) \
 	DYNARRAY_FOREACH_TYPE(_list,char *,_string,_stmnt)
-
-/*
-static void strlist_init(strlist_t *list)
-{
-	dynarray_init(list);
-}
-*/
 
 static void strlist_append_b(strlist_t *list, const void *str, size_t slen)
 {
@@ -554,6 +549,7 @@ static void strlist_sort(strlist_t *list) {
 #define LIST_NUMERIC_ID		(1 << 10)
 #define LIST_INODE		(1 << 11)
 #define LIST_HUMAN_READABLE	(1 << 12)
+#define LIST_FILE_TYPE		(1 << 13)
 #define MULTI_FILES		(1 << 15)
 
 // fwd
@@ -732,7 +728,7 @@ static void show_inode(const struct stat *st) {
 #endif
 }
 
-static int listfile_size(const char *path, const char *filename, const struct stat *st, int flags) {
+static int listfile_other(const char *path, const char *filename, const struct stat *st, int flags) {
 	struct stat s;
 	if(!st) {
 		if(lstat(path, &s) < 0) {
@@ -776,6 +772,19 @@ static int listfile_size(const char *path, const char *filename, const struct st
 
 	int suffix = 0;
 	if((flags & LIST_PATH_SLASH) && filetype == 'd') suffix = '/';
+#if !defined _WIN32 || defined _WIN32_WNT_NATIVE
+	else if(flags & LIST_FILE_TYPE) switch(filetype) {
+		case 'p':
+			suffix = '|';
+			break;
+		case 'l':
+			suffix = '@';
+			break;
+		case 's':
+			suffix = '=';
+			break;
+	}
+#endif
 
 	if(is_color) printf_color(get_file_color_by_mode(st->st_mode, path), "%V%s%v%c\n", filename, suffix);
 	else printf("%s%c\n", filename, suffix);
@@ -852,8 +861,9 @@ static int listfile_long(const char *path, int flags) {
 #if !defined _WIN32 || defined _WIN32_WNT_NATIVE
 		case S_IFSOCK:
 			//COLOR_PRINT(COLOR_BOLD_PURPLE, file, name);
-			printf_color(COLOR_BOLD_PURPLE, "%s %3u %-6s %-6s          %s %V%s%v\n",
-				mode, (unsigned int)s.st_nlink, user, group, date, name);
+			printf_color(COLOR_BOLD_PURPLE, "%s %3u %-6s %-6s          %s %V%s%v%c\n",
+				mode, (unsigned int)s.st_nlink, user, group, date, name,
+				flags & LIST_FILE_TYPE ? '=' : 0);
 			break;
 #ifndef _WIN32
 		case S_IFBLK:
@@ -868,8 +878,9 @@ static int listfile_long(const char *path, int flags) {
 #endif
 		case S_IFIFO:
 			printf_color(COLOR_YELLOW | (COLOR_BACKGROUND_BLACK << 16),
-				"%s %3u %-6s %-6s          %s %V%s%v\n",
-				mode, (unsigned int)s.st_nlink, user, group, date, name);
+				"%s %3u %-6s %-6s          %s %V%s%v%c\n",
+				mode, (unsigned int)s.st_nlink, user, group, date, name,
+				flags & LIST_FILE_TYPE ? '|' : 0);
 			break;
 		case S_IFREG:
 			if(is_color) {
@@ -895,6 +906,7 @@ static int listfile_long(const char *path, int flags) {
 			int len;
 			int color = COLOR_BOLD_CRAN;
 			struct stat st_linkto;
+			int suffix = 0;
 
 			len = readlink(path, linkto, 256);
 			if(len < 0) color = COLOR_BOLD_RED;
@@ -916,8 +928,19 @@ static int listfile_long(const char *path, int flags) {
 				putchar('\n');
 				break;
 			}
-			if(color == COLOR_BOLD_CRAN) color = get_file_color_by_mode(st_linkto.st_mode, NULL);
-			printf_color(color, " -> %V%s%v\n", linkto);
+			if(color == COLOR_BOLD_CRAN) {
+				color = get_file_color_by_mode(st_linkto.st_mode, NULL);
+				if((flags & LIST_PATH_SLASH) && S_ISDIR(st_linkto.st_mode)) suffix = '/';
+				else if(flags & LIST_FILE_TYPE) switch(st_linkto.st_mode & S_IFMT) {
+					case S_IFIFO:
+						suffix = '|';
+						break;
+					case S_IFSOCK:
+						suffix = '=';
+						break;
+				}
+			}
+			printf_color(color, " -> %V%s%v%c\n", linkto, suffix);
 			break;
 		}
 #endif
@@ -950,11 +973,22 @@ static int listfile_maclabel(const char *path, int flags) {
 	if(flags & LIST_INODE) show_inode(&s);
 
 	int suffix = ((flags & LIST_PATH_SLASH) && S_ISDIR(s.st_mode)) ? '/' : 0;
+	if(!suffix && (flags & LIST_FILE_TYPE)) switch(s.st_mode & S_IFMT) {
+		case S_IFIFO:
+			suffix = '|';
+			break;
+		case S_IFLNK:
+			suffix = '@';
+			break;
+		case S_IFSOCK:
+			suffix = '=';
+			break;
+	}
 	lgetfilecon(path, &maclabel);
 
 	if(!(flags & LIST_LONG)) {
 		printf("%s ", maclabel ? : "?");
-		if(flags & (LIST_SIZE | LIST_CLASSIFY)) listfile_size(path, name, &s, flags & ~LIST_INODE);
+		if(flags & (LIST_SIZE | LIST_CLASSIFY)) listfile_other(path, name, &s, flags & ~LIST_INODE);
 		else printf_color(get_file_color_by_mode(s.st_mode, path), "%V%s%v%c\n", name, suffix);
 		free(maclabel);
 		return 0;
@@ -1009,13 +1043,24 @@ static int listfile_maclabel(const char *path, int flags) {
 			} else {
 				printf("%s %-8s %-8s", mode, user, group);
 			}
-			printf_color(color, " %s %V%s%v%c", maclabel ? : "?", name, suffix);
+			printf_color(color, " %s %V%s%v", maclabel ? : "?", name);
 			if(len < 0) {
 				putchar('\n');
 				break;
 			}
-			if(color == COLOR_BOLD_CRAN) color = get_file_color_by_mode(st_linkto.st_mode, NULL);
-			printf_color(color, " -> %V%s%v\n", linkto);
+			if(color == COLOR_BOLD_CRAN) {
+				color = get_file_color_by_mode(st_linkto.st_mode, NULL);
+				if((flags & LIST_PATH_SLASH) && S_ISDIR(st_linkto.st_mode)) suffix = '/';
+				else if(flags & LIST_FILE_TYPE) switch(st_linkto.st_mode & S_IFMT) {
+					case S_IFIFO:
+						suffix = '|';
+						break;
+					case S_IFSOCK:
+						suffix = '=';
+						break;
+				}
+			} else suffix = 0;
+			printf_color(color, " -> %V%s%v%c\n", linkto, suffix);
 			break;
 		}
 		default:
@@ -1051,7 +1096,7 @@ static int listfile(const char *dirname, const char *filename, int flags) {
 		pathname = filename;
 	}
 
-	if((flags & (LIST_LONG | LIST_SIZE | LIST_CLASSIFY | LIST_PATH_SLASH | LIST_MACLABEL | LIST_INODE)) == 0) {
+	if((flags & (LIST_LONG | LIST_SIZE | LIST_CLASSIFY | LIST_PATH_SLASH | LIST_MACLABEL | LIST_INODE | LIST_FILE_TYPE)) == 0) {
 		/* name is anything after the final '/', or the whole path if none*/
 		if((flags & LIST_DIRECTORIES) || !(name = strrchr(pathname, '/'))) name = pathname;
 		else name++;
@@ -1069,8 +1114,8 @@ static int listfile(const char *dirname, const char *filename, int flags) {
 #endif
 	if ((flags & LIST_LONG) != 0) {
 		return listfile_long(pathname, flags);
-	} else /*((flags & LIST_SIZE) != 0)*/ {
-		return listfile_size(pathname, filename, NULL, flags);
+	} else {
+		return listfile_other(pathname, filename, NULL, flags);
 	}
 }
 
@@ -1214,7 +1259,9 @@ int ls_main(int argc, char **argv) {
 							if(!arg[1]) end_of_options = 1;
 							else {
 								const char *long_arg = arg + 1;
-								if(strcmp(long_arg, "color") == 0) {
+								if(strcmp(long_arg, "all") == 0) {
+									flags |= LIST_ALL;
+								} else if(strcmp(long_arg, "color") == 0) {
 									is_color = isatty(STDOUT_FILENO);
 								} else if(strncmp(long_arg, "color=", 6) == 0) {
 									const char *a = long_arg + 6;
@@ -1233,6 +1280,11 @@ int ls_main(int argc, char **argv) {
 											argv[0], a);
 										return 1;
 									}
+								} else if(strcmp(long_arg, "directory") == 0) {
+									flags |= LIST_DIRECTORIES;
+								} else if(strcmp(long_arg, "file-type") == 0) {
+									flags |= LIST_FILE_TYPE;
+									flags |= LIST_PATH_SLASH;
 								} else if(strcmp(long_arg, "help") == 0) {
 									fprintf(stderr, "Usage: %s [-" SHORT_OPTIONS "]"
 #if !defined _WIN32_WCE || defined _USE_LIBPORT
@@ -1243,6 +1295,10 @@ int ls_main(int argc, char **argv) {
 #endif
 										" [<file>] [...]\n", argv[0]);
 									return 0;
+								} else if(strcmp(long_arg, "human-readable") == 0) {
+									flags |= LIST_HUMAN_READABLE;
+								} else if(strcmp(long_arg, "inode") == 0) {
+									flags |= LIST_INODE;
 								} else if(strcmp(long_arg, "numeric-uid-gid") == 0) {
 									flags |= LIST_NUMERIC_ID;
 								} else {

@@ -264,6 +264,7 @@ TRAN_SRC = \
 	getevent.c \
 	hd.c \
 	id.c \
+	insmod.c \
 	isptrace1allowed.c \
 	kill.c \
 	kill1.c \
