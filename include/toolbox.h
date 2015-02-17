@@ -13,6 +13,8 @@
 extern "C" {
 #endif
 
+int toolbox(const char *, ...);
+
 #ifdef __APPLE__
 #define _SHARED
 #endif

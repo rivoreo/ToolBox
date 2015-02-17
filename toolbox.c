@@ -17,7 +17,37 @@
 static void help(void);
 int main(int, char **);
 
-static int toolbox_main(int argc, char **argv) {
+#if defined _SHARED && defined __PIC__
+#include <stdarg.h>
+#include <errno.h>
+#define ARG_MAX 255
+
+int toolbox_main(int, char **);
+
+int toolbox(const char *arg, ...) {
+	int argc = 0;
+	char *argv[ARG_MAX+1];
+	va_list ap;
+	va_start(ap, arg);
+	do {
+		char *a = strdup(arg);
+		if(!a) {
+			while(argc) free(argv[--argc]);
+			errno = ENOMEM;
+			return -1;
+		}
+		argv[argc++] = a;
+	} while(argc < ARG_MAX && (arg = va_arg(ap, char *)));
+	va_end(ap);
+	argv[argc] = NULL;
+	int r = toolbox_main(argc, argv);
+	while(argc) free(argv[--argc]);
+	return r;
+}
+#else
+static
+#endif
+int toolbox_main(int argc, char **argv) {
 	if(argc > 1) {
 		if(strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0 ||
 		strcmp(argv[1], "-l") == 0 || strcmp(argv[1], "--list") == 0) {
@@ -72,7 +102,7 @@ int main(int argc, char **argv) {
 	const char *name = argv[0];
 	int i;
 
-	if((argc > 1) && (argv[1][0] == '@')) {
+	if(argc > 1 && argv[1][0] == '@') {
 		name = argv[1] + 1;
 		argc--;
 		argv++;

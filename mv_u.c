@@ -1,3 +1,12 @@
+/*	mv - toolbox
+	Copyright 2007-2015 PC GO Ld.
+	Copyright 2015 libdll.so
+
+	This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
+
+	This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+*/
+
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
@@ -22,28 +31,20 @@ int mv_main(int argc, char *argv[]) {
 	/* check if destination exists */
 	dest = argv[argc - 1];
 	size_t dest_len = strlen(dest);
-#ifdef _WIN32
-	//printf("dest[%d] = '%c'\n", dest_len - 1, dest[dest_len - 1]);
-	// The celibc already done this
-	//if(dest[dest_len - 1] == '/') dest[dest_len - 1] = 0;
-#endif
 	if(stat(dest, &st) < 0) {
 		/* an error, unless the destination was missing */
 		if(errno != ENOENT) {
-			fprintf(stderr, "failed on %s - %s\n", dest, strerror(errno));
+			fprintf(stderr, "%s: failed on %s - %s\n", argv[0], dest, strerror(errno));
 			return -1;
 		} else if(argc > 3) {
-			//errno = ENOTDIR;
-			//perror(dest);
-			fprintf(stderr, "%s: %s\n", dest, strerror(ENOTDIR));
+			fprintf(stderr, "%s: %s: %s\n", argv[0], dest, strerror(ENOTDIR));
 			return 1;
 		}
 		st.st_mode = 0;
 	}
 	//printf("%s is a dir? %s\n", dest, S_ISDIR(st.st_mode)? "true" : "false");
 	if(argc > 3 && !S_ISDIR(st.st_mode)) {
-		errno = ENOTDIR;
-		perror(dest);
+		fprintf(stderr, "%s: %s: %s\n", argv[0], dest, strerror(ENOTDIR));
 		return 1;
 	}
 
@@ -60,7 +61,7 @@ int mv_main(int argc, char *argv[]) {
 		/* if destination is a directory, concat the source file name */
 		if(S_ISDIR(st.st_mode)) {
 			const char *fileName = strrchr(source, '/');
-			if (fullDest[strlen(fullDest)-1] != '/') {
+			if(fullDest[strlen(fullDest)-1] != '/') {
 				strcat(fullDest, "/");
 			}
 			strcat(fullDest, fileName ? fileName + 1 : source);
@@ -78,7 +79,6 @@ int mv_main(int argc, char *argv[]) {
 
 		/* attempt to move it */
 		if(rename(source, fullDest) < 0) {
-			//fprintf(stderr, "failed on '%s' - %s\n", source, strerror(errno));
 			//perror("mv");
 			perror(argv[0]);
 			return 4;

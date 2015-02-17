@@ -15,30 +15,27 @@ static int nochange;
 static int verbose;
 
 static void usage(void) {
-    fprintf(stderr, "Usage:  %s [-nrRv] pathname...\n", progname);
+	fprintf(stderr, "Usage: %s [-nrRv] pathname...\n", progname);
 }
 
 static int restore(const char *pathname, const struct stat *sb)
 {
     char *oldcontext, *newcontext;
 
-    if (lgetfilecon(pathname, &oldcontext) < 0) {
-        fprintf(stderr, "Could not get context of %s:  %s\n",
-                pathname, strerror(errno));
+    if(lgetfilecon(pathname, &oldcontext) < 0) {
+        fprintf(stderr, "Could not get context of %s: %s\n", pathname, strerror(errno));
         return -1;
     }
-    if (selabel_lookup(sehandle, &newcontext, pathname, sb->st_mode) < 0) {
-        fprintf(stderr, "Could not lookup context for %s:  %s\n", pathname,
-                strerror(errno));
+    if(selabel_lookup(sehandle, &newcontext, pathname, sb->st_mode) < 0) {
+        fprintf(stderr, "Could not lookup context for %s: %s\n", pathname, strerror(errno));
         return -1;
     }
-    if (strcmp(newcontext, "<<none>>") &&
+    if(strcmp(newcontext, "<<none>>") &&
         strcmp(oldcontext, newcontext)) {
-        if (verbose)
-            printf("Relabeling %s from %s to %s.\n", pathname, oldcontext, newcontext);
-        if (!nochange) {
-            if (lsetfilecon(pathname, newcontext) < 0) {
-                fprintf(stderr, "Could not label %s with %s:  %s\n",
+        if(verbose) printf("Relabeling %s from %s to %s.\n", pathname, oldcontext, newcontext);
+        if(!nochange) {
+            if(lsetfilecon(pathname, newcontext) < 0) {
+                fprintf(stderr, "Could not label %s with %s: %s\n",
                         pathname, newcontext, strerror(errno));
                 return -1;
             }
@@ -97,13 +94,11 @@ int restorecon_main(int argc, char **argv)
             case FTS_DNR:
             case FTS_ERR:
             case FTS_NS:
-                fprintf(stderr, "Could not access %s:  %s\n", ftsent->fts_path,
-                        strerror(errno));
+                fprintf(stderr, "Could not access %s:  %s\n", ftsent->fts_path, strerror(errno));
                 fts_set(fts, ftsent, FTS_SKIP);
                 break;
             default:
-                if (restore(ftsent->fts_path, ftsent->fts_statp) < 0)
-                    fts_set(fts, ftsent, FTS_SKIP);
+                if(restore(ftsent->fts_path, ftsent->fts_statp) < 0) fts_set(fts, ftsent, FTS_SKIP);
                 break;
             }
         }
@@ -114,8 +109,7 @@ int restorecon_main(int argc, char **argv)
         for (i = 0; i < argc; i++) {
             rc = lstat(argv[i], &sb);
             if (rc < 0) {
-                fprintf(stderr, "Could not stat %s:  %s\n", argv[i],
-                        strerror(errno));
+                fprintf(stderr, "Could not stat %s:  %s\n", argv[i], strerror(errno));
                 continue;
             }
             restore(argv[i], &sb);

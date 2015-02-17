@@ -64,10 +64,10 @@ toolbox:	$(NATIVETOOLSDIR)crtn.o toolbox.o $(TOOLS_OBJS)
 	$(LD) $(LDFLAGS) $^ -o $@ $(LIBS) -lcrypto
 
 toolbox.dll:	dllcrt.o $(TOOLS_OBJS)
-	$(LD) --shared -e _DllMainCRTStartup --subsystem 1 $^ -o $@ $(LIBS) -lcrypto
+	$(LD) --shared -e _DllMainCRTStartup --subsystem 1 --enable-stdcall-fixup $^ -o $@ $(LIBS) -lcrypto
 
 libtoolbox.so:	dllcrt.o $(TOOLS_OBJS)
-	$(LD) --shared -e _DllMainCRTStartup --subsystem 1 $^ -o $@ $(LIBS) -lcrypto
+	$(LD) --shared -e _DllMainCRTStartup --subsystem 1 --enable-stdcall-fixup $^ -o $@ $(LIBS) -lcrypto
 
 md5:	$(NATIVETOOLSDIR)crtn.o md5.o
 	$(LD) $(LDFLAGS) $^ -o $@ $(LIBS) -lcrypto

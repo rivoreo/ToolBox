@@ -46,8 +46,8 @@ endif
 
 ifdef SHARED_OBJECT
 CFLAGS += -fPIC
-ifdef DARWIN
 CFLAGS += -D_SHARED
+ifdef DARWIN
 LDFLAGS += --shared
 else
 ifeq ($(SHARED_OBJECT),noexec)
@@ -279,6 +279,7 @@ TRAN_SRC = \
 	ps.c \
 	readtty.c \
 	renice.c \
+	rmmod.c \
 	route.c \
 	schedtop.c \
 	sendevent.c \

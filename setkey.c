@@ -17,7 +17,7 @@ static void setkey_usage(const char *name) {
 			"	-h          Print help\n\n", name);
 }
 
-#define TTYDEV	"/dev/tty0"
+#define TTYDEV "/dev/tty0"
 
 int main(int argc, char *argv[]) {
 	int fd;

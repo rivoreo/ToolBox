@@ -1,3 +1,12 @@
+/*	touch - toolbox
+	Copyright 2007-2015 PC GO Ld.
+	Copyright 2015 libdll.so
+
+	This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
+
+	This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+*/
+
 #include <sys/stat.h>
 #include "timefunc.h"
 #include <stdio.h>
@@ -41,7 +50,6 @@ int touch_main(int argc, char *argv[]) {
 	specified_time.tv_sec = time(NULL);
 	specified_time.tv_usec = 0;
 #else
-	//int debug = 0;
 	struct timespec specified_time, times[2];
 	specified_time.tv_sec = 0;
 	specified_time.tv_nsec = UTIME_NOW;
@@ -75,7 +83,6 @@ int touch_main(int argc, char *argv[]) {
 					case 'l': flags |= AT_SYMLINK_NOFOLLOW; break;
 #endif
 					case 'd': debug = 1; break;
-//#endif
 					default:
 						usage();
 						return -1;
@@ -138,27 +145,13 @@ int touch_main(int argc, char *argv[]) {
 	if(aflag) {
 		times[0] = specified_time;
 	} else {
-//#ifdef _WIN32
-//		struct stat omit;
-//		stat(file, &omit);
-//		times[0].tv_sec = omit.st_atime;
-//		times[0].tv_nsec = 0;
-//#else
 		times[0].tv_nsec = UTIME_OMIT;
-//#endif
 	}
 
 	if(mflag) {
 		times[1] = specified_time;
 	} else {
-//#ifdef _WIN32
-//		struct stat omit;
-//		stat(file, &omit);
-//		times[1].tv_sec = omit.st_mtime;
-//		times[1].tv_nsec = 0;
-//#else
 		times[1].tv_nsec = UTIME_OMIT;
-//#endif
 	}
 
 	if(debug) {

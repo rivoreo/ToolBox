@@ -36,7 +36,7 @@ static int restore(const char *pathname, const struct stat *sb) {
 		if(!nochange) {
 			if(lsetfilecon(pathname, newcontext) < 0) {
 				fprintf(stderr, "Could not label %s with %s:  %s\n",
-						pathname, newcontext, strerror(errno));
+					pathname, newcontext, strerror(errno));
 				return -1;
 			}
 		}
