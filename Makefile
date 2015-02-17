@@ -283,6 +283,7 @@ TRAN_SRC = \
 	renice.c \
 	rmmod.c \
 	route.c \
+	runcon.c \
 	schedtop.c \
 	sendevent.c \
 	setconsole.c \

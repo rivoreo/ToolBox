@@ -4,4 +4,5 @@
 *.i
 *.orig
 .directory
+.DS_Store
 a.out

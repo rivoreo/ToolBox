@@ -53,7 +53,7 @@ Files
 	rmdir*,
 	rmmod_u.c,
 	rotatefb*,
-	runcon*,
+	runcon_u.c,
 	schedtop_u.c,
 	sendevent_u.c,
 	setconsole_u.c,
