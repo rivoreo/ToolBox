@@ -10,14 +10,13 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <getopt.h>
-#ifdef __linux__
-//#include <asm/page.h>
+#if defined __linux__ || defined __gnu_hurd__
 #include <sys/swap.h>
 #endif
 #include <string.h>
 #include <errno.h>
 
-#ifdef __linux__
+#if defined __linux__ || defined __gnu_hurd__
 /* XXX These need to be obtained from kernel headers. See b/9336527 */
 #define SWAP_FLAG_PREFER        0x8000
 #define SWAP_FLAG_PRIO_MASK     0x7fff

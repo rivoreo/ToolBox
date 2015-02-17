@@ -127,7 +127,6 @@ endif
 else
 EXTRA_TOOLS := \
 	chown \
-	clear \
 	dd \
 	df \
 	du \
@@ -229,6 +228,7 @@ endif		# MINGW
 BASE_TOOLS := \
 	cat$(SUFFIX) \
 	chmod$(SUFFIX) \
+	clear$(SUFFIX) \
 	cmp$(SUFFIX) \
 	date$(SUFFIX) \
 	df$(SUFFIX) \
@@ -343,6 +343,9 @@ chmod.exe:	chmod.c
 
 cmp.exe:	cmp.c
 	$(CC) $(CFLAGS) $(LDFLAGS) cmp.c -o cmp.exe $(LIBS)
+
+clear.exe:	clear.c
+	$(CC) $(CFLAGS) $(LDFLAGS) clear.c -o $@ $(LIBS)
 
 date.exe:	date.c
 	$(CC) $(CFLAGS) $(LDFLAGS) date.c -o $@ $(LIBS)
