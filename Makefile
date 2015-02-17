@@ -286,6 +286,7 @@ TRAN_SRC = \
 	sendevent.c \
 	setconsole.c \
 	setenforce.c \
+	setkey.c \
 	sleep.c \
 	swapoff.c \
 	swapon.c \

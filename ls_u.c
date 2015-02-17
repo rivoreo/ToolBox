@@ -435,8 +435,7 @@ static void dynarray_init(dynarray_t *a)
 }
 */
 
-static void dynarray_reserve_more(dynarray_t *a, int count)
-{
+static void dynarray_reserve_more(dynarray_t *a, int count) {
 	int old_cap = a->capacity;
 	int new_cap = old_cap;
 	const int max_cap = INT_MAX / sizeof(void *);
@@ -457,23 +456,18 @@ static void dynarray_reserve_more(dynarray_t *a, int count)
 		}
 	}
 	new_items = realloc(a->items, new_cap * sizeof(void *));
-	if (new_items == NULL)
-		abort();
+	if(!new_items) abort();
 
 	a->items = new_items;
 	a->capacity = new_cap;
 }
 
-static void dynarray_append(dynarray_t *a, void *item)
-{
-	if (a->count >= a->capacity)
-		dynarray_reserve_more(a, 1);
-
+static void dynarray_append(dynarray_t *a, void *item) {
+	if(a->count >= a->capacity) dynarray_reserve_more(a, 1);
 	a->items[a->count++] = item;
 }
 
-static void dynarray_done(dynarray_t *a)
-{
+static void dynarray_done(dynarray_t *a) {
 	free(a->items);
 	a->items = NULL;
 	a->count = a->capacity = 0;
@@ -482,11 +476,11 @@ static void dynarray_done(dynarray_t *a)
 #define DYNARRAY_FOREACH_TYPE(_array,_item_type,_item,_stmnt) \
 	do { \
 		int _nn_##__LINE__ = 0; \
-		for (;_nn_##__LINE__ < (_array)->count; ++ _nn_##__LINE__) { \
+		for(;_nn_##__LINE__ < (_array)->count; ++ _nn_##__LINE__) { \
 			_item_type _item = (_item_type)(_array)->items[_nn_##__LINE__]; \
 			_stmnt; \
 		} \
-	} while (0)
+	} while(0)
 
 #define DYNARRAY_FOREACH(_array,_item,_stmnt) \
 	DYNARRAY_FOREACH_TYPE(_array,void *,_item,_stmnt)
@@ -496,32 +490,28 @@ static void dynarray_done(dynarray_t *a)
 
 typedef dynarray_t strlist_t;
 
-#define  STRLIST_INITIALIZER  DYNARRAY_INITIALIZER
+#define STRLIST_INITIALIZER DYNARRAY_INITIALIZER
 
-#define  STRLIST_FOREACH(_list,_string,_stmnt) \
+#define STRLIST_FOREACH(_list,_string,_stmnt) \
 	DYNARRAY_FOREACH_TYPE(_list,char *,_string,_stmnt)
 
-static void strlist_append_b(strlist_t *list, const void *str, size_t slen)
-{
+static void strlist_append_b(strlist_t *list, const void *str, size_t slen) {
 	char *copy = malloc(slen + 1);
 	memcpy(copy, str, slen);
 	copy[slen] = '\0';
 	dynarray_append(list, copy);
 }
 
-static void strlist_append_dup(strlist_t *list, const char *str)
-{
+static void strlist_append_dup(strlist_t *list, const char *str) {
 	strlist_append_b(list, str, strlen(str));
 }
 
-static void strlist_done(strlist_t *list)
-{
+static void strlist_done(strlist_t *list) {
 	STRLIST_FOREACH(list, string, free(string));
 	dynarray_done(list);
 }
 
-static int strlist_compare_strings(const void *a, const void *b)
-{
+static int strlist_compare_strings(const void *a, const void *b) {
 	const char *sa = *(const char **)a;
 	const char *sb = *(const char **)b;
 	return strcasecmp(sa, sb);
@@ -599,8 +589,7 @@ static void mode2str(unsigned int mode, char *out) {
 }
 
 #ifndef _WIN32
-static void user2str(unsigned int uid, char *out)
-{
+static void user2str(unsigned int uid, char *out) {
 	struct passwd *pw = getpwuid(uid);
 	if(pw) {
 		strcpy(out, pw->pw_name);
@@ -609,8 +598,7 @@ static void user2str(unsigned int uid, char *out)
 	}
 }
 
-static void group2str(unsigned int gid, char *out)
-{
+static void group2str(unsigned int gid, char *out) {
 	struct group *gr = getgrgid(gid);
 	if(gr) {
 		strcpy(out, gr->gr_name);
@@ -1119,8 +1107,7 @@ static int listfile(const char *dirname, const char *filename, int flags) {
 	}
 }
 
-static int listdir(const char *name, int flags)
-{
+static int listdir(const char *name, int flags) {
 	char tmp[4096];
 	DIR *d;
 	struct dirent *de;
@@ -1133,7 +1120,7 @@ static int listdir(const char *name, int flags)
 		return -1;
 	}
 
-	if(flags & LIST_SIZE || flags & LIST_LONG) {
+	if((flags & LIST_SIZE) || (flags & LIST_LONG)) {
 		show_total_size(name, d, flags);
 	}
 
@@ -1191,8 +1178,7 @@ static int listdir(const char *name, int flags)
 	return 0;
 }
 
-static int listpath(const char *name, int flags)
-{
+static int listpath(const char *name, int flags) {
 	struct stat s;
 	int err;
 
@@ -1248,7 +1234,7 @@ int ls_main(int argc, char **argv) {
 							break;
 						case 'a':
 							flags |= LIST_ALL;
-							flags &= ~LIST_ALL_ALMOST;
+							//flags &= ~LIST_ALL_ALMOST;
 							break;
 						case 'F': flags |= LIST_CLASSIFY; break;
 						case 'p': flags |= LIST_PATH_SLASH; break;
@@ -1290,6 +1276,7 @@ int ls_main(int argc, char **argv) {
 #if !defined _WIN32_WCE || defined _USE_LIBPORT
 										" [--color[=<when>]]"
 #endif
+										" [--file-type]"
 #ifdef _WIN32_WCE
 										" <file>"
 #endif

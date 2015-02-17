@@ -54,7 +54,7 @@ Files
 	sendevent_u.c,
 	setconsole_u.c,
 	setenforce_u.c,
-	setkey*,
+	setkey_u.c,
 	setsebool*,
 	swapoff_u.c,
 	swapon_u.c,
