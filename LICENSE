@@ -1,5 +1,7 @@
 Files
-	maclib/*,
+	maclib/libcrypto.dylib,
+	maclib/libcrypto-0.9.7-export-list,
+	maclib/Makefile,
 	posix-io-for-windows/*
 are placed in the Public Domain.
 
@@ -29,6 +31,8 @@ Files
 	ln_u.c,
 	ls_u.c,
 	lsmod_u.c,
+	maclib/getopt.c,
+	maclib/libgetopt.a,
 	Makefile,
 	md5_u.c,
 	mkdir*,

@@ -37,7 +37,7 @@ int toolbox(const char *arg, ...) {
 			return -1;
 		}
 		argv[argc++] = a;
-	} while(argc < ARG_MAX && (arg = va_arg(ap, char *)));
+	} while(argc < ARG_MAX && (arg = va_arg(ap, const char *)));
 	va_end(ap);
 	argv[argc] = NULL;
 	int r = toolbox_main(argc, argv);

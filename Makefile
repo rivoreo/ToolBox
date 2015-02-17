@@ -152,7 +152,8 @@ EXTRA_TOOLS := \
 ifdef DARWIN
 NO_SELINUX = 1
 CFLAGS += -D_NO_UTIMENSAT
-LIBS += -Lmaclib
+LIBS += -Lmaclib -lgetopt
+DEPEND += maclib/libgetopt.a
 ifndef SHARED_OBJECT
 ALL_TOOLS += printenv_u.o
 endif
@@ -294,7 +295,7 @@ TRAN_SRC = \
 	touch.c
 
 
-unity:	$(OUTFILE)
+unity:	$(DEPEND) $(OUTFILE)
 
 separate:	$(DEPEND) $(BASE_TOOLS) $(EXTRA_TOOLS)
 
@@ -435,6 +436,9 @@ unlink.exe:	unlink.c
 
 uptime$(SUFFIX):	uptime.c
 	$(CC) $(CFLAGS) $(LDFLAGS) uptime.c -o $@ $(LIBS) $(TIMELIB)
+
+maclib/libgetopt.a:
+	$(MAKE) -C maclib libgetopt.a
 
 posix-io-for-windows/libposixio.a:
 	$(MAKE) -C posix-io-for-windows
