@@ -92,6 +92,7 @@ ALL_TOOLS := \
 	lsof_u.o \
 	md5_u.o \
 	mkdir_u.o \
+	mknod_u.o \
 	mkswap_u.o \
 	modexe_u.o \
 	modexeb_u.o \
@@ -140,6 +141,7 @@ EXTRA_TOOLS := \
 	kill1 \
 	ln \
 	lsof \
+	mknod \
 	mtdread \
 	netstat \
 	ps \
@@ -272,6 +274,7 @@ TRAN_SRC = \
 	ln.c \
 	ls.c \
 	md5.c \
+	mknod.c \
 	mkswap.c \
 	modexe.c \
 	mv.c \

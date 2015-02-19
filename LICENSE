@@ -36,6 +36,7 @@ Files
 	Makefile,
 	md5_u.c,
 	mkdir*,
+	mknod_u.c,
 	mkswap_u.c,
 	mtd.h,
 	mtdread*,

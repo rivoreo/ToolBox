@@ -42,10 +42,11 @@
 #include <stdbool.h>
 
 #ifdef __linux__
-#include <linux/kdev_t.h>
+//#include <linux/kdev_t.h>
 #ifndef _NO_SELINUX
 #include <selinux/selinux.h>
 #endif
+/*
 #elif defined __MACH__
 #ifdef __APPLE__
 #ifndef MAJOR
@@ -62,12 +63,21 @@
 #define MINOR(A) (0)
 #endif
 #endif
+*/
 #elif defined _WIN32_WNT_NATIVE
+/*
 #ifndef MAJOR
 #define MAJOR(A) (0)
 #endif
 #ifndef MINOR
 #define MINOR(A) (0)
+#endif
+*/
+#ifndef major
+#define major(d) (0)
+#endif
+#ifndef minor
+#define minor(d) (0)
 #endif
 #endif
 
@@ -739,7 +749,7 @@ static int listfile_other(const char *path, const char *filename, const struct s
 			int unit = 'K';
 			double n = human_readable_d(size, &unit);
 			if(isnan(n)) printf("? ");
-			else printf("%.1f%c%c ", n, unit, unit ? 'i' : 0);
+			else printf("%.1f%ci ", n, unit);
 		} else printf("%ld ", size);
 	}
 
@@ -858,9 +868,10 @@ static int listfile_long(const char *path, int flags) {
 		case S_IFCHR:
 			//COLOR_PRINT(COLOR_BOLD_YELLOW, file, name);
 			printf_color(COLOR_BOLD_YELLOW | (COLOR_BACKGROUND_BLACK << 16),
-				"%s %3u %-6s %-6s %3d, %3d %s %V%s%v\n",
+				"%s %3u %-6s %-6s %3u, %3u %s %V%s%v\n",
 				mode, (unsigned int)s.st_nlink, user, group,
-				(int)MAJOR(s.st_rdev), (int)MINOR(s.st_rdev), date, name);
+				(unsigned int)major(s.st_rdev), (unsigned int)minor(s.st_rdev),
+				date, name);
 			break;
 #endif
 #endif

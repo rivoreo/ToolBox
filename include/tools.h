@@ -54,6 +54,9 @@ TOOL(lsof)
 #endif
 TOOL(md5)
 TOOL(mkdir)
+#ifndef _WIN32_WNT_NATIVE
+TOOL(mknod)
+#endif
 TOOL(mkswap)
 TOOL(modexe)
 TOOL(modexeb)
