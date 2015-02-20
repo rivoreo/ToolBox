@@ -4,12 +4,7 @@
 #include <fcntl.h>
 #include <getopt.h>
 #include <string.h>
-#ifdef __linux__
-#include <linux/kd.h>
-#include <linux/vt.h>
-#endif
 #include <errno.h>
-#include <pthread.h>
 #include <sys/ioctl.h>
 
 int ioctl_main(int argc, char *argv[])
@@ -61,7 +56,7 @@ int ioctl_main(int argc, char *argv[])
     }
 
     fd = open(argv[optind], (read_only ? O_RDWR : O_RDONLY) | O_SYNC);
-    if (fd < 0) {
+    if(fd < 0) {
         fprintf(stderr, "cannot open %s\n", argv[optind]);
         return 1;
     }
@@ -97,10 +92,8 @@ int ioctl_main(int argc, char *argv[])
     }
     printf("sending ioctl 0x%x", ioctl_nr);
     rem = length;
-    while(rem--) {
-        printf(" 0x%02x", *ioctl_argp_save++);
-    }
-    printf("\n");
+    while(rem--) printf(" 0x%02x", *ioctl_argp_save++);
+    putchar('\n');
 
     if(direct_arg) {
         res = ioctl(fd, ioctl_nr, *(uint32_t *)ioctl_args);
@@ -117,10 +110,8 @@ int ioctl_main(int argc, char *argv[])
         printf("return buf:");
         ioctl_argp = ioctl_args;
         rem = length;
-        while(rem--) {
-            printf(" %02x", *ioctl_argp++);
-        }
-        printf("\n");
+        while(rem--) printf(" %02x", *ioctl_argp++);
+        putchar('\n');
     }
     return 0;
 }

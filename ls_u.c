@@ -46,24 +46,6 @@
 #ifndef _NO_SELINUX
 #include <selinux/selinux.h>
 #endif
-/*
-#elif defined __MACH__
-#ifdef __APPLE__
-#ifndef MAJOR
-#define MAJOR(A) ((A) >> 24)
-#endif
-#ifndef MINOR
-#define MINOR(A) ((A) & 0xff)
-#endif
-#elif defined __GNU__
-#ifndef MAJOR
-#define MAJOR(A) (0)
-#endif
-#ifndef MINOR
-#define MINOR(A) (0)
-#endif
-#endif
-*/
 #elif defined _WIN32_WNT_NATIVE
 /*
 #ifndef MAJOR
@@ -868,10 +850,9 @@ static int listfile_long(const char *path, int flags) {
 		case S_IFCHR:
 			//COLOR_PRINT(COLOR_BOLD_YELLOW, file, name);
 			printf_color(COLOR_BOLD_YELLOW | (COLOR_BACKGROUND_BLACK << 16),
-				"%s %3u %-6s %-6s %3u, %3u %s %V%s%v\n",
+				"%s %3u %-6s %-6s %3d, %3d %s %V%s%v\n",
 				mode, (unsigned int)s.st_nlink, user, group,
-				(unsigned int)major(s.st_rdev), (unsigned int)minor(s.st_rdev),
-				date, name);
+				(int)major(s.st_rdev), (int)minor(s.st_rdev), date, name);
 			break;
 #endif
 #endif

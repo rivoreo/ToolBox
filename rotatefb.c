@@ -1,10 +1,18 @@
-#include <ctype.h>
+/*	rotatefb - toolbox
+	Copyright 2015 libdll.so
+
+	This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
+
+	This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+*/
+
+//#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/mman.h>
+//#include <sys/mman.h>
 #include <fcntl.h>
 #include <string.h>
-#include <termios.h>
+//#include <termios.h>
 #include <unistd.h>
 #include <errno.h>
 #include <linux/fb.h>
@@ -25,13 +33,13 @@ int main(int argc, char *argv[]) {
 				fbdev = optarg;
 				break;
 			case '?':
-				fprintf(stderr, "%s: invalid option -%c\n", argv[0], optopt);
+				//fprintf(stderr, "%s: invalid option -%c\n", argv[0], optopt);
 				return 1;
 		}
 	}
 
 	if(optind + 1 != argc) {
-		fprintf(stderr, "%s: specify rotation\n", argv[0]);
+		fprintf(stderr, "%s: Rotation not specified\n", argv[0]);
 		//exit(1);
 		return 1;
 	}

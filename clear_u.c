@@ -34,7 +34,6 @@ int clear_main() {
 	return DeviceIoControl((void *)STDOUT_FILENO, IOCTL_CONSOLE_CLS, NULL, 0, NULL, 0, &rsize, NULL) ? 0 : -1;
 #else
 	size_t len = sizeof CLEAR_SCREEN - 1;
-	int s = write(STDOUT_FILENO, CLEAR_SCREEN, len);
-	return s == len ? 0 : 1;
+	return write(STDOUT_FILENO, CLEAR_SCREEN, len) == len ? 0 : 1;
 #endif
 }

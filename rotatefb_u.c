@@ -1,10 +1,7 @@
-#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/mman.h>
 #include <fcntl.h>
 #include <string.h>
-#include <termios.h>
 #include <unistd.h>
 #include <errno.h>
 #include <linux/fb.h>
@@ -26,7 +23,6 @@ int rotatefb_main(int argc, char *argv[])
             fbdev = optarg;
             break;
         case '?':
-            fprintf(stderr, "%s: invalid option -%c\n", argv[0], optopt);
             return 1;
         }
     }

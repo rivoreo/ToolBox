@@ -6,6 +6,7 @@
 	This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 */
 
+#include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <string.h>
@@ -13,7 +14,7 @@
 #include <stdlib.h>
 
 static void print_usage(const char *name) {
-	fprintf(stderr, "Usage: %s [{-m|--mode} <mode>] <name> <type> [<major>] [<minor>]\n", name);
+	fprintf(stderr, "Usage: %s [{-m|--mode} <mode>] <name> <type> [<major> <minor>]\n", name);
 }
 
 static mode_t str2mode(const char *s) {
