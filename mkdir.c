@@ -1,3 +1,11 @@
+/*	mkdir - toolbox
+	Copyright 2015 libdll.so
+
+	This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
+
+	This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+*/
+
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
@@ -5,8 +13,7 @@
 #include <limits.h>
 #include <sys/stat.h>
 
-static void usage()
-{
+static void usage() {
 	fprintf(stderr,
 		"Usage: mkdir"
 #if defined _WIN32 && !defined _WIN32_WNT_NATIVE
@@ -18,10 +25,9 @@ static void usage()
 	//return -1;
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     //int symbolic = 0;
-    int ret;
+	int ret;
 /*
     if(argc < 2 || strcmp(argv[1], "--help") == 0) {
         return usage();
@@ -81,14 +87,14 @@ int main(int argc, char *argv[])
 #else
 			ret = mkdir(currpath, 0777);
 #endif
-                    if(ret < 0) {
+			if(ret < 0) {
 //#ifdef _WIN32_WCE
 //				fprintf(stderr, "mkdir failed for %s\n%d\n", currpath, errno);
 //#else
 				fprintf(stderr, "mkdir failed for %s, %s\n", currpath, strerror(errno));
 //#endif
 				return ret;
-                    }
+			}
                 }
                 pathpiece = strtok(NULL, "/");
             }
@@ -98,14 +104,14 @@ int main(int argc, char *argv[])
 #else
 		ret = mkdir(argv[0], 0777);
 #endif
-            if(ret < 0) {
+		if(ret < 0) {
 //#ifdef _WIN32_WCE
 //			fprintf(stderr, "mkdir failed for %s\n%d\n", argv[0], errno);
 //#else
 			fprintf(stderr, "mkdir failed for %s, %s\n", argv[0], strerror(errno));
 //#endif
 			return ret;
-            }
+		}
         }
     }
 

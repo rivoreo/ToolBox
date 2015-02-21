@@ -34,6 +34,19 @@ extern int WINAPI KernelIoControl(unsigned long int, void *, unsigned long int, 
 #ifndef SE_SHUTDOWN_PRIVILEGE
 #define SE_SHUTDOWN_PRIVILEGE (19)
 #endif
+#ifndef _WIN32_WCE
+// Custom errno mapping for reboot
+static int __set_errno_from_oserror() {
+	switch(GetLastError()) {
+		case ERROR_INVALID_FUNCTION:
+			return errno = ENOSYS;
+		case ERROR_ACCESS_DENIED:
+			return errno = EPERM;
+		default:
+			return errno = EINVAL;
+	}
+}
+#endif
 #endif
 static int enable_shutdown_privilege() {
 	void *token = NULL;
@@ -59,9 +72,13 @@ static int enable_shutdown_privilege() {
 #else
 	//LUID id;
 	//memset(&id, 0, sizeof id);
-	if(!OpenProcessToken((void *)-1, TOKEN_ADJUST_PRIVILEGES, &token)) return -1;
+	if(!OpenProcessToken((void *)-1, TOKEN_ADJUST_PRIVILEGES, &token)) {
+		__set_errno_from_oserror();
+		return -1;
+	}
 	//if(!LookupPrivilegeValue(NULL, SE_SHUTDOWN_NAME, &id)) return -1;
 	int ok = AdjustTokenPrivileges(token, 0, &privilege, sizeof privilege, NULL, NULL);
+	if(!ok) __set_errno_from_oserror();
 	CloseHandle(token);
 	return ok ? 0 : 1;
 #endif
@@ -77,7 +94,7 @@ static int reboot(int flags) {
 #ifdef _USE_KIOCTL
 	if(!KernelIoControl(IOCTL_HAL_REBOOT, NULL, 0, NULL, 0, NULL)) return -1;
 #else
-	unsigned long int e = SetSystemPowerState(NULL, POWER_STATE_RESET, POWER_FORCE);
+	unsigned long int e = SetSystemPowerState(NULL, POWER_STATE_RESET, 0);
 	if(e) {
 		SetLastError(e);
 		return -1;
@@ -118,10 +135,14 @@ static int reboot(int flags) {
 			return -1;
 	}
 	if(!ExitWindowsEx(wflags, 0)) {
+		__set_errno_from_oserror();
 		return -1;
 	}
 #else
-	if(!InitiateSystemShutdownW(NULL, NULL, 0, 1, flags & EWX_REBOOT)) return -1;
+	if(!InitiateSystemShutdownW(NULL, NULL, 0, 1, flags & EWX_REBOOT)) {
+		__set_errno_from_oserror();
+		return -1;
+	}
 #endif
 #endif		/* _WIN32_WNT_NATIVE */
 #endif		/* _WIN32_WCE */

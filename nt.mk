@@ -12,6 +12,7 @@ TOOLS_OBJS = \
 	df_u.o \
 	exists_u.o \
 	hd_u.o \
+	ioctl_u.o \
 	ln_u.o \
 	ls_u.o \
 	md5_u.o \
@@ -21,6 +22,7 @@ TOOLS_OBJS = \
 	modexeb_u.o \
 	mv_u.o \
 	printenv_u.o \
+	reboot_u.o \
 	rmdir_u.o \
 	sleep_u.o \
 	touch_u.o \
@@ -33,6 +35,7 @@ TOOLS = \
 	df \
 	exists \
 	hd \
+	ioctl \
 	link \
 	ln \
 	ls \
@@ -43,6 +46,7 @@ TOOLS = \
 	modexeb \
 	mv \
 	printenv \
+	reboot \
 	rmdir \
 	sleep \
 	touch \

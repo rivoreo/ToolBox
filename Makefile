@@ -136,7 +136,6 @@ EXTRA_TOOLS := \
 	id \
 	ifconfig \
 	iftop \
-	ioctl \
 	isptrace1allowed \
 	kill \
 	kill1 \
@@ -148,7 +147,6 @@ EXTRA_TOOLS := \
 	ps \
 	r \
 	readtty \
-	reboot \
 	schedtop \
 	sync \
 	top
@@ -240,6 +238,7 @@ BASE_TOOLS := \
 	df$(SUFFIX) \
 	exists$(SUFFIX) \
 	hd$(SUFFIX) \
+	ioctl$(SUFFIX) \
 	link$(SUFFIX) \
 	ls$(SUFFIX) \
 	md5$(SUFFIX) \
@@ -249,6 +248,7 @@ BASE_TOOLS := \
 	modexeb$(SUFFIX) \
 	mv$(SUFFIX) \
 	printenv$(SUFFIX) \
+	reboot$(SUFFIX) \
 	rm$(SUFFIX) \
 	rmdir$(SUFFIX) \
 	sleep$(SUFFIX) \
@@ -270,6 +270,7 @@ TRAN_SRC = \
 	hd.c \
 	id.c \
 	insmod.c \
+	ioctl.c \
 	isptrace1allowed.c \
 	kill.c \
 	kill1.c \
@@ -383,6 +384,9 @@ getenforce:	getenforce.c
 hd.exe:	hd.c
 	$(CC) $(CFLAGS) $(LDFLAGS) hd.c -o hd.exe $(LIBS)
 
+ioctl.exe:	ioctl.c
+	$(CC) $(CFLAGS) $(LDFLAGS) ioctl.c -o $@ $(LIBS)
+
 link.exe:	link.c
 	$(CC) $(CFLAGS) $(LDFLAGS) link.c -o link.exe $(LIBS)
 
@@ -412,6 +416,9 @@ mv.exe:	mv.c
 
 printenv.exe:	printenv.c
 	$(CC) $(CFLAGS) $(LDFLAGS) printenv.c -o printenv.exe $(LIBS)
+
+reboot.exe:	reboot.c
+	$(CC) -D_USE_KIOCTL $(CFLAGS) $(LDFLAGS) reboot.c -o $@ $(LIBS)
 
 restorecon:	restorecon.c
 	$(CC) $(CFLAGS) $(LDFLAGS) restorecon.c -o restorecon $(LIBS) $(SELINUX_LIBS)

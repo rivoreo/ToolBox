@@ -39,7 +39,9 @@ TOOL(iftop)
 #ifdef __linux__
 TOOL(insmod)
 #endif
+#endif
 TOOL(ioctl)
+#ifndef _WIN32_WNT_NATIVE
 TOOL(isptrace1allowed)
 TOOL(kill)
 TOOL(kill1)
@@ -78,7 +80,9 @@ TOOL(printenv)
 TOOL(ps)
 TOOL(r)
 TOOL(readtty)
+#endif
 TOOL(reboot)
+#ifndef _WIN32_WNT_NATIVE
 #ifndef __APPLE__
 TOOL(renice)
 #endif
