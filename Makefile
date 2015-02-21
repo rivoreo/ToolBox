@@ -289,6 +289,7 @@ TRAN_SRC = \
 	renice.c \
 	restorecon.c \
 	rmmod.c \
+	rotatefb.c \
 	route.c \
 	runcon.c \
 	schedtop.c \

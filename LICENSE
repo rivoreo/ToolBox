@@ -54,7 +54,7 @@ Files
 	rm_u.c,
 	rmdir*,
 	rmmod_u.c,
-	rotatefb*,
+	rotatefb_u.c,
 	runcon_u.c,
 	schedtop_u.c,
 	sendevent_u.c,

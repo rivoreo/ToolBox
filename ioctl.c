@@ -41,7 +41,9 @@ int main(int argc, char *argv[]) {
 	int read_only = 0;
 	int length = -1;
 	int arg_size = 4;
+#ifndef _WIN32
 	int direct_arg = 0;
+#endif
 	uint32_t ioctl_nr;
 	void *ioctl_args;
 	uint8_t *ioctl_argp;
