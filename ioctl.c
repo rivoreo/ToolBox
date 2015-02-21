@@ -56,9 +56,11 @@ int main(int argc, char *argv[]) {
 			case 'r':
 				read_only = 1;
 				break;
+#ifndef _WIN32
 			case 'd':
 				direct_arg = 1;
 				break;
+#endif
 			case 'l':
 				length = strtol(optarg, NULL, 0);
 				break;
@@ -66,12 +68,18 @@ int main(int argc, char *argv[]) {
 				arg_size = strtol(optarg, NULL, 0);
 				break;
 			case 'h':
-				fprintf(stderr, "Usage: %s [-l <length>] [-a <argsize>] [-rdh] <device> <ioctlnr> [<arg>] [...]\n"
-						"	-l <length>   Length of io buffer\n"
-						"	-a <argsize>  Size of each argument (1-8)\n"
-						"	-r            Open device in read only mode\n"
-						"	-d            Direct argument (no iobuffer)\n"
-						"	-h            Print help\n", argv[0]);
+				fprintf(stderr, "Usage: %s [-l <length>] [-a <argsize>] [-r"
+#ifndef _WIN32
+					"d"
+#endif
+					"h] <device> <ioctlnr> [<arg>] [...]\n"
+					"	-l <length>   Length of io buffer\n"
+					"	-a <argsize>  Size of each argument (1-8)\n"
+					"	-r            Open device in read only mode\n"
+#ifndef _WIN32
+					"	-d            Direct argument (no iobuffer)\n"
+#endif
+					"	-h            Print help\n", argv[0]);
 				return -1;
 			case '?':
 				//fprintf(stderr, "%s: invalid option -%c\n", argv[0], optopt);
@@ -99,11 +107,12 @@ int main(int argc, char *argv[]) {
 	ioctl_nr = strtol(argv[optind], NULL, 0);
 	optind++;
 
+#ifndef _WIN32
 	if(direct_arg) {
 		arg_size = 4;
 		length = 4;
 	}
-
+#endif
 	if(length < 0) {
 		length = (argc - optind) * arg_size;
 	}
@@ -149,7 +158,10 @@ int main(int argc, char *argv[]) {
 #ifdef _WIN32_WNT_NATIVE
 		IO_STATUS_BLOCK io_status;
 		long int status = NtDeviceIoControlFile((void *)fd, NULL, NULL, NULL, &io_status, request, buffer, length, buffer, length);
-		if(status < 0) return -1;
+		if(status < 0) {
+			__set_errno_from_ntstatus(status);
+			return -1;
+		}
 		length = io_status.Information;
 #else
 		unsigned long int rsize;

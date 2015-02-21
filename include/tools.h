@@ -78,6 +78,7 @@ TOOL(printenv)
 TOOL(ps)
 TOOL(r)
 TOOL(readtty)
+TOOL(reboot)
 #ifndef __APPLE__
 TOOL(renice)
 #endif

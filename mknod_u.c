@@ -27,6 +27,8 @@ static mode_t str2mode(const char *s) {
 		}
 		s++;
 	}
+	//r &= ~S_IFMT;
+	if(r & S_IFMT) return (mode_t)-1;
 	return r;
 }
 

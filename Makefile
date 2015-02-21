@@ -103,6 +103,7 @@ ALL_TOOLS := \
 	ps_u.o \
 	r_u.o \
 	readtty_u.o \
+	reboot_u.o \
 	rm_u.o \
 	rmdir_u.o \
 	schedtop_u.o \
@@ -147,6 +148,7 @@ EXTRA_TOOLS := \
 	ps \
 	r \
 	readtty \
+	reboot \
 	schedtop \
 	sync \
 	top
@@ -283,7 +285,9 @@ TRAN_SRC = \
 	notify.c \
 	ps.c \
 	readtty.c \
+	reboot.c \
 	renice.c \
+	restorecon.c \
 	rmmod.c \
 	route.c \
 	runcon.c \
