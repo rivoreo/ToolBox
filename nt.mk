@@ -26,7 +26,8 @@ TOOLS_OBJS = \
 	rmdir_u.o \
 	sleep_u.o \
 	touch_u.o \
-	uptime_u.o
+	uptime_u.o \
+	which_u.o
 
 TOOLS = \
 	chmod \
@@ -51,7 +52,8 @@ TOOLS = \
 	sleep \
 	touch \
 	unlink \
-	uptime
+	uptime \
+	which
 
 
 ifdef SHARED_OBJECT

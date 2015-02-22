@@ -35,7 +35,7 @@ Files
 	maclib/libgetopt.a,
 	Makefile,
 	md5_u.c,
-	mkdir*,
+	mkdir_u.c,
 	mknod_u.c,
 	mkswap_u.c,
 	mtd.h,
@@ -70,7 +70,8 @@ Files
 	touch_u.c,
 	unlink.c,
 	vmstat*,
-	wcelib/*
+	wcelib/*,
+	which_u.c
 are under the GNU-GPL-2+; the full text of GNU-GPL-2 can be found in the GPL-2 file.
 
 Files

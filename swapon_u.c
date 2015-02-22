@@ -48,9 +48,9 @@ int swapon_main(int argc, char **argv) {
 	while(1) {
 		int c = getopt(argc, argv, "h"
 #if defined __linux__ || defined __gnu_hurd__
-			"p"
+			"p:"
 #endif
-			":");
+			);
 		if(c == -1) break;
 		switch(c) {
 #if defined __linux__ || defined __gnu_hurd__

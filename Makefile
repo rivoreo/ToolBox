@@ -111,7 +111,8 @@ ALL_TOOLS := \
 	sync_u.o \
 	top_u.o \
 	touch_u.o \
-	uptime_u.o
+	uptime_u.o \
+	which_u.o
 
 ifdef MINGW
 SUFFIX := .exe
@@ -254,7 +255,8 @@ BASE_TOOLS := \
 	sleep$(SUFFIX) \
 	touch$(SUFFIX) \
 	unlink$(SUFFIX) \
-	uptime$(SUFFIX)
+	uptime$(SUFFIX) \
+	which$(SUFFIX)
 
 
 TRAN_SRC = \
@@ -277,6 +279,7 @@ TRAN_SRC = \
 	ln.c \
 	ls.c \
 	md5.c \
+	mkdir.c \
 	mknod.c \
 	mkswap.c \
 	modexe.c \
@@ -302,7 +305,8 @@ TRAN_SRC = \
 	swapoff.c \
 	swapon.c \
 	sync.c \
-	touch.c
+	touch.c \
+	which.c
 
 
 unity:	$(DEPEND) $(OUTFILE)
@@ -452,6 +456,9 @@ unlink.exe:	unlink.c
 
 uptime$(SUFFIX):	uptime.c
 	$(CC) $(CFLAGS) $(LDFLAGS) uptime.c -o $@ $(LIBS) $(TIMELIB)
+
+which.exe:	which.c
+	$(CC) $(CFLAGS) $(LDFLAGS) which.c -o $@ $(LIBS)
 
 maclib/libgetopt.a:
 	$(MAKE) -C maclib libgetopt.a
