@@ -288,6 +288,7 @@ TRAN_SRC = \
 	nohup.c \
 	notify.c \
 	ps.c \
+	top.c \
 	readtty.c \
 	reboot.c \
 	renice.c \
