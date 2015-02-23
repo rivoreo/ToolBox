@@ -26,8 +26,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-//#include <cutils/sched_policy.h>
-
 struct cpu_info {
 	long unsigned utime, ntime, stime, itime;
 	long unsigned iowtime, irqtime, sirqtime;
@@ -80,7 +78,6 @@ static struct proc_info *alloc_proc(void);
 static void free_proc(struct proc_info *proc);
 static void read_procs(void);
 static int read_stat(char *filename, struct proc_info *proc);
-//static void read_policy(int pid, struct proc_info *proc);
 static void add_proc(int proc_num, struct proc_info *proc);
 static int read_cmdline(char *filename, struct proc_info *proc);
 static int read_status(char *filename, struct proc_info *proc);
@@ -123,7 +120,6 @@ int top_main(int argc, char *argv[]) {
 						if(i + 1 >= argc) {
 							fprintf(stderr, "Option -m expects an argument.\n");
 							usage(argv[0]);
-							//exit(EXIT_FAILURE);
 							return EXIT_FAILURE;
 						}
 						max_procs = atoi(argv[++i]);
@@ -132,7 +128,6 @@ int top_main(int argc, char *argv[]) {
 						if(i + 1 >= argc) {
 							fprintf(stderr, "Option -n expects an argument.\n");
 							usage(argv[0]);
-							//exit(EXIT_FAILURE);
 							return EXIT_FAILURE;
 						}
 						iterations = atoi(argv[++i]);
@@ -141,7 +136,6 @@ int top_main(int argc, char *argv[]) {
 						if(i + 1 >= argc) {
 							fprintf(stderr, "Option -d expects an argument.\n");
 							usage(argv[0]);
-							//exit(EXIT_FAILURE);
 							return EXIT_FAILURE;
 						}
 						delay = atoi(argv[++i]);
@@ -150,7 +144,6 @@ int top_main(int argc, char *argv[]) {
 						if(i + 1 >= argc) {
 							fprintf(stderr, "Option -s expects an argument.\n");
 							usage(argv[0]);
-							//exit(EXIT_FAILURE);
 							return EXIT_FAILURE;
 						}
 						i++;
@@ -160,7 +153,6 @@ int top_main(int argc, char *argv[]) {
 						else if(strcmp(argv[i], "thr") == 0) { proc_cmp = &proc_thr_cmp; }
 						else {
 							fprintf(stderr, "Invalid argument \"%s\" for option -s.\n", argv[i]);
-							//exit(EXIT_FAILURE);
 							return EXIT_FAILURE;
 						}
 						break;
@@ -169,7 +161,6 @@ int top_main(int argc, char *argv[]) {
 						break;
 					case 'h':
 						usage(argv[0]);
-						//exit(EXIT_SUCCESS);
 						return EXIT_SUCCESS;
 						break;
 					case '-':
@@ -187,7 +178,6 @@ int top_main(int argc, char *argv[]) {
 
 	if(threads && proc_cmp == &proc_thr_cmp) {
 		fprintf(stderr, "Sorting by threads per thread makes no sense!\n");
-		//exit(EXIT_FAILURE);
 		return EXIT_FAILURE;
 	}
 
@@ -340,7 +330,6 @@ static void read_procs(void) {
 static int read_stat(char *filename, struct proc_info *proc) {
 	FILE *file;
 	char buf[MAX_LINE], *open_paren, *close_paren;
-	//int res, idx;
 
 	file = fopen(filename, "r");
 	if(!file) return -1;

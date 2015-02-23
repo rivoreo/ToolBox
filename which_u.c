@@ -13,6 +13,12 @@
 #include <stdio.h>
 #include <limits.h>
 
+#if defined WIN32 && !defined _WIN32_WCE && !defined _WIN32_WNT_NATIVE
+#define PATHS_SEPARATOR ';'
+#else
+#define PATHS_SEPARATOR ':'
+#endif
+
 static void print_usage(const char *name) {
 	fprintf(stderr, "Usage: %s [-a|-s] <name>\n", name);
 }
@@ -26,14 +32,14 @@ static int which(const char *path, const char *filename, char *rpath) {
 		//char *p = current_path;
 		struct stat st;
 		int j = 0;
-		while(path[i] != ':') {
+		while(path[i] != PATHS_SEPARATOR) {
 			if(!path[i]) {
 				i = 0;
 				break;
 			}
 			if(j > PATH_MAX) {
 				j = 0;
-				while(path[++i] != ':') if(!path[i]) return -1;
+				while(path[++i] != PATHS_SEPARATOR) if(!path[i]) return -1;
 				i++;
 			}
 			//*p++ = path[i++];
