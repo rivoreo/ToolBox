@@ -110,6 +110,7 @@ ALL_TOOLS := \
 	schedtop_u.o \
 	sleep_u.o \
 	sync_u.o \
+	tee_u.o \
 	top_u.o \
 	touch_u.o \
 	uptime_u.o \
@@ -255,6 +256,7 @@ BASE_TOOLS := \
 	rm$(SUFFIX) \
 	rmdir$(SUFFIX) \
 	sleep$(SUFFIX) \
+	tee$(SUFFIX) \
 	touch$(SUFFIX) \
 	unlink$(SUFFIX) \
 	uptime$(SUFFIX) \
@@ -291,6 +293,7 @@ TRAN_SRC = \
 	nohup.c \
 	notify.c \
 	ps.c \
+	tee.c \
 	top.c \
 	readtty.c \
 	reboot.c \
@@ -454,6 +457,9 @@ setsebool:	setsebool.c
 
 sleep.exe:	sleep.c
 	$(CC) $(CFLAGS) $(LDFLAGS) sleep.c -o sleep.exe $(LIBS)
+
+tee.exe:	tee.c
+	$(CC) $(CFLAGS) $(LDFLAGS) tee.c -o $@ $(LIBS)
 
 touch.exe:	touch.c
 	$(CC) $(CFLAGS) $(LDFLAGS) touch.c -o touch.exe $(LIBS)

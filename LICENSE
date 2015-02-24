@@ -66,6 +66,7 @@ Files
 	swapoff_u.c,
 	swapon_u.c,
 	sync_u.c,
+	tee_u.c,
 	timefunc.h,
 	toolbox.c,
 	touch_u.c,
