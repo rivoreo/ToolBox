@@ -62,6 +62,7 @@ void print_prio(pid_t pid) {
 int renice_main(int argc, char *argv[]) {
 	int prio;
 	int realtime = 0;
+	int r = 0;
 
 	while(1) {
 		int c = getopt(argc, argv, "rg:h");
@@ -100,15 +101,17 @@ int renice_main(int argc, char *argv[]) {
 			struct sched_param sp = { .sched_priority = prio };
 			if(sched_setscheduler(pid, SCHED_RR, &sp) < 0) {
 				perror("sched_set_scheduler");
-				return EXIT_FAILURE;
+				//return EXIT_FAILURE;
+				r++;
 			}
 		} else {
 			if(setpriority(PRIO_PROCESS, pid, prio) < 0) {
 				perror("setpriority");
-				return EXIT_FAILURE;
+				//return EXIT_FAILURE;
+				r++;
 			}
 		}
 	}
 
-	return 0;
+	return r;
 }
