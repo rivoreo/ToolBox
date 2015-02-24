@@ -129,3 +129,4 @@ TOOL(uptime)
 #if !defined __APPLE__ && !defined _WIN32_WNT_NATIVE
 TOOL(vmstat)
 #endif
+TOOL(which)

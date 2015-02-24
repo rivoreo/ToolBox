@@ -11,6 +11,10 @@
 #include <string.h>
 #include <errno.h>
 
+#ifndef HOST_NAME_MAX
+#define HOST_NAME_MAX _POSIX_HOST_NAME_MAX
+#endif
+
 static void print_usage(const char *name) {
 	fprintf(stderr, "Usage:\n"
 		"	%s [-f|-s]\n"
