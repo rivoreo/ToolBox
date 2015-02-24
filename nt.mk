@@ -25,6 +25,7 @@ TOOLS_OBJS = \
 	reboot_u.o \
 	rmdir_u.o \
 	sleep_u.o \
+	tee_u.o \
 	touch_u.o \
 	uptime_u.o \
 	which_u.o
@@ -50,6 +51,7 @@ TOOLS = \
 	reboot \
 	rmdir \
 	sleep \
+	tee \
 	touch \
 	unlink \
 	uptime \

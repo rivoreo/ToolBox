@@ -122,6 +122,9 @@ TOOL(swapon)
 #endif
 #ifndef _WIN32_WNT_NATIVE
 TOOL(sync)
+#endif
+TOOL(tee)
+#ifndef _WIN32_WNT_NATIVE
 TOOL(top)
 #endif
 TOOL(touch)
