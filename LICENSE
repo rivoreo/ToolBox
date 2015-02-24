@@ -19,6 +19,7 @@ Files
 	getenforce_u.c,
 	getevent_u.c,
 	hd_u.c,
+	hostname_u.c,
 	id_u.c,
 	ifconfig*,
 	include/*,

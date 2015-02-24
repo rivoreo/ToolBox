@@ -33,6 +33,7 @@ TOOL(getevent)
 #endif
 TOOL(hd)
 #ifndef _WIN32_WNT_NATIVE
+TOOL(hostname)
 TOOL(id)
 TOOL(ifconfig)
 TOOL(iftop)

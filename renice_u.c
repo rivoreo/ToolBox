@@ -20,6 +20,7 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sched.h>
+#include <ctype.h>
 
 static void usage(const char *s) {
 	fprintf(stderr, "Usage: %s { [-r] <priority> <pids ...> | -g <pid> }\n", s);
@@ -34,6 +35,9 @@ void print_prio(pid_t pid) {
 	printf("scheduling class: ");
 	sched = sched_getscheduler(pid);
 	switch(sched) {
+		case -1:
+			perror("sched_getscheduler");
+			break;
 		case SCHED_FIFO:
 			puts("FIFO");
 			break;
@@ -43,14 +47,14 @@ void print_prio(pid_t pid) {
 		case SCHED_OTHER:
 			puts("Normal");
 			break;
-		case -1:
-			perror("sched_getscheduler");
-			break;
 		default:
 			puts("Unknown");
 	}
 
-	sched_getparam(pid, &sp);
+	if(sched_getparam(pid, &sp) < 0) {
+		perror("sched_getparam");
+		return;
+	}
 	printf("RT prio: %d (of %d to %d)\n", sp.sched_priority,
 		sched_get_priority_min(sched), sched_get_priority_max(sched));
 }
@@ -59,31 +63,6 @@ int renice_main(int argc, char *argv[]) {
 	int prio;
 	int realtime = 0;
 
-#if 0
-	argc--;
-	argv++;
-
-	if(argc < 1) {
-		usage(name);
-		return -1;
-	}
-
-	if(strcmp("-r", argv[0]) == 0) {
-		// do realtime priority adjustment
-		realtime = 1;
-		argc--;
-		argv++;
-	}
-
-	if(strcmp("-g", argv[0]) == 0) {
-		if(argc < 2) {
-			usage(name);
-			return -1;
-		}
-		print_prio(atoi(argv[1]));
-		return 0;
-	}
-#else
 	while(1) {
 		int c = getopt(argc, argv, "rg:h");
 		if(c == -1) break;
@@ -92,6 +71,10 @@ int renice_main(int argc, char *argv[]) {
 				realtime = 1;
 				break;
 			case 'g':
+				if(!isdigit(*optarg)) {
+					fprintf(stderr, "%s: Invalid pid '%s'\n", argv[0], optarg);
+					return -2;
+				}
 				print_prio(atoi(optarg));
 				return 0;
 			case 'h':
@@ -101,7 +84,6 @@ int renice_main(int argc, char *argv[]) {
 				return -1;
 		}
 	}
-#endif
 	//fprintf(stderr, "argc = %d, optind = %d\n", argc, optind);
 	if(argc < optind + 2) {
 		usage(argv[0]);
@@ -109,26 +91,19 @@ int renice_main(int argc, char *argv[]) {
 	}
 
 	prio = atoi(argv[optind++]);
-	argc -= optind;
+	//argc -= optind;
 	argv += optind;
 
-	while(argc) {
-		pid_t pid;
-
-		pid = atoi(*argv);
-		argc--;
-		argv++;
-
+	while(*argv) {
+		pid_t pid = atoi(*argv++);
 		if(realtime) {
 			struct sched_param sp = { .sched_priority = prio };
-			int ret = sched_setscheduler(pid, SCHED_RR, &sp);
-			if(ret) {
+			if(sched_setscheduler(pid, SCHED_RR, &sp) < 0) {
 				perror("sched_set_scheduler");
 				return EXIT_FAILURE;
 			}
 		} else {
-			int ret = setpriority(PRIO_PROCESS, pid, prio);
-			if(ret) {
+			if(setpriority(PRIO_PROCESS, pid, prio) < 0) {
 				perror("setpriority");
 				return EXIT_FAILURE;
 			}

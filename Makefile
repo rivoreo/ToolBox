@@ -80,6 +80,7 @@ ALL_TOOLS := \
 	du_u.o \
 	exists_u.o \
 	hd_u.o \
+	hostname_u.o \
 	id_u.o \
 	ifconfig_u.o \
 	iftop_u.o \
@@ -239,6 +240,7 @@ BASE_TOOLS := \
 	df$(SUFFIX) \
 	exists$(SUFFIX) \
 	hd$(SUFFIX) \
+	hostname$(SUFFIX) \
 	ioctl$(SUFFIX) \
 	link$(SUFFIX) \
 	ls$(SUFFIX) \
@@ -270,6 +272,7 @@ TRAN_SRC = \
 	getenforce.c \
 	getevent.c \
 	hd.c \
+	hostname.c \
 	id.c \
 	insmod.c \
 	ioctl.c \
@@ -388,6 +391,9 @@ getenforce:	getenforce.c
 
 hd.exe:	hd.c
 	$(CC) $(CFLAGS) $(LDFLAGS) hd.c -o hd.exe $(LIBS)
+
+hostname.exe:	hostname.c
+	$(CC) $(CFLAGS) $(LDFLAGS) hostname.c -o $@ $(LIBS)
 
 ioctl.exe:	ioctl.c
 	$(CC) $(CFLAGS) $(LDFLAGS) ioctl.c -o $@ $(LIBS)
