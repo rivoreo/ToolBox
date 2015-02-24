@@ -35,26 +35,30 @@ static mode_t str2mode(const char *s) {
 int mknod_main(int argc, char **argv) {
 	int i = 1;
 	mode_t mode = 0777;
+	int set_mode(const char *s) {
+		mode = str2mode(s);
+		if(mode == (mode_t)-1) return -1;
+		umask(0);
+		int j;
+		argc -= 2;
+		for(j=i; j<argc+1; j++) argv[j] = argv[j + 2];
+		return 0;
+	}
 first_loop:
 	while(i < argc) {
 		if(argv[i][0] == '-') {
 			const char *o = argv[i] + 1;
 			while(*o) switch(*o++) {
-				set_mode:
 				case 'm': {
 					const char *m = argv[i + 1];
 					if(!m) {
 						fprintf(stderr, "%s: Option '-m' requires an argument\n", argv[0]);
 						return -2;
 					}
-					mode = str2mode(m);
-					if(mode == (mode_t)-1) {
+					if(set_mode(m) < 0) {
 						fprintf(stderr, "%s: Bad mode\n", argv[0]);
 						return -2;
 					}
-					int j;
-					argc -= 2;
-					for(j=i; j<argc+1; j++) argv[j] = argv[j + 2];
 					goto first_loop;
 				}
 				case 'h':
@@ -62,8 +66,18 @@ first_loop:
 					return 0;
 				case '-':
 					if(*o) {
-						if(strcmp(o, "mode") == 0) goto set_mode;
-						else if(strcmp(o, "help") == 0) {
+						if(strcmp(o, "mode") == 0) {
+							const char *m = argv[i + 1];
+							if(!m) {
+								fprintf(stderr, "%s: Option '--mode' requires an argument\n", argv[0]);
+								return -2;
+							}
+							if(set_mode(m) < 0) {
+								fprintf(stderr, "%s: Bad mode\n", argv[0]);
+								return -2;
+							}
+							goto first_loop;
+						} else if(strcmp(o, "help") == 0) {
 							print_usage(argv[0]);
 							return 0;
 						}

@@ -1,7 +1,4 @@
 /*
- * 工具箱中的某工具
- * 版权所有 2007-2015 PC GO Ld.
- *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -164,7 +161,11 @@ int top_main(int argc, char *argv[]) {
 						return EXIT_SUCCESS;
 						break;
 					case '-':
-						if(!arg[1]) end_of_options = 1;
+						if(!arg[1]) {
+							end_of_options = 1;
+							break;
+						}
+						// Full
 					default:
 						fprintf(stderr, "Invalid argument \"%s\".\n", argv[i]);
 						usage(argv[0]);
