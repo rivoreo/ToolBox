@@ -22,7 +22,7 @@
 #include <sched.h>
 
 static void usage(const char *s) {
-	fprintf(stderr, "Usage: %s [[-r] <priority pids ...>] [-g <pid>]\n", s);
+	fprintf(stderr, "Usage: %s { [-r] <priority> <pids ...> | -g <pid> }\n", s);
 }
 
 void print_prio(pid_t pid) {
@@ -58,9 +58,8 @@ void print_prio(pid_t pid) {
 int renice_main(int argc, char *argv[]) {
 	int prio;
 	int realtime = 0;
-	char *name = argv[0];
 
-	// consume command name
+#if 0
 	argc--;
 	argv++;
 
@@ -84,25 +83,39 @@ int renice_main(int argc, char *argv[]) {
 		print_prio(atoi(argv[1]));
 		return 0;
 	}
-
-	if(argc < 1) {
-		usage(name);
+#else
+	while(1) {
+		int c = getopt(argc, argv, "rg:h");
+		if(c == -1) break;
+		switch(c) {
+			case 'r':
+				realtime = 1;
+				break;
+			case 'g':
+				print_prio(atoi(optarg));
+				return 0;
+			case 'h':
+				usage(argv[0]);
+				return 0;
+			case '?':
+				return -1;
+		}
+	}
+#endif
+	//fprintf(stderr, "argc = %d, optind = %d\n", argc, optind);
+	if(argc < optind + 2) {
+		usage(argv[0]);
 		return -1;
 	}
 
-	prio = atoi(argv[0]);
-	argc--;
-	argv++;
-
-	if(argc < 1) {
-		usage(name);
-		return -1;
-	}
+	prio = atoi(argv[optind++]);
+	argc -= optind;
+	argv += optind;
 
 	while(argc) {
 		pid_t pid;
 
-		pid = atoi(argv[0]);
+		pid = atoi(*argv);
 		argc--;
 		argv++;
 
