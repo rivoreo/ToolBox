@@ -22,10 +22,10 @@ TOOLS_OBJS = \
 	modexeb_u.o \
 	mv_u.o \
 	printenv_u.o \
+	readlink_u.o \
 	reboot_u.o \
 	rmdir_u.o \
 	sleep_u.o \
-	tee_u.o \
 	touch_u.o \
 	uptime_u.o \
 	which_u.o
@@ -48,10 +48,10 @@ TOOLS = \
 	modexeb \
 	mv \
 	printenv \
+	readlink \
 	reboot \
 	rmdir \
 	sleep \
-	tee \
 	touch \
 	unlink \
 	uptime \

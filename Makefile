@@ -103,6 +103,7 @@ ALL_TOOLS := \
 	nohup_u.o \
 	ps_u.o \
 	r_u.o \
+	readlink_u.o \
 	readtty_u.o \
 	reboot_u.o \
 	rm_u.o \
@@ -111,7 +112,6 @@ ALL_TOOLS := \
 	sleep_u.o \
 	sync_u.o \
 	tee_u.o \
-	top_u.o \
 	touch_u.o \
 	uptime_u.o \
 	which_u.o
@@ -149,10 +149,10 @@ EXTRA_TOOLS := \
 	netstat \
 	ps \
 	r \
+	readlink \
 	readtty \
 	schedtop \
-	sync \
-	top
+	sync
 
 ifdef DARWIN
 NO_SELINUX = 1
@@ -167,10 +167,12 @@ ALL_TOOLS += \
 	dmesg_u.o \
 	printenv_u.o \
 	renice_u.o \
+	top_u.o \
 	vmstat_u.o
 EXTRA_TOOLS += \
 	dmesg \
 	renice \
+	top \
 	vmstat
 TIMELIB = -lrt
 ifdef GNU

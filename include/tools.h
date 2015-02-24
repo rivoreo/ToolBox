@@ -80,6 +80,9 @@ TOOL(printenv)
 #ifndef _WIN32_WNT_NATIVE
 TOOL(ps)
 TOOL(r)
+#endif
+TOOL(readlink)
+#ifndef _WIN32_WNT_NATIVE
 TOOL(readtty)
 #endif
 TOOL(reboot)
@@ -124,7 +127,7 @@ TOOL(swapon)
 TOOL(sync)
 #endif
 TOOL(tee)
-#ifndef _WIN32_WNT_NATIVE
+#if !defined _WIN32_WNT_NATIVE && !defined __APPLE__
 TOOL(top)
 #endif
 TOOL(touch)
