@@ -73,8 +73,10 @@ static int max_procs, delay, iterations, threads;
 
 static struct cpu_info old_cpu, new_cpu;
 
+#ifndef _WIN32
 /* windows size struct */
 static struct winsize *sz;
+#endif
 
 static struct proc_info *alloc_proc(void);
 static void free_proc(struct proc_info *proc);
@@ -108,6 +110,7 @@ int top_main(int argc, char *argv[]) {
 
 	end_of_options = 0;
 
+#ifndef _WIN32
 	/* Test windows size */
 	sz=(struct winsize*)malloc(sizeof(struct winsize));
 	memset(sz,0x00,sizeof(struct winsize));
@@ -116,6 +119,7 @@ int top_main(int argc, char *argv[]) {
 		return ENOSYS;
 	}
 	fprintf(stdout, "Screen width: %i  Screen height: %i\n", sz->ws_col, sz->ws_row);
+#endif
 
 	for (i = 1; i < argc; i++) {
 		/* Is an Option? */
