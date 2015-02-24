@@ -87,9 +87,7 @@ TOOL(readtty)
 #endif
 TOOL(reboot)
 #ifndef _WIN32_WNT_NATIVE
-#ifndef __APPLE__
 TOOL(renice)
-#endif
 #ifndef _NO_SELINUX
 TOOL(restorecon)
 #endif

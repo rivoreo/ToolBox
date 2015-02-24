@@ -23,9 +23,14 @@
 #include <ctype.h>
 
 static void usage(const char *s) {
-	fprintf(stderr, "Usage: %s { [-r] <priority> <pids ...> | -g <pid> }\n", s);
+#ifdef __APPLE__
+	fprintf(stderr, "Usage: %s <pid> [...]\n", s);
+#else
+	fprintf(stderr, "Usage: %s { [-r] <priority> <pid> [...] | -g <pid> }\n", s);
+#endif
 }
 
+#ifndef __APPLE__
 void print_prio(pid_t pid) {
 	int sched;
 	struct sched_param sp;
@@ -58,12 +63,13 @@ void print_prio(pid_t pid) {
 	printf("RT prio: %d (of %d to %d)\n", sp.sched_priority,
 		sched_get_priority_min(sched), sched_get_priority_max(sched));
 }
+#endif
 
 int renice_main(int argc, char *argv[]) {
 	int prio;
-	int realtime = 0;
 	int r = 0;
-
+#ifndef __APPLE__
+	int realtime = 0;
 	while(1) {
 		int c = getopt(argc, argv, "rg:h");
 		if(c == -1) break;
@@ -85,6 +91,7 @@ int renice_main(int argc, char *argv[]) {
 				return -1;
 		}
 	}
+#endif
 	//fprintf(stderr, "argc = %d, optind = %d\n", argc, optind);
 	if(argc < optind + 2) {
 		usage(argv[0]);
@@ -97,6 +104,7 @@ int renice_main(int argc, char *argv[]) {
 
 	while(*argv) {
 		pid_t pid = atoi(*argv++);
+#ifndef __APPLE__
 		if(realtime) {
 			struct sched_param sp = { .sched_priority = prio };
 			if(sched_setscheduler(pid, SCHED_RR, &sp) < 0) {
@@ -105,12 +113,15 @@ int renice_main(int argc, char *argv[]) {
 				r++;
 			}
 		} else {
+#endif
 			if(setpriority(PRIO_PROCESS, pid, prio) < 0) {
 				perror("setpriority");
 				//return EXIT_FAILURE;
 				r++;
 			}
+#ifndef __APPLE__
 		}
+#endif
 	}
 
 	return r;

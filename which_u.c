@@ -23,7 +23,7 @@ static void print_usage(const char *name) {
 	fprintf(stderr, "Usage: %s [-a|-s] <name>\n", name);
 }
 
-static int which(const char *path, const char *filename, char *rpath) {
+int which(const char *path, const char *filename, char *rpath) {
 	//fprintf(stderr, "function: which(%p<%s>, %p<%s>, %p)\n", path, path, filename, filename, rpath);
 	char current_path[PATH_MAX + 1];
 	int i = 0;

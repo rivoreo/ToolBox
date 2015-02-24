@@ -106,6 +106,7 @@ ALL_TOOLS := \
 	readlink_u.o \
 	readtty_u.o \
 	reboot_u.o \
+	renice_u.o \
 	rm_u.o \
 	rmdir_u.o \
 	schedtop_u.o \
@@ -151,6 +152,7 @@ EXTRA_TOOLS := \
 	r \
 	readlink \
 	readtty \
+	renice \
 	schedtop \
 	sync
 
@@ -166,12 +168,10 @@ else
 ALL_TOOLS += \
 	dmesg_u.o \
 	printenv_u.o \
-	renice_u.o \
 	top_u.o \
 	vmstat_u.o
 EXTRA_TOOLS += \
 	dmesg \
-	renice \
 	top \
 	vmstat
 TIMELIB = -lrt

@@ -23,7 +23,7 @@ int readlink_main(int argc, char **argv) {
 	int i = 0;
 	void move_argv() {
 		int j;
-		for(j=0; j<i; j++) argv[j + 1] = argv[j];
+		for(j=i; j>0; j--) argv[j] = argv[j - 1];
 		argc--;
 		argv++;
 	}
@@ -85,8 +85,10 @@ options_parse_end:
 			return 1;
 		}
 		buffer[len] = 0;
-		if(no_newline) printf("%s", buffer);
-		else puts(buffer);
+		if(!quiet) {
+			if(no_newline) printf("%s", buffer);
+			else puts(buffer);
+		}
 	}
 
 	return r;
