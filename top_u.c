@@ -15,12 +15,14 @@
 
 #include <ctype.h>
 #include <dirent.h>
+#include <errno.h>
 #include <grp.h>
 #include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+#include <sys/ioctl.h>
 #include <unistd.h>
 
 struct cpu_info {
@@ -71,6 +73,9 @@ static int max_procs, delay, iterations, threads;
 
 static struct cpu_info old_cpu, new_cpu;
 
+/* windows size struct */
+static struct winsize *sz;
+
 static struct proc_info *alloc_proc(void);
 static void free_proc(struct proc_info *proc);
 static void read_procs(void);
@@ -89,6 +94,7 @@ static int proc_thr_cmp(const void *, const void *);
 static int numcmp(long long, long long);
 static void usage(const char *);
 
+
 int top_main(int argc, char *argv[]) {
 	int i;
 	int end_of_options;
@@ -101,6 +107,16 @@ int top_main(int argc, char *argv[]) {
 	proc_cmp = &proc_cpu_cmp;
 
 	end_of_options = 0;
+
+	/* Test windows size */
+	sz=(struct winsize*)malloc(sizeof(struct winsize));
+	memset(sz,0x00,sizeof(struct winsize));
+	if(ioctl(0,TIOCGWINSZ,sz) == -1) {
+		perror("Could not get Terminal window size");
+		return ENOSYS;
+	}
+	fprintf(stdout, "Screen width: %i  Screen height: %i\n", sz->ws_col, sz->ws_row);
+
 	for (i = 1; i < argc; i++) {
 		/* Is an Option? */
 		if(!end_of_options && argv[i][0] == '-') {
