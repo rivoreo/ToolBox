@@ -33,6 +33,7 @@ static char *get_name_from_file(const char *filename) {
 			return NULL;
 		}
 		buffer[s] = 0;
+		/* support note */
 		if(*p == '#') {
 			while(*++p != '\n') if(!*p) {
 				close(fd);
@@ -46,6 +47,7 @@ static char *get_name_from_file(const char *filename) {
 		}
 		char *pp = p;
 		while(*pp) {
+			/* End of the hostname */
 			if(*pp == '\n') {
 				*pp = 0;
 				break;
@@ -80,11 +82,13 @@ int hostname_main(int argc, char **argv) {
 				return -1;
 		}
 	}
+	/* If user input excess argument */
 	if(argc > optind + !filename) {
 		print_usage(argv[0]);
 		return -1;
 	}
 
+	/* Get user input hostname */
 	const char *hostname = argv[optind];
 	if(!hostname) {
 		if(filename) {
