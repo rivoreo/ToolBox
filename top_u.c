@@ -110,16 +110,6 @@ int top_main(int argc, char *argv[]) {
 
 	end_of_options = 0;
 
-#ifndef _WIN32
-	/* Test windows size */
-	sz=(struct winsize*)malloc(sizeof(struct winsize));
-	memset(sz,0x00,sizeof(struct winsize));
-	if(ioctl(0,TIOCGWINSZ,sz) == -1) {
-		perror("Could not get Terminal window size");
-		return ENOSYS;
-	}
-	fprintf(stdout, "Screen width: %i  Screen height: %i\n", sz->ws_col, sz->ws_row);
-#endif
 
 	for (i = 1; i < argc; i++) {
 		/* Is an Option? */
@@ -435,8 +425,20 @@ static void print_procs(void) {
 	long unsigned total_delta_time;
 	struct passwd *user;
 	//struct group *group;
-	char *user_str, user_buf[20];
+	char *user_str, user_buf[20], buf[4096], winsz[64];
 	//char *group_str, group_buf[20];
+
+
+#ifndef _WIN32
+	/* Test windows size */
+	sz=(struct winsize*)malloc(sizeof(struct winsize));
+	memset(sz,0x00,sizeof(struct winsize));
+	if(ioctl(0,TIOCGWINSZ,sz) == -1) {
+		perror("Could not get Terminal window size");
+		return ENOSYS;
+	}
+	fprintf(stdout, "Screen width: %i  Screen height: %i\n", sz->ws_col, sz->ws_row);
+#endif
 
 	for (i = 0; i < num_new_procs; i++) {
 		if (new_procs[i]) {
@@ -460,13 +462,14 @@ static void print_procs(void) {
 	qsort(new_procs, num_new_procs, sizeof(struct proc_info *), proc_cmp);
 
 	printf("\n\n\n");
-	printf("User %ld%%, System %ld%%, IOW %ld%%, IRQ %ld%%\n",
+	snprintf(buf, sizeof(buf), "User %ld%%, System %ld%%, IOW %ld%%, IRQ %ld%%",
 			((new_cpu.utime + new_cpu.ntime) - (old_cpu.utime + old_cpu.ntime)) * 100  / total_delta_time,
 			((new_cpu.stime ) - (old_cpu.stime)) * 100 / total_delta_time,
 			((new_cpu.iowtime) - (old_cpu.iowtime)) * 100 / total_delta_time,
 			((new_cpu.irqtime + new_cpu.sirqtime)
 			 - (old_cpu.irqtime + old_cpu.sirqtime)) * 100 / total_delta_time);
-	printf("User %ld + Nice %ld + Sys %ld + Idle %ld + IOW %ld + IRQ %ld + SIRQ %ld = %ld\n",
+	printf("%-*.*s\n", sz->ws_col, sz->ws_col, buf);
+	snprintf(buf, sizeof(buf), "User %ld + Nice %ld + Sys %ld + Idle %ld + IOW %ld + IRQ %ld + SIRQ %ld = %ld",
 			new_cpu.utime - old_cpu.utime,
 			new_cpu.ntime - old_cpu.ntime,
 			new_cpu.stime - old_cpu.stime,
@@ -475,11 +478,14 @@ static void print_procs(void) {
 			new_cpu.irqtime - old_cpu.irqtime,
 			new_cpu.sirqtime - old_cpu.sirqtime,
 			total_delta_time);
+	printf("%-*.*s\n", sz->ws_col, sz->ws_col, buf);
 	putchar('\n');
 	if(!threads) {
-		printf("%5s %2s %4s %1s %5s %7s %7s %3s %-8s %s\n", "PID", "PR", "CPU%", "S", "#THR", "VSS", "RSS", "PCY", "UID", "Name");
+		snprintf(buf, sizeof(buf), "%5s %2s %4s %1s %5s %7s %7s %3s %-8s %s", "PID", "PR", "CPU%", "S", "#THR", "VSS", "RSS", "PCY", "UID", "Name");
+	printf("%-*.*s\n", sz->ws_col, sz->ws_col, buf);
 	} else {
-		printf("%5s %5s %2s %4s %1s %7s %7s %3s %-8s %-15s %s\n", "PID", "TID", "PR", "CPU%", "S", "VSS", "RSS", "PCY", "UID", "Thread", "Proc");
+		snprintf(buf, sizeof(buf), "%5s %5s %2s %4s %1s %7s %7s %3s %-8s %-15s %s", "PID", "TID", "PR", "CPU%", "S", "VSS", "RSS", "PCY", "UID", "Thread", "Proc");
+	printf("%-*.*s\n", sz->ws_col, sz->ws_col, buf);
 	}
 
 	for(i = 0; i < num_new_procs; i++) {
@@ -502,11 +508,13 @@ static void print_procs(void) {
 		   group_str = group_buf;
 		   }*/
 		if(!threads) {
-			printf("%5d %2d %3ld%% %c %5d %6ldK %6ldK %3s %-8.8s %s\n", proc->pid, proc->prs, proc->delta_time * 100 / total_delta_time, proc->state, proc->num_threads,
+			snprintf(buf, sizeof(buf), "%5d %2d %3ld%% %c %5d %6ldK %6ldK %3s %-8.8s %s", proc->pid, proc->prs, proc->delta_time * 100 / total_delta_time, proc->state, proc->num_threads,
 					proc->vss / 1024, proc->rss * getpagesize() / 1024, proc->policy, user_str, proc->name[0] != 0 ? proc->name : proc->tname);
+	printf("%-*.*s\n", sz->ws_col, sz->ws_col, buf);
 		} else {
-			printf("%5d %5d %2d %3ld%% %c %6ldK %6ldK %3s %-8.8s %-15s %s\n", proc->pid, proc->tid, proc->prs, proc->delta_time * 100 / total_delta_time, proc->state,
+			snprintf(buf, sizeof(buf), "%5d %5d %2d %3ld%% %c %6ldK %6ldK %3s %-8.8s %-15s %s", proc->pid, proc->tid, proc->prs, proc->delta_time * 100 / total_delta_time, proc->state,
 					proc->vss / 1024, proc->rss * getpagesize() / 1024, proc->policy, user_str, proc->tname, proc->name);
+	printf("%-*.*s\n", sz->ws_col, sz->ws_col, buf);
 		}
 	}
 }
