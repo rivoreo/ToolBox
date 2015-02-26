@@ -149,7 +149,7 @@ static void cook_args(char **argv) {
 		}
 		cook_buf(fp);
 		if(fp != stdin) fclose(fp);
-	} while (*argv);
+	} while(*argv);
 }
 
 static void raw_cat(int rfd) {

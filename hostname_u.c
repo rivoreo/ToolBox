@@ -17,13 +17,24 @@
 #include <windows.h>
 #include <winsock2.h>
 #define HOST_NAME_MAX 16
-#ifndef _WIN32_WCE
 static int _sethostname(const char *name, size_t len) {
 	if(len > HOST_NAME_MAX) {
 		//errno = EINVAL;
 		errno = ENAMETOOLONG;
 		return -1;
 	}
+#ifdef _WIN32_WCE
+	size_t name_len = strlen(name);
+	if(!name_len) {
+		errno = EINVAL;
+		return -1;
+	}
+	if(len > name_len) len = name_len;
+	char buffer[len + 1];
+	memcpy(buffer, name, len);
+	buffer[len] = 0;
+	return sethostname(buffer, len + 1);
+#else
 #if 0
 	char buffer[len + 1];
 	memcpy(buffer, name, len)[len] = 0;
@@ -38,9 +49,9 @@ static int _sethostname(const char *name, size_t len) {
 	buffer[wlen] = 0;
 	return SetComputerNameW(buffer) ? 0 : -1;
 #endif
+#endif
 }
 #define sethostname _sethostname
-#endif
 #else
 #ifndef HOST_NAME_MAX
 #define HOST_NAME_MAX _POSIX_HOST_NAME_MAX
@@ -136,6 +147,10 @@ int hostname_main(int argc, char **argv) {
 			}
 		} else {
 			char hostname[HOST_NAME_MAX+1];
+#if defined _WIN32 && !defined _WIN32_WCE
+			WSADATA d;
+			WSAStartup(MAKEWORD(2, 2), &d);
+#endif
 			if(!gethostname(hostname, sizeof hostname) < 0) {
 				perror("gethostname");
 				return 1;

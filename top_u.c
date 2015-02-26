@@ -32,7 +32,7 @@ struct cpu_info {
 
 #define PROC_NAME_LEN 64
 #define THREAD_NAME_LEN 32
-#define POLICY_NAME_LEN 4
+//#define POLICY_NAME_LEN 4
 
 struct proc_info {
 	struct proc_info *next;
@@ -52,7 +52,7 @@ struct proc_info {
 	long rss;
 	int prs;
 	int num_threads;
-	char policy[POLICY_NAME_LEN];
+	//char policy[POLICY_NAME_LEN];
 };
 
 struct proc_list {
@@ -392,16 +392,6 @@ static int read_cmdline(char *filename, struct proc_info *proc) {
 	fclose(file);
 	return 0;
 }
-/*
-   static void read_policy(int pid, struct proc_info *proc) {
-   SchedPolicy p;
-   if (get_sched_policy(pid, &p) < 0)
-   strlcpy(proc->policy, "unk", POLICY_NAME_LEN);
-   else {
-   strlcpy(proc->policy, get_sched_policy_name(p), POLICY_NAME_LEN);
-   proc->policy[2] = '\0';
-   }
-   }*/
 
 static int read_status(char *filename, struct proc_info *proc) {
 	FILE *file;
@@ -435,7 +425,7 @@ static void print_procs(void) {
 	memset(sz,0x00,sizeof(struct winsize));
 	if(ioctl(0,TIOCGWINSZ,sz) == -1) {
 		perror("Could not get Terminal window size");
-		return ENOSYS;
+		return;
 	}
 	fprintf(stdout, "Screen width: %i  Screen height: %i\n", sz->ws_col, sz->ws_row);
 #endif
@@ -481,11 +471,11 @@ static void print_procs(void) {
 	printf("%-*.*s\n", sz->ws_col, sz->ws_col, buf);
 	putchar('\n');
 	if(!threads) {
-		snprintf(buf, sizeof(buf), "%5s %2s %4s %1s %5s %7s %7s %3s %-8s %s", "PID", "PR", "CPU%", "S", "#THR", "VSS", "RSS", "PCY", "UID", "Name");
-	printf("%-*.*s\n", sz->ws_col, sz->ws_col, buf);
+		snprintf(buf, sizeof(buf), "%5s %2s %4s %1s %5s %7s %7s %-8s %s", "PID", "PR", "CPU%", "S", "#THR", "VSS", "RSS", "UID", "Name");
+		printf("%-*.*s\n", sz->ws_col, sz->ws_col, buf);
 	} else {
-		snprintf(buf, sizeof(buf), "%5s %5s %2s %4s %1s %7s %7s %3s %-8s %-15s %s", "PID", "TID", "PR", "CPU%", "S", "VSS", "RSS", "PCY", "UID", "Thread", "Proc");
-	printf("%-*.*s\n", sz->ws_col, sz->ws_col, buf);
+		snprintf(buf, sizeof(buf), "%5s %5s %2s %4s %1s %7s %7s %-8s %-15s %s", "PID", "TID", "PR", "CPU%", "S", "VSS", "RSS", "UID", "Thread", "Proc");
+		printf("%-*.*s\n", sz->ws_col, sz->ws_col, buf);
 	}
 
 	for(i = 0; i < num_new_procs; i++) {
@@ -508,12 +498,12 @@ static void print_procs(void) {
 		   group_str = group_buf;
 		   }*/
 		if(!threads) {
-			snprintf(buf, sizeof(buf), "%5d %2d %3ld%% %c %5d %6ldK %6ldK %3s %-8.8s %s", proc->pid, proc->prs, proc->delta_time * 100 / total_delta_time, proc->state, proc->num_threads,
-					proc->vss / 1024, proc->rss * getpagesize() / 1024, proc->policy, user_str, proc->name[0] != 0 ? proc->name : proc->tname);
+			snprintf(buf, sizeof(buf), "%5d %2d %3ld%% %c %5d %6ldK %6ldK %-8.8s %s", proc->pid, proc->prs, proc->delta_time * 100 / total_delta_time, proc->state, proc->num_threads,
+				proc->vss / 1024, proc->rss * getpagesize() / 1024, user_str, *proc->name ? proc->name : proc->tname);
 	printf("%-*.*s\n", sz->ws_col, sz->ws_col, buf);
 		} else {
-			snprintf(buf, sizeof(buf), "%5d %5d %2d %3ld%% %c %6ldK %6ldK %3s %-8.8s %-15s %s", proc->pid, proc->tid, proc->prs, proc->delta_time * 100 / total_delta_time, proc->state,
-					proc->vss / 1024, proc->rss * getpagesize() / 1024, proc->policy, user_str, proc->tname, proc->name);
+			snprintf(buf, sizeof(buf), "%5d %5d %2d %3ld%% %c %6ldK %6ldK %-8.8s %-15s %s", proc->pid, proc->tid, proc->prs, proc->delta_time * 100 / total_delta_time, proc->state,
+				proc->vss / 1024, proc->rss * getpagesize() / 1024, user_str, proc->tname, proc->name);
 	printf("%-*.*s\n", sz->ws_col, sz->ws_col, buf);
 		}
 	}

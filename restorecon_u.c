@@ -16,7 +16,6 @@
 #include <fts.h>
 #include <selinux/selinux.h>
 #include <selinux/label.h>
-//#include <selinux/android.h>
 
 static struct selabel_handle *sehandle;
 static const char *progname;
@@ -56,7 +55,6 @@ static int restore(const char *pathname, const struct stat *sb) {
 
 int restorecon_main(int argc, char **argv) {
 	int recurse = 0, ftsflags = FTS_PHYSICAL;
-	//int i = 0;
 
 	progname = argv[0];
 
@@ -89,15 +87,6 @@ int restorecon_main(int argc, char **argv) {
 		usage();
 		return -1;
 	}
-	/*
-	   sehandle = selinux_android_file_context_handle();
-
-	   if (!sehandle) {
-	   fprintf(stderr, "Could not load file_contexts:  %s\n",
-	   strerror(errno));
-	   return -1;
-	   }
-	 */
 	if(recurse) {
 		FTS *fts;
 		FTSENT *ftsent;
