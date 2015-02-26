@@ -1,6 +1,8 @@
 /*	hostname - toolbox
 	Copyright 2015 libdll.so
+
 	This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
+
 	This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 */
 
@@ -11,8 +13,38 @@
 #include <string.h>
 #include <errno.h>
 
+#ifdef _WIN32
+#include <windows.h>
+#include <winsock2.h>
+#define HOST_NAME_MAX 16
+#ifndef _WIN32_WCE
+static int _sethostname(const char *name, size_t len) {
+	if(len > HOST_NAME_MAX) {
+		//errno = EINVAL;
+		errno = ENAMETOOLONG;
+		return -1;
+	}
+#if 0
+	char buffer[len + 1];
+	memcpy(buffer, name, len)[len] = 0;
+	return SetComputerNameA(buffer) ? 0 : -1;
+#else
+	wchar_t buffer[len + 1];
+	int wlen = mbstowcs(buffer, name, len);
+	if(wlen < 0) {
+		errno = EINVAL;
+		return -1;
+	}
+	buffer[wlen] = 0;
+	return SetComputerNameW(buffer) ? 0 : -1;
+#endif
+}
+#define sethostname _sethostname
+#endif
+#else
 #ifndef HOST_NAME_MAX
 #define HOST_NAME_MAX _POSIX_HOST_NAME_MAX
+#endif
 #endif
 
 static void print_usage(const char *name) {
@@ -54,6 +86,7 @@ static char *get_name_from_file(const char *filename) {
 			/* End of the hostname */
 			if(*pp == '\n') {
 				*pp = 0;
+				if(pp != buffer && pp[-1] == '\r') pp[-1] = 0;
 				break;
 			}
 			pp++;
@@ -86,7 +119,7 @@ int hostname_main(int argc, char **argv) {
 				return -1;
 		}
 	}
-	/* If user input excess argument */
+	/* If user input excess arguments */
 	if(argc > optind + !filename) {
 		print_usage(argv[0]);
 		return -1;
@@ -127,4 +160,3 @@ int hostname_main(int argc, char **argv) {
 	}
 	return 0;
 }
-

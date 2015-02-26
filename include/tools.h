@@ -123,8 +123,8 @@ TOOL(swapon)
 #endif
 #ifndef _WIN32_WNT_NATIVE
 TOOL(sync)
-#endif
 TOOL(tee)
+#endif
 #if !defined _WIN32_WNT_NATIVE && !defined __APPLE__
 TOOL(top)
 #endif

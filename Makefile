@@ -124,12 +124,14 @@ ifeq ($(CC),arm-mingw32ce-gcc)
 CFLAGS += --include include/wcedef.h
 LIBS += -Lwcelib -lc
 TIMELIB = -lmmtimer
+LIBWS2 = -lws2
 endif
 ifeq ($(CC),i586-mingw32msvc-gcc)
 LIBS += -Lposix-io-for-windows -lposixio
 DEPEND = posix-io-for-windows/libposixio.a
 export CONSOLE = 1
 TIMELIB = -lwinmm
+LIBWS2 = -lws2_32
 endif
 else
 EXTRA_TOOLS := \
@@ -398,7 +400,7 @@ hd.exe:	hd.c
 	$(CC) $(CFLAGS) $(LDFLAGS) hd.c -o hd.exe $(LIBS)
 
 hostname.exe:	hostname.c
-	$(CC) $(CFLAGS) $(LDFLAGS) hostname.c -o $@ $(LIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) hostname.c -o $@ $(LIBS) $(LIBWS2)
 
 ioctl.exe:	ioctl.c
 	$(CC) $(CFLAGS) $(LDFLAGS) ioctl.c -o $@ $(LIBS)

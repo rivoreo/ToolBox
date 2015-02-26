@@ -13,7 +13,7 @@
 #include <stdio.h>
 #include <limits.h>
 
-#if defined WIN32 && !defined _WIN32_WCE && !defined _WIN32_WNT_NATIVE
+#if defined _WIN32 && !defined _WIN32_WCE && !defined _WIN32_WNT_NATIVE
 #define PATHS_SEPARATOR ';'
 #else
 #define PATHS_SEPARATOR ':'
@@ -53,13 +53,19 @@ int which(const char *path, const char *filename, char *rpath) {
 		size_t filename_len = strlen(filename);
 		//size_t len = p - current_path + filename_len;
 		size_t len = j + filename_len;
-		if(len > PATH_MAX) {
-			if(!i) return -1;
-			continue;
-		}
+		if(len > PATH_MAX) continue;
 		//memcpy(p, filename, filename_len + 1);
 		memcpy(current_path + j, filename, filename_len + 1);
-		if(access(current_path, X_OK) == 0 && stat(current_path, &st) == 0 && S_ISREG(st.st_mode)) {
+		if(access(current_path, X_OK) < 0) {
+#if defined _WIN32 && !defined _WIN32_WNT_NATIVE
+			if(len + 4 > PATH_MAX) continue;
+			strcpy(current_path + len, ".exe");
+			len += 4;
+			if(access(current_path, X_OK) < 0)
+#endif
+				continue;
+		}
+		if(stat(current_path, &st) == 0 && S_ISREG(st.st_mode)) {
 			if(rpath) memcpy(rpath, current_path, len + 1);
 			return i;
 		}
@@ -113,4 +119,3 @@ int which_main(int argc, char **argv) {
 	}
 	return r;
 }
-

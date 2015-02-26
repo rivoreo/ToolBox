@@ -136,17 +136,8 @@ int tee_main(int argc, char **argv) {
 				fprintf(stderr, "%s: write: %s: %s\n", argv[0], p->name, strerror(errno));
 			}
 		}
-	} //while(s == BUFFER_SIZE);
-
-/*
-	for(p=fd_list; p; p=p->next) {
-		if(close(p->fd) < 0) {
-			fprintf(stderr, "%s: close: %s: %s\n", argv[0], p->name, strerror(errno));
-		}
 	}
-*/
-	free_list();
 
+	free_list();
 	return 0;
 }
-
