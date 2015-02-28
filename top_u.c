@@ -24,6 +24,7 @@
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
+#include <termios.h>
 
 struct cpu_info {
 	long unsigned utime, ntime, stime, itime;
@@ -76,6 +77,7 @@ static struct cpu_info old_cpu, new_cpu;
 #ifndef _WIN32
 /* windows size struct */
 static struct winsize *sz;
+//static struct termios orig_termios;
 #endif
 
 static struct proc_info *alloc_proc(void);
@@ -110,6 +112,18 @@ int top_main(int argc, char *argv[]) {
 
 	end_of_options = 0;
 
+
+#ifndef _WIN32
+	/* Test windows size */
+	sz=(struct winsize*)malloc(sizeof(struct winsize));
+	memset(sz,0x00,sizeof(struct winsize));
+	if(ioctl(0,TIOCGWINSZ,sz) == -1) {
+		perror("Could not get Terminal window size");
+		return;
+	}
+	//fprintf(stdout, "Screen width: %i  Screen height: %i\n", sz->ws_col, sz->ws_row);
+	max_procs = sz->ws_row - 4;
+#endif
 
 	for (i = 1; i < argc; i++) {
 		/* Is an Option? */
@@ -418,7 +432,8 @@ static void print_procs(void) {
 	char *user_str, user_buf[20], buf[4096], winsz[64];
 	//char *group_str, group_buf[20];
 
-
+	
+	printf("\x1b[1J");
 #ifndef _WIN32
 	/* Test windows size */
 	sz=(struct winsize*)malloc(sizeof(struct winsize));
@@ -427,7 +442,7 @@ static void print_procs(void) {
 		perror("Could not get Terminal window size");
 		return;
 	}
-	fprintf(stdout, "Screen width: %i  Screen height: %i\n", sz->ws_col, sz->ws_row);
+	//fprintf(stdout, "Screen width: %i  Screen height: %i\n", sz->ws_col, sz->ws_row);
 #endif
 
 	for (i = 0; i < num_new_procs; i++) {
@@ -451,7 +466,7 @@ static void print_procs(void) {
 
 	qsort(new_procs, num_new_procs, sizeof(struct proc_info *), proc_cmp);
 
-	printf("\n\n\n");
+	//printf("\n\n\n");
 	snprintf(buf, sizeof(buf), "User %ld%%, System %ld%%, IOW %ld%%, IRQ %ld%%",
 			((new_cpu.utime + new_cpu.ntime) - (old_cpu.utime + old_cpu.ntime)) * 100  / total_delta_time,
 			((new_cpu.stime ) - (old_cpu.stime)) * 100 / total_delta_time,
@@ -469,7 +484,7 @@ static void print_procs(void) {
 			new_cpu.sirqtime - old_cpu.sirqtime,
 			total_delta_time);
 	printf("%-*.*s\n", sz->ws_col, sz->ws_col, buf);
-	putchar('\n');
+	//putchar('\n');
 	if(!threads) {
 		snprintf(buf, sizeof(buf), "%5s %2s %4s %1s %5s %7s %7s %-8s %s", "PID", "PR", "CPU%", "S", "#THR", "VSS", "RSS", "UID", "Name");
 		printf("%-*.*s\n", sz->ws_col, sz->ws_col, buf);
