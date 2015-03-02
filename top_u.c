@@ -114,12 +114,14 @@ int top_main(int argc, char *argv[]) {
 
 
 #ifndef _WIN32
-	/* Test windows size */
-	sz=(struct winsize*)malloc(sizeof(struct winsize));
-	memset(sz,0x00,sizeof(struct winsize));
-	if(ioctl(0,TIOCGWINSZ,sz) == -1) {
-		perror("Could not get Terminal window size");
-		return;
+	if(isatty(STDOUT_FILENO)) {
+		/* Test windows size */
+		sz=(struct winsize*)malloc(sizeof(struct winsize));
+		memset(sz,0x00,sizeof(struct winsize));
+		if(ioctl(0,TIOCGWINSZ,sz) == -1) {
+			perror("Could not get Terminal window size");
+			return;
+		}
 	}
 	//fprintf(stdout, "Screen width: %i  Screen height: %i\n", sz->ws_col, sz->ws_row);
 	max_procs = sz->ws_row - 4;
@@ -432,16 +434,24 @@ static void print_procs(void) {
 	char *user_str, user_buf[20], buf[4096], winsz[64];
 	//char *group_str, group_buf[20];
 
-	
-	printf("\x1b[1J");
+	if(isatty(STDOUT_FILENO)) {
+		/* ANSI/VT100 Terminal Support */	
+		//printf("\x1b[1J");
+		/* Home-positioning to 0 and 0 coordinates */
+		printf("\x1b[1;1H");
+		/* Save current cursor position */
+		printf("\x1b[7");
+		/* Clear whole line (cursor position unchanged) */
+		printf("\x1b[2K");
+	}
+
 #ifndef _WIN32
-	/* Test windows size */
-	sz=(struct winsize*)malloc(sizeof(struct winsize));
-	memset(sz,0x00,sizeof(struct winsize));
 	if(ioctl(0,TIOCGWINSZ,sz) == -1) {
 		perror("Could not get Terminal window size");
 		return;
 	}
+	/* To change the max proc row, when terminal size change */
+	max_procs = sz->ws_row - 4;
 	//fprintf(stdout, "Screen width: %i  Screen height: %i\n", sz->ws_col, sz->ws_row);
 #endif
 
@@ -521,6 +531,10 @@ static void print_procs(void) {
 				proc->vss / 1024, proc->rss * getpagesize() / 1024, user_str, proc->tname, proc->name);
 	printf("%-*.*s\n", sz->ws_col, sz->ws_col, buf);
 		}
+	}
+	if(isatty(STDOUT_FILENO)) {
+		/* Restore current cursor position */
+		printf("\x1b[8");
 	}
 }
 
