@@ -35,6 +35,16 @@ struct cpu_info {
 #define THREAD_NAME_LEN 32
 //#define POLICY_NAME_LEN 4
 
+#define PRINT_BUF() \
+	do { \
+		if(use_tty) { \
+			printf("%-*.*s\n", sz.ws_col, sz.ws_col, buf); \
+		} else { \
+			printf("%s\n",buf); \
+		} \
+	} \
+	while(0)
+
 struct proc_info {
 	struct proc_info *next;
 	pid_t pid;
@@ -76,7 +86,8 @@ static struct cpu_info old_cpu, new_cpu;
 
 #ifndef _WIN32
 /* windows size struct */
-static struct winsize *sz;
+static struct winsize sz;
+static int use_tty;
 //static struct termios orig_termios;
 #endif
 
@@ -109,21 +120,22 @@ int top_main(int argc, char *argv[]) {
 	delay = 3;
 	iterations = -1;
 	proc_cmp = &proc_cpu_cmp;
-
+	use_tty = 0;
 	end_of_options = 0;
 
 
 #ifndef _WIN32
 	if(isatty(STDOUT_FILENO)) {
 		/* Test windows size */
-		sz=(struct winsize*)malloc(sizeof(struct winsize));
-		memset(sz,0x00,sizeof(struct winsize));
-		if(ioctl(0,TIOCGWINSZ,sz) == -1) {
+		//sz=(struct winsize*)malloc(sizeof(struct winsize));
+		//memset(sz,0x00,sizeof(struct winsize));
+		use_tty = 1;
+		if(ioctl(0,TIOCGWINSZ,&sz) == -1) {
 			perror("Could not get Terminal window size");
 			return;
 		}
-		//fprintf(stdout, "Screen width: %i  Screen height: %i\n", sz->ws_col, sz->ws_row);
-		max_procs = sz->ws_row - 4;
+		//fprintf(stdout, "Screen width: %i  Screen height: %i\n", sz.ws_col, sz.ws_row);
+		max_procs = sz.ws_row - 4;
 	}
 #endif
 
@@ -434,7 +446,7 @@ static void print_procs(void) {
 	char *user_str, user_buf[20], buf[4096], winsz[64];
 	//char *group_str, group_buf[20];
 
-	if(isatty(STDOUT_FILENO)) {
+	if(use_tty) {
 		/* ANSI/VT100 Terminal Support */	
 		//printf("\x1b[1J");
 		/* Home-positioning to 0 and 0 coordinates */
@@ -446,13 +458,13 @@ static void print_procs(void) {
 	
 
 #ifndef _WIN32
-		if(ioctl(0,TIOCGWINSZ,sz) == -1) {
+		if(ioctl(0,TIOCGWINSZ,&sz) == -1) {
 			perror("Could not get Terminal window size");
 			return;
 		}
 		/* To change the max proc row, when terminal size change */
-		max_procs = sz->ws_row - 4;
-		//fprintf(stdout, "Screen width: %i  Screen height: %i\n", sz->ws_col, sz->ws_row);
+		max_procs = sz.ws_row - 4;
+		//fprintf(stdout, "Screen width: %i  Screen height: %i\n", sz.ws_col, sz.ws_row);
 #endif
 	}
 
@@ -478,18 +490,14 @@ static void print_procs(void) {
 	qsort(new_procs, num_new_procs, sizeof(struct proc_info *), proc_cmp);
 
 	//printf("\n\n\n");
+
 	snprintf(buf, sizeof(buf), "User %ld%%, System %ld%%, IOW %ld%%, IRQ %ld%%",
 			((new_cpu.utime + new_cpu.ntime) - (old_cpu.utime + old_cpu.ntime)) * 100  / total_delta_time,
 			((new_cpu.stime ) - (old_cpu.stime)) * 100 / total_delta_time,
 			((new_cpu.iowtime) - (old_cpu.iowtime)) * 100 / total_delta_time,
 			((new_cpu.irqtime + new_cpu.sirqtime)
 			 - (old_cpu.irqtime + old_cpu.sirqtime)) * 100 / total_delta_time);
-	/* There should be rewrite to #define */
-	if(isatty(STDOUT_FILENO)) {
-		printf("%-*.*s\n", sz->ws_col, sz->ws_col, buf);
-	} else {
-		printf("%s\n",buf);
-	}
+	PRINT_BUF();
 	snprintf(buf, sizeof(buf), "User %ld + Nice %ld + Sys %ld + Idle %ld + IOW %ld + IRQ %ld + SIRQ %ld = %ld",
 			new_cpu.utime - old_cpu.utime,
 			new_cpu.ntime - old_cpu.ntime,
@@ -499,26 +507,14 @@ static void print_procs(void) {
 			new_cpu.irqtime - old_cpu.irqtime,
 			new_cpu.sirqtime - old_cpu.sirqtime,
 			total_delta_time);
-	if(isatty(STDOUT_FILENO)) {
-		printf("%-*.*s\n", sz->ws_col, sz->ws_col, buf);
-	} else {
-		printf("%s\n",buf);
-	}
+	PRINT_BUF();
 	//putchar('\n');
 	if(!threads) {
 		snprintf(buf, sizeof(buf), "%5s %2s %4s %1s %5s %7s %7s %-8s %s", "PID", "PR", "CPU%", "S", "#THR", "VSS", "RSS", "UID", "Name");
-		if(isatty(STDOUT_FILENO)) {
-			printf("%-*.*s\n", sz->ws_col, sz->ws_col, buf);
-		} else {
-			printf("%s\n",buf);
-		}
+		PRINT_BUF();
 	} else {
 		snprintf(buf, sizeof(buf), "%5s %5s %2s %4s %1s %7s %7s %-8s %-15s %s", "PID", "TID", "PR", "CPU%", "S", "VSS", "RSS", "UID", "Thread", "Proc");
-		if(isatty(STDOUT_FILENO)) {
-			printf("%-*.*s\n", sz->ws_col, sz->ws_col, buf);
-		} else {
-			printf("%s\n",buf);
-		}
+		PRINT_BUF();
 	}
 
 	for(i = 0; i < num_new_procs; i++) {
@@ -543,22 +539,14 @@ static void print_procs(void) {
 		if(!threads) {
 			snprintf(buf, sizeof(buf), "%5d %2d %3ld%% %c %5d %6ldK %6ldK %-8.8s %s", proc->pid, proc->prs, proc->delta_time * 100 / total_delta_time, proc->state, proc->num_threads,
 				proc->vss / 1024, proc->rss * getpagesize() / 1024, user_str, *proc->name ? proc->name : proc->tname);
-			if(isatty(STDOUT_FILENO)) {
-				printf("%-*.*s\n", sz->ws_col, sz->ws_col, buf);
-			} else {
-				printf("%s\n",buf);
-			}
+			PRINT_BUF();
 		} else {
 			snprintf(buf, sizeof(buf), "%5d %5d %2d %3ld%% %c %6ldK %6ldK %-8.8s %-15s %s", proc->pid, proc->tid, proc->prs, proc->delta_time * 100 / total_delta_time, proc->state,
 				proc->vss / 1024, proc->rss * getpagesize() / 1024, user_str, proc->tname, proc->name);
-			if(isatty(STDOUT_FILENO)) {
-				printf("%-*.*s\n", sz->ws_col, sz->ws_col, buf);
-			} else {
-				printf("%s\n",buf);
-			}
+			PRINT_BUF();
 		}
 	}
-	if(isatty(STDOUT_FILENO)) {
+	if(use_tty) {
 		/* Restore current cursor position */
 		printf("\x1b[8");
 	}
