@@ -110,6 +110,7 @@ ALL_TOOLS := \
 	rm_u.o \
 	rmdir_u.o \
 	schedtop_u.o \
+	service_u.o \
 	sleep_u.o \
 	sync_u.o \
 	tee_u.o \
@@ -156,6 +157,7 @@ EXTRA_TOOLS := \
 	readtty \
 	renice \
 	schedtop \
+	service \
 	sync
 
 ifdef DARWIN
@@ -309,6 +311,7 @@ TRAN_SRC = \
 	runcon.c \
 	schedtop.c \
 	sendevent.c \
+	service.c \
 	setconsole.c \
 	setenforce.c \
 	setkey.c \

@@ -59,6 +59,7 @@ Files
 	runcon_u.c,
 	schedtop_u.c,
 	sendevent_u.c,
+	service_u.c,
 	setconsole_u.c,
 	setenforce_u.c,
 	setkey_u.c,

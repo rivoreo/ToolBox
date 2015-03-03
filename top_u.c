@@ -108,7 +108,7 @@ static int proc_rss_cmp(const void *, const void *);
 static int proc_thr_cmp(const void *, const void *);
 static int numcmp(long long, long long);
 static void usage(const char *);
-static void SIGINT_handler(void);
+static void SIGINT_handler(int);
 
 
 int top_main(int argc, char *argv[]) {
@@ -124,7 +124,6 @@ int top_main(int argc, char *argv[]) {
 	use_tty = -1;
 	end_of_options = 0;
 
-	signal(SIGINT, SIGINT_handler);
 	for (i = 1; i < argc; i++) {
 		/* There is not the end of options? && Is an Option? */
 		if(!end_of_options && argv[i][0] == '-') {
@@ -213,6 +212,7 @@ int top_main(int argc, char *argv[]) {
 		}
 		//fprintf(stdout, "Screen width: %i  Screen height: %i\n", sz.ws_col, sz.ws_row);
 		max_procs = sz.ws_row - 4;
+		signal(SIGINT, SIGINT_handler);
 	}
 
 	if(threads && proc_cmp == &proc_thr_cmp) {
@@ -516,7 +516,7 @@ static void print_procs(void) {
 	if(!threads) {
 		snprintf(buf, sizeof(buf), "%5s %2s %4s %1s %5s %9s %9s %-8s %s", "PID", "PR", "CPU%", "S", "#THR", "VSS", "RSS", "USER", "COMMAND");
 	} else {
-	snprintf(buf, sizeof(buf), "%5s %5s %2s %4s %1s %9s %9s %-8s %-15s %s", "PID", "TID", "PR", "CPU%", "S", "VSS", "RSS", "USER", "Thread", "Proc");
+		snprintf(buf, sizeof(buf), "%5s %5s %2s %4s %1s %9s %9s %-8s %-15s %s", "PID", "TID", "PR", "CPU%", "S", "VSS", "RSS", "USER", "Thread", "Proc");
 	}
 	if(use_tty) {
 		printf("\x1b[30;47m%-*.*s\x1b[39;49m\n", sz.ws_col, sz.ws_col, buf);
@@ -644,11 +644,10 @@ static void usage(const char *name) {
 		"	-h        Display this help screen.\n\n", name);
 }
 
-static void SIGINT_handler(void) {
-	/* restore screen */
+static void SIGINT_handler(int signal) {
+	/* Restore screen */
 	printf("\x1b[?47l");
-	/* switch cursor visible */
+	/* Switch cursor visible */
 	printf("\x1b[?25h");
 	exit(0);
 }
-

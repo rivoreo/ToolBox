@@ -107,6 +107,9 @@ TOOL(schedtop)
 #endif
 #ifdef __linux__
 TOOL(sendevent)
+#ifndef _WIN32_WNT_NATIVE
+TOOL(service)
+#endif
 TOOL(setconsole)
 #ifndef _NO_SELINUX
 TOOL(setenforce)
