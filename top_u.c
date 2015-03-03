@@ -59,7 +59,7 @@ struct proc_info {
 	unsigned long int delta_stime;
 	unsigned long int delta_time;
 	unsigned long int vss;
-	long rss;
+	unsigned long int rss;
 	int prs;
 	int num_threads;
 	//char policy[POLICY_NAME_LEN];
@@ -123,7 +123,7 @@ int top_main(int argc, char *argv[]) {
 	end_of_options = 0;
 
 	for (i = 1; i < argc; i++) {
-		/* Is not the end of options? && Is an Option? */
+		/* There is not the end of options? && Is an Option? */
 		if(!end_of_options && argv[i][0] == '-') {
 			const char *arg = argv[i] + 1;
 			if(!arg[0]) {
@@ -134,7 +134,6 @@ int top_main(int argc, char *argv[]) {
 			while(arg[0]) {
 				switch(arg[0]) {
 					case 'b':
-						// Batch mode
 						use_tty = 0;
 						break;
 					case 'm':
@@ -193,7 +192,6 @@ int top_main(int argc, char *argv[]) {
 					default:
 						fprintf(stderr, "Invalid argument \"%s\".\n", argv[i]);
 						usage(argv[0]);
-						//exit(EXIT_FAILURE);
 						return EXIT_FAILURE;
 				}
 				arg++;
@@ -208,7 +206,7 @@ int top_main(int argc, char *argv[]) {
 		//memset(sz,0x00,sizeof(struct winsize));
 		if(ioctl(0,TIOCGWINSZ,&sz) == -1) {
 			perror("Could not get Terminal window size");
-			return;
+			return EXIT_FAILURE;
 		}
 		//fprintf(stdout, "Screen width: %i  Screen height: %i\n", sz.ws_col, sz.ws_row);
 		max_procs = sz.ws_row - 4;
@@ -289,16 +287,15 @@ static void read_procs(void) {
 	fclose(file);
 
 	proc_num = 0;
-	while ((pid_dir = readdir(proc_dir))) {
+	while((pid_dir = readdir(proc_dir))) {
 		if(!isdigit(pid_dir->d_name[0])) continue;
 
 		pid = atoi(pid_dir->d_name);
 
 		struct proc_info cur_proc;
 
-		if (!threads) {
+		if(!threads) {
 			proc = alloc_proc();
-
 			proc->pid = proc->tid = pid;
 
 			sprintf(filename, "/proc/%d/stat", pid);
@@ -325,17 +322,15 @@ static void read_procs(void) {
 
 		sprintf(filename, "/proc/%d/task", pid);
 		task_dir = opendir(filename);
-		if (!task_dir) continue;
+		if(!task_dir) continue;
 
-		while ((tid_dir = readdir(task_dir))) {
-			if (!isdigit(tid_dir->d_name[0]))
-				continue;
+		while((tid_dir = readdir(task_dir))) {
+			if(!isdigit(tid_dir->d_name[0]))continue;
 
-			if (threads) {
+			if(threads) {
 				tid = atoi(tid_dir->d_name);
 
 				proc = alloc_proc();
-
 				proc->pid = pid; proc->tid = tid;
 
 				sprintf(filename, "/proc/%d/task/%d/stat", pid, tid);
@@ -355,12 +350,10 @@ static void read_procs(void) {
 
 		closedir(task_dir);
 
-		if (!threads)
-			add_proc(proc_num++, proc);
+		if(!threads) add_proc(proc_num++, proc);
 	}
 
-	for (i = proc_num; i < num_new_procs; i++)
-		new_procs[i] = NULL;
+	for(i = proc_num; i < num_new_procs; i++) new_procs[i] = NULL;
 
 	closedir(proc_dir);
 }
@@ -386,7 +379,7 @@ static int read_stat(const char *filename, struct proc_info *proc) {
 
 	/* Scan rest of string. */
 	sscanf(close_paren + 1, " %c %*d %*d %*d %*d %*d %*d %*d %*d %*d %*d "
-			"%lu %lu %*d %*d %*d %*d %*d %*d %*d %lu %ld "
+			"%lu %lu %*d %*d %*d %*d %*d %*d %*d %lu %lu "
 			"%*d %*d %*d %*d %*d %*d %*d %*d %*d %*d %*d %*d %*d %*d %d",
 			&proc->state, &proc->utime, &proc->stime, &proc->vss, &proc->rss, &proc->prs);
 
@@ -442,21 +435,24 @@ static void print_procs(void) {
 	unsigned long int total_delta_time;
 	struct passwd *user;
 	//struct group *group;
-	char *user_str, user_buf[20], buf[4096], winsz[64];
+	char *user_str, user_buf[20], buf[4096];
 	//char *group_str, group_buf[20];
 
 	if(use_tty) {
-		/* ANSI/VT100 Terminal Support */	
+		/* ANSI/VT100 Terminal Support */
+
+		/* Clear the screen */
 		//printf("\x1b[1J");
+
 		/* Home-positioning to 0 and 0 coordinates */
 		printf("\x1b[1;1H");
+
 		/* Save current cursor position */
 		printf("\x1b[7");
+
 		/* Clear whole line (cursor position unchanged) */
 		printf("\x1b[2K");
-	
 
-#ifndef _WIN32
 		if(ioctl(0,TIOCGWINSZ,&sz) == -1) {
 			perror("Could not get Terminal window size");
 			return;
@@ -464,7 +460,6 @@ static void print_procs(void) {
 		/* To change the max proc row, when terminal size change */
 		max_procs = sz.ws_row - 4;
 		//fprintf(stdout, "Screen width: %i  Screen height: %i\n", sz.ws_col, sz.ws_row);
-#endif
 	}
 
 	for (i = 0; i < num_new_procs; i++) {
@@ -489,6 +484,7 @@ static void print_procs(void) {
 	qsort(new_procs, num_new_procs, sizeof(struct proc_info *), proc_cmp);
 
 	//printf("\n\n\n");
+	if(!use_tty) putchar('\n');
 
 	snprintf(buf, sizeof(buf), "User %ld%%, System %ld%%, IOW %ld%%, IRQ %ld%%",
 			((new_cpu.utime + new_cpu.ntime) - (old_cpu.utime + old_cpu.ntime)) * 100  / total_delta_time,
@@ -507,7 +503,7 @@ static void print_procs(void) {
 			new_cpu.sirqtime - old_cpu.sirqtime,
 			total_delta_time);
 	PRINT_BUF();
-	//putchar('\n');
+
 	if(!threads) {
 		snprintf(buf, sizeof(buf), "%5s %2s %4s %1s %5s %9s %9s %-8s %s", "PID", "PR", "CPU%", "S", "#THR", "VSS", "RSS", "USER", "COMMAND");
 		PRINT_BUF();
@@ -536,11 +532,11 @@ static void print_procs(void) {
 		   group_str = group_buf;
 		   }*/
 		if(!threads) {
-			snprintf(buf, sizeof(buf), "%5d %2d %3ld%% %c %5d %7ldKi %7luKi %-8.8s %s", proc->pid, proc->prs, proc->delta_time * 100 / total_delta_time, proc->state, proc->num_threads,
+			snprintf(buf, sizeof(buf), "%5d %2d %3ld%% %c %5d %7luKi %7luKi %-8.8s %s", proc->pid, proc->prs, proc->delta_time * 100 / total_delta_time, proc->state, proc->num_threads,
 				proc->vss / 1024, proc->rss * getpagesize() / 1024, user_str, *proc->name ? proc->name : proc->tname);
 			PRINT_BUF();
 		} else {
-			snprintf(buf, sizeof(buf), "%5d %5d %2d %3ld%% %c %7ldKi %7luKi %-8.8s %-15s %s", proc->pid, proc->tid, proc->prs, proc->delta_time * 100 / total_delta_time, proc->state,
+			snprintf(buf, sizeof(buf), "%5d %5d %2d %3ld%% %c %7luKi %7luKi %-8.8s %-15s %s", proc->pid, proc->tid, proc->prs, proc->delta_time * 100 / total_delta_time, proc->state,
 				proc->vss / 1024, proc->rss * getpagesize() / 1024, user_str, proc->tname, proc->name);
 			PRINT_BUF();
 		}
@@ -619,7 +615,7 @@ static int proc_thr_cmp(const void *a, const void *b) {
 	return -numcmp(pa->num_threads, pb->num_threads);
 }
 
-static int numcmp(long long a, long long b) {
+static int numcmp(long long int a, long long int b) {
 	if(a < b) return -1;
 	if(a > b) return 1;
 	return 0;
