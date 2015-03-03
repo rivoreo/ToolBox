@@ -91,7 +91,7 @@ int which_main(int argc, char **argv) {
 			case 'h':
 				print_usage(argv[0]);
 				return 0;
-			default:
+			case '?':
 				return -1;
 		}
 	}

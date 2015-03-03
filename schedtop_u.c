@@ -86,8 +86,8 @@ static int read_line(char *line, size_t line_size) {
 	return 0;
 }
 
-static void add_thread(int pid, int tid, struct thread_info *proc_info)
-{
+static void add_thread(int pid, int tid, struct thread_info *proc_info) {
+	//fprintf(stderr, "function: add_thread(%d, %d, %p)\n", pid, tid, proc_info);
 	unsigned long long int exec_time, delay_time;
 	char line[1024];
 	char *name, *name_end;
@@ -118,19 +118,14 @@ static void add_thread(int pid, int tid, struct thread_info *proc_info)
 			name_len = strlen(name);
 		}
 	}
-	if (!name) {
-		if (tid)
-			sprintf(line, "/proc/%d/task/%d/stat", pid, tid);
-		else
-			sprintf(line, "/proc/%d/stat", pid);
-		if (read_line(line, sizeof(line)))
-			return;
+	if(!name) {
+		if(tid) sprintf(line, "/proc/%d/task/%d/stat", pid, tid);
+		else sprintf(line, "/proc/%d/stat", pid);
+		if(read_line(line, sizeof(line))) return;
 		name = strchr(line, '(');
-		if (name == NULL)
-			return;
+		if(name == NULL) return;
 		name_end = strchr(name, ')');
-		if (name_end == NULL)
-			return;
+		if(name_end == NULL) return;
 		name++;
 		name_len = name_end - name;
 	}
@@ -169,11 +164,11 @@ static void print_threads(int pid, uint32_t flags)
 		if(j == threads.active) printf(" %5u died\n", tid);
 		else if(!(flags & FLAG_HIDE_IDLE) || threads.data[j].run_count - last_threads.data[i].run_count) {
 			printf(" %5u %2u.%0*u %2u.%0*u %5u %5u.%0*u %5u.%0*u %7u  %s\n", tid,
-					NS_TO_S_D(threads.data[j].exec_time - last_threads.data[i].exec_time),
-					NS_TO_S_D(threads.data[j].delay_time - last_threads.data[i].delay_time),
-					threads.data[j].run_count - last_threads.data[i].run_count,
-					NS_TO_S_D(threads.data[j].exec_time), NS_TO_S_D(threads.data[j].delay_time),
-					threads.data[j].run_count, threads.data[j].name);
+				NS_TO_S_D(threads.data[j].exec_time - last_threads.data[i].exec_time),
+				NS_TO_S_D(threads.data[j].delay_time - last_threads.data[i].delay_time),
+				threads.data[j].run_count - last_threads.data[i].run_count,
+				NS_TO_S_D(threads.data[j].exec_time), NS_TO_S_D(threads.data[j].delay_time),
+				threads.data[j].run_count, threads.data[j].name);
 		}
 	}
 }
@@ -184,12 +179,13 @@ static void update_table(DIR *d, uint32_t flags)
 	struct dirent *de;
 
 	rewinddir(d);
-	while((de = readdir(d)) != 0){
-		if(isdigit(de->d_name[0])){
+	while((de = readdir(d)) != 0) {
+		//puts(de->d_name);
+		if(isdigit(de->d_name[0])) {
 			int pid = atoi(de->d_name);
 			struct thread_info *proc_info;
 			add_thread(pid, 0, NULL);
-			proc_info = &processes.data[processes.active - 1];
+			proc_info = processes.data + processes.active - 1;
 			proc_info->exec_time = 0;
 			proc_info->delay_time = 0;
 			proc_info->run_count = 0;
