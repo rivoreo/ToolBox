@@ -510,11 +510,13 @@ static void print_procs(void) {
 	PRINT_BUF();
 	//putchar('\n');
 	if(!threads) {
-		snprintf(buf, sizeof(buf), "%5s %2s %4s %1s %5s %7s %7s %-8s %s", "PID", "PR", "CPU%", "S", "#THR", "VSS", "RSS", "UID", "Name");
+		snprintf(buf, sizeof(buf), "\x1b[30;47m%5s %2s %4s %1s %5s %7s %7s %-8s %s", "PID", "PR", "CPU%", "S", "#THR", "VSS", "RSS", "UID", "Name");
 		PRINT_BUF();
+		printf("\x1b[39;49m");
 	} else {
-		snprintf(buf, sizeof(buf), "%5s %5s %2s %4s %1s %7s %7s %-8s %-15s %s", "PID", "TID", "PR", "CPU%", "S", "VSS", "RSS", "UID", "Thread", "Proc");
+		snprintf(buf, sizeof(buf), "\x1b[30;47m%5s %5s %2s %4s %1s %7s %7s %-8s %-15s %s", "PID", "TID", "PR", "CPU%", "S", "VSS", "RSS", "UID", "Thread", "Proc");
 		PRINT_BUF();
+		printf("\x1b[39;49m");
 	}
 
 	for(i = 0; i < num_new_procs; i++) {
