@@ -23,9 +23,9 @@ static void print_usage(const char *name) {
 	fprintf(stderr, "Usage: %s <service> [<action>] [<options>]\n", name);
 }
 
-char service_script[PATH_MAX+1];
+static char service_script[PATH_MAX+1];
 static size_t name_len;
-char *env[sizeof env_names / sizeof(char *) + 1];
+static char *env[sizeof env_names / sizeof(char *) + 1];
 
 int service_main(int argc, char **argv) {
 	if(argc < 2) {

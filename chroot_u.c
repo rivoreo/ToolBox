@@ -101,8 +101,8 @@ int chroot_main(int argc, char **argv) {
 		return 1;
 	}
 #if 0
-	if(group_list && setgroups(group_list) < 0) {
-		perror("setgroups");
+	if(group_list && set_other_groups(group_list) < 0) {
+		// Error message already printed in that function
 		return 1;
 	}
 #else
@@ -113,7 +113,8 @@ int chroot_main(int argc, char **argv) {
 #endif
 
 	if(argc < optind) {
-		argv[0] = DEFAULT_SHELL;
+		char *shell = getenv("SHELL");
+		argv[0] = shell ? : DEFAULT_SHELL;
 		argv[1] = NULL;
 	} else argv += optind + 1;
 	execvp(argv[0], argv);
