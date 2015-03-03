@@ -27,8 +27,8 @@
 #include <termios.h>
 
 struct cpu_info {
-	long unsigned utime, ntime, stime, itime;
-	long unsigned iowtime, irqtime, sirqtime;
+	unsigned long int utime, ntime, stime, itime;
+	unsigned long int iowtime, irqtime, sirqtime;
 };
 
 #define PROC_NAME_LEN 64
@@ -40,10 +40,9 @@ struct cpu_info {
 		if(use_tty) { \
 			printf("%-*.*s\n", sz.ws_col, sz.ws_col, buf); \
 		} else { \
-			printf("%s\n",buf); \
+			puts(buf); \
 		} \
-	} \
-	while(0)
+	} while(0)
 
 struct proc_info {
 	struct proc_info *next;
@@ -54,12 +53,12 @@ struct proc_info {
 	char name[PROC_NAME_LEN];
 	char tname[THREAD_NAME_LEN];
 	char state;
-	long unsigned utime;
-	long unsigned stime;
-	long unsigned delta_utime;
-	long unsigned delta_stime;
-	long unsigned delta_time;
-	long vss;
+	unsigned long int utime;
+	unsigned long int stime;
+	unsigned long int delta_utime;
+	unsigned long int delta_stime;
+	unsigned long int delta_time;
+	unsigned long int vss;
 	long rss;
 	int prs;
 	int num_threads;
@@ -94,10 +93,10 @@ static int use_tty;
 static struct proc_info *alloc_proc(void);
 static void free_proc(struct proc_info *proc);
 static void read_procs(void);
-static int read_stat(char *filename, struct proc_info *proc);
+static int read_stat(const char *filename, struct proc_info *proc);
 static void add_proc(int proc_num, struct proc_info *proc);
-static int read_cmdline(char *filename, struct proc_info *proc);
-static int read_status(char *filename, struct proc_info *proc);
+static int read_cmdline(const char *filename, struct proc_info *proc);
+static int read_status(const char *filename, struct proc_info *proc);
 static void print_procs(void);
 static struct proc_info *find_old_proc(pid_t pid, pid_t tid);
 static void free_old_procs(void);
@@ -120,30 +119,13 @@ int top_main(int argc, char *argv[]) {
 	delay = 3;
 	iterations = -1;
 	proc_cmp = &proc_cpu_cmp;
-	use_tty = 0;
+	use_tty = -1;
 	end_of_options = 0;
 
-
-#ifndef _WIN32
-	if(isatty(STDOUT_FILENO)) {
-		/* Test windows size */
-		//sz=(struct winsize*)malloc(sizeof(struct winsize));
-		//memset(sz,0x00,sizeof(struct winsize));
-		use_tty = 1;
-		if(ioctl(0,TIOCGWINSZ,&sz) == -1) {
-			perror("Could not get Terminal window size");
-			return;
-		}
-		//fprintf(stdout, "Screen width: %i  Screen height: %i\n", sz.ws_col, sz.ws_row);
-		max_procs = sz.ws_row - 4;
-	}
-#endif
-
 	for (i = 1; i < argc; i++) {
-		/* Is an Option? */
+		/* Is not the end of options? && Is an Option? */
 		if(!end_of_options && argv[i][0] == '-') {
 			const char *arg = argv[i] + 1;
-			/* Is the end of options? */
 			if(!arg[0]) {
 				fprintf(stderr, "Expects an option.\n");
 				usage(argv[0]);
@@ -151,6 +133,10 @@ int top_main(int argc, char *argv[]) {
 			}
 			while(arg[0]) {
 				switch(arg[0]) {
+					case 'b':
+						// Batch mode
+						use_tty = 0;
+						break;
 					case 'm':
 						if(i + 1 >= argc) {
 							fprintf(stderr, "Option -m expects an argument.\n");
@@ -213,6 +199,19 @@ int top_main(int argc, char *argv[]) {
 				arg++;
 			}
 		}
+	}
+
+	if(use_tty == -1) use_tty = isatty(STDOUT_FILENO);
+	if(use_tty) {
+		/* Test windows size */
+		//sz=(struct winsize*)malloc(sizeof(struct winsize));
+		//memset(sz,0x00,sizeof(struct winsize));
+		if(ioctl(0,TIOCGWINSZ,&sz) == -1) {
+			perror("Could not get Terminal window size");
+			return;
+		}
+		//fprintf(stdout, "Screen width: %i  Screen height: %i\n", sz.ws_col, sz.ws_row);
+		max_procs = sz.ws_row - 4;
 	}
 
 	if(threads && proc_cmp == &proc_thr_cmp) {
@@ -366,7 +365,7 @@ static void read_procs(void) {
 	closedir(proc_dir);
 }
 
-static int read_stat(char *filename, struct proc_info *proc) {
+static int read_stat(const char *filename, struct proc_info *proc) {
 	FILE *file;
 	char buf[MAX_LINE], *open_paren, *close_paren;
 
@@ -406,7 +405,7 @@ static void add_proc(int proc_num, struct proc_info *proc) {
 	new_procs[proc_num] = proc;
 }
 
-static int read_cmdline(char *filename, struct proc_info *proc) {
+static int read_cmdline(const char *filename, struct proc_info *proc) {
 	FILE *file;
 	char line[MAX_LINE];
 
@@ -421,7 +420,7 @@ static int read_cmdline(char *filename, struct proc_info *proc) {
 	return 0;
 }
 
-static int read_status(char *filename, struct proc_info *proc) {
+static int read_status(const char *filename, struct proc_info *proc) {
 	FILE *file;
 	char line[MAX_LINE];
 	unsigned int uid, gid;
@@ -440,7 +439,7 @@ static int read_status(char *filename, struct proc_info *proc) {
 static void print_procs(void) {
 	int i;
 	struct proc_info *old_proc, *proc;
-	long unsigned total_delta_time;
+	unsigned long int total_delta_time;
 	struct passwd *user;
 	//struct group *group;
 	char *user_str, user_buf[20], buf[4096], winsz[64];
@@ -510,10 +509,10 @@ static void print_procs(void) {
 	PRINT_BUF();
 	//putchar('\n');
 	if(!threads) {
-		snprintf(buf, sizeof(buf), "%5s %2s %4s %1s %5s %7s %7s %-8s %s", "PID", "PR", "CPU%", "S", "#THR", "VSS", "RSS", "UID", "Name");
+		snprintf(buf, sizeof(buf), "%5s %2s %4s %1s %5s %9s %9s %-8s %s", "PID", "PR", "CPU%", "S", "#THR", "VSS", "RSS", "USER", "COMMAND");
 		PRINT_BUF();
 	} else {
-		snprintf(buf, sizeof(buf), "%5s %5s %2s %4s %1s %7s %7s %-8s %-15s %s", "PID", "TID", "PR", "CPU%", "S", "VSS", "RSS", "UID", "Thread", "Proc");
+		snprintf(buf, sizeof(buf), "%5s %5s %2s %4s %1s %9s %9s %-8s %-15s %s", "PID", "TID", "PR", "CPU%", "S", "VSS", "RSS", "USER", "Thread", "Proc");
 		PRINT_BUF();
 	}
 
@@ -537,11 +536,11 @@ static void print_procs(void) {
 		   group_str = group_buf;
 		   }*/
 		if(!threads) {
-			snprintf(buf, sizeof(buf), "%5d %2d %3ld%% %c %5d %6ldK %6ldK %-8.8s %s", proc->pid, proc->prs, proc->delta_time * 100 / total_delta_time, proc->state, proc->num_threads,
+			snprintf(buf, sizeof(buf), "%5d %2d %3ld%% %c %5d %7ldKi %7luKi %-8.8s %s", proc->pid, proc->prs, proc->delta_time * 100 / total_delta_time, proc->state, proc->num_threads,
 				proc->vss / 1024, proc->rss * getpagesize() / 1024, user_str, *proc->name ? proc->name : proc->tname);
 			PRINT_BUF();
 		} else {
-			snprintf(buf, sizeof(buf), "%5d %5d %2d %3ld%% %c %6ldK %6ldK %-8.8s %-15s %s", proc->pid, proc->tid, proc->prs, proc->delta_time * 100 / total_delta_time, proc->state,
+			snprintf(buf, sizeof(buf), "%5d %5d %2d %3ld%% %c %7ldKi %7luKi %-8.8s %-15s %s", proc->pid, proc->tid, proc->prs, proc->delta_time * 100 / total_delta_time, proc->state,
 				proc->vss / 1024, proc->rss * getpagesize() / 1024, user_str, proc->tname, proc->name);
 			PRINT_BUF();
 		}
@@ -628,10 +627,11 @@ static int numcmp(long long a, long long b) {
 
 static void usage(const char *name) {
 	fprintf(stderr, "Usage: %s [-m <max_procs>] [-n <iterations>] [-d <delay>] [-s <sort_column>] [-t] [-h]\n\n"
-			"    -m <num>  Maximum number of processes to display.\n"
-			"    -n <num>  Updates to show before exiting.\n"
-			"    -d <num>  Seconds to wait between updates.\n"
-			"    -s <col>  Column to sort by (cpu,vss,rss,thr).\n"
-			"    -t        Show threads instead of processes.\n"
-			"    -h        Display this help screen.\n\n", name);
+		"	-b        Batch mode.\n"
+		"	-m <num>  Maximum number of processes to display.\n"
+		"	-n <num>  Updates to show before exiting.\n"
+		"	-d <num>  Seconds to wait between updates.\n"
+		"	-s <col>  Column to sort by (cpu,vss,rss,thr).\n"
+		"	-t        Show threads instead of processes.\n"
+		"	-h        Display this help screen.\n\n", name);
 }
