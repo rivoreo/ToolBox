@@ -505,12 +505,21 @@ static void print_procs(void) {
 	PRINT_BUF();
 
 	if(!threads) {
-		snprintf(buf, sizeof(buf), "%5s %2s %4s %1s %5s %9s %9s %-8s %s", "PID", "PR", "CPU%", "S", "#THR", "VSS", "RSS", "USER", "COMMAND");
-		PRINT_BUF();
+		if(use_tty) {
+			snprintf(buf, sizeof(buf), "\x1b[30;47m%5s %2s %4s %1s %5s %9s %9s %-8s %s", "PID", "PR", "CPU%", "S", "#THR", "VSS", "RSS", "USER", "COMMAND");
+		} else {
+			snprintf(buf, sizeof(buf), "%5s %2s %4s %1s %5s %9s %9s %-8s %s", "PID", "PR", "CPU%", "S", "#THR", "VSS", "RSS", "USER", "COMMAND");
+		}
 	} else {
+		if(use_tty) {
+		snprintf(buf, sizeof(buf), "\x1b[30;47m%5s %5s %2s %4s %1s %9s %9s %-8s %-15s %s", "PID", "TID", "PR", "CPU%", "S", "VSS", "RSS", "USER", "Thread", "Proc");
+		} else {
 		snprintf(buf, sizeof(buf), "%5s %5s %2s %4s %1s %9s %9s %-8s %-15s %s", "PID", "TID", "PR", "CPU%", "S", "VSS", "RSS", "USER", "Thread", "Proc");
-		PRINT_BUF();
+		}
 	}
+		PRINT_BUF();
+		if(use_tty)
+			printf("\x1b[39;49m");
 
 	for(i = 0; i < num_new_procs; i++) {
 		proc = new_procs[i];
