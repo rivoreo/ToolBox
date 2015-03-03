@@ -7,6 +7,7 @@ TOOL(chcon)
 TOOL(chmod)
 #ifndef _WIN32_WNT_NATIVE
 TOOL(chown)
+TOOL(chroot)
 TOOL(clear)
 #endif
 TOOL(cmp)

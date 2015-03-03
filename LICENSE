@@ -9,6 +9,7 @@ Files
 	chcon_u.c,
 	chmod*,
 	chown_u.c,
+	chroot_u.c,
 	clear_u.c,
 	cmp_u.c,
 	date*,

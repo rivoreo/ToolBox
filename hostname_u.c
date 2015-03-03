@@ -112,7 +112,8 @@ static char *get_name_from_file(const char *filename) {
 
 int hostname_main(int argc, char **argv) {
 	static struct option long_options[2] = {
-		{ "file", 1, NULL, 'F'}
+		{ "file", 1, NULL, 'F' },
+		{ "help", 0, NULL, 'h' }
 	};
 	const char *filename = NULL;
 	int short_name = 1;

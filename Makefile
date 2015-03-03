@@ -72,6 +72,7 @@ ALL_TOOLS := \
 	cat_u.o \
 	chmod_u.o \
 	chown_u.o \
+	chroot_u.o \
 	clear_u.o \
 	cmp_u.o \
 	date_u.o \
@@ -137,6 +138,7 @@ endif
 else
 EXTRA_TOOLS := \
 	chown \
+	chroot \
 	dd \
 	df \
 	du \
@@ -273,6 +275,7 @@ TRAN_SRC = \
 	cat.c \
 	chcon.c \
 	chown.c \
+	chroot.c \
 	clear.c \
 	cmp.c \
 	du.c \
