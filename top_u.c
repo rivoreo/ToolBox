@@ -25,6 +25,7 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <termios.h>
+#include <signal.h>
 
 struct cpu_info {
 	unsigned long int utime, ntime, stime, itime;
@@ -107,6 +108,7 @@ static int proc_rss_cmp(const void *, const void *);
 static int proc_thr_cmp(const void *, const void *);
 static int numcmp(long long, long long);
 static void usage(const char *);
+static void SIGINT_handler(void);
 
 
 int top_main(int argc, char *argv[]) {
@@ -122,6 +124,7 @@ int top_main(int argc, char *argv[]) {
 	use_tty = -1;
 	end_of_options = 0;
 
+	signal(SIGINT, SIGINT_handler);
 	for (i = 1; i < argc; i++) {
 		/* There is not the end of options? && Is an Option? */
 		if(!end_of_options && argv[i][0] == '-') {
@@ -443,12 +446,18 @@ static void print_procs(void) {
 
 		/* Clear the screen */
 		//printf("\x1b[1J");
+		
+		/* save screen */
+		printf("\x1b[?47h");
 
 		/* Home-positioning to 0 and 0 coordinates */
 		printf("\x1b[1;1H");
 
 		/* Save current cursor position */
 		printf("\x1b[7");
+
+		/* switch cursor invisible */
+		printf("\x1b[?25l");
 
 		/* Clear whole line (cursor position unchanged) */
 		printf("\x1b[2K");
@@ -640,3 +649,12 @@ static void usage(const char *name) {
 		"	-t        Show threads instead of processes.\n"
 		"	-h        Display this help screen.\n\n", name);
 }
+
+static void SIGINT_handler(void) {
+	/* restore screen */
+	printf("\x1b[?47l");
+	/* switch cursor visible */
+	printf("\x1b[?25h");
+	exit(0);
+}
+
