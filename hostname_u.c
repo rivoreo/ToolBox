@@ -7,6 +7,7 @@
 */
 
 #include <unistd.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <fcntl.h>
 #include <limits.h>
@@ -61,7 +62,7 @@ static int _sethostname(const char *name, size_t len) {
 static void print_usage(const char *name) {
 	fprintf(stderr, "Usage:\n"
 		"	%s [-f|-s]\n"
-		"	%s -F <file>\n"
+		"	%s {-F|--file} <file>\n"
 		"	%s <hostname>\n\n",
 		name, name, name);
 }
@@ -108,10 +109,16 @@ static char *get_name_from_file(const char *filename) {
 }
 
 int hostname_main(int argc, char **argv) {
+	static struct option long_options[2] = { [0] = {
+		.name = "file",
+		.has_arg = 1,
+		.flag = NULL,
+		.val = 'F'
+	} };
 	const char *filename = NULL;
 	int short_name = 1;
 	while(1) {
-		int c = getopt(argc, argv, "F:fsh");
+		int c = getopt_long(argc, argv, "F:fsh", long_options, NULL);
 		if(c == -1) break;
 		switch(c) {
 			case 'F':

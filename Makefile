@@ -337,8 +337,6 @@ $(OUTFILE):	$(ALL_TOOLS) toolbox.o
 %.c:	%_u.c
 	[ -f $@ ] && { $(TOUCH) -c $@; exit 0; } || $(SHELL) defmain.sh $*
 
-lsmod.c:	;
-
 cleanc:
 	/bin/rm -f $(TRAN_SRC)
 
