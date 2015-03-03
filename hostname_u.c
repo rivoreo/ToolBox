@@ -25,6 +25,8 @@ static int _sethostname(const char *name, size_t len) {
 		return -1;
 	}
 #ifdef _WIN32_WCE
+	/* The Winsock2 for Windows CE have a sethostname implementation
+	 * but a quite incompatible with the BSD sethostname */
 	size_t name_len = strlen(name);
 	if(!name_len) {
 		errno = EINVAL;
@@ -81,7 +83,7 @@ static char *get_name_from_file(const char *filename) {
 			return NULL;
 		}
 		buffer[s] = 0;
-		/* support note */
+		/* Support comment */
 		if(*p == '#') {
 			while(*++p != '\n') if(!*p) {
 				close(fd);
@@ -109,12 +111,9 @@ static char *get_name_from_file(const char *filename) {
 }
 
 int hostname_main(int argc, char **argv) {
-	static struct option long_options[2] = { [0] = {
-		.name = "file",
-		.has_arg = 1,
-		.flag = NULL,
-		.val = 'F'
-	} };
+	static struct option long_options[2] = {
+		{ "file", 1, NULL, 'F'}
+	};
 	const char *filename = NULL;
 	int short_name = 1;
 	while(1) {

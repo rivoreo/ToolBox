@@ -13,11 +13,6 @@
 #include <stdint.h>
 #include <fcntl.h>
 #include <string.h>
-//#ifdef __linux__
-//#include <linux/kd.h>
-//#include <linux/vt.h>
-//#endif
-//#include <pthread.h>
 #ifndef _WIN32
 #include <sys/ioctl.h>
 #else
@@ -124,7 +119,6 @@ int ioctl_main(int argc, char *argv[]) {
 			uint64_t tmp = strtoull(argv[optind], NULL, 0);
 			if(rem < arg_size) {
 				fprintf(stderr, "%s: too many arguments\n", argv[0]);
-				//exit(1);
 				//return 1;
 				goto failed;
 			}

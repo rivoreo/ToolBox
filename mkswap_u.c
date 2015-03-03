@@ -64,7 +64,7 @@ int mkswap_main(int argc, char **argv) {
 
 	while(1) {
 		int c = getopt(argc, argv, "p:L:U:");
-		if(c == EOF) break;
+		if(c == -1) break;
 		switch(c) {
 			case 'p':
 				pagesize = atoi(optarg);
