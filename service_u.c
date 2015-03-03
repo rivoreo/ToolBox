@@ -23,6 +23,10 @@ static void print_usage(const char *name) {
 	fprintf(stderr, "Usage: %s <service> [<action>] [<options>]\n", name);
 }
 
+char service_script[PATH_MAX+1];
+static size_t name_len;
+char *env[sizeof env_names / sizeof(char *) + 1];
+
 int service_main(int argc, char **argv) {
 	if(argc < 2) {
 		print_usage(argv[0]);
@@ -37,8 +41,6 @@ int service_main(int argc, char **argv) {
 		return 1;
 	}
 
-	char service_script[PATH_MAX+1] = INIT_D_PATH;
-	size_t name_len = strlen(argv[1]);
 	if(sizeof INIT_D_PATH + name_len > sizeof service_script) {
 		fprintf(stderr, "%s: Service name too long\n", argv[0]);
 		return 1;
@@ -49,7 +51,8 @@ int service_main(int argc, char **argv) {
 		return 1;
 	}
 	int i;
-	char *env[sizeof env_names / sizeof(char *) + 1];
+	name_len = strlen(argv[1]);
+	service_script[PATH_MAX+1] = INIT_D_PATH;
 	char **p = env;
 	for(i = 0; i < sizeof env_names / sizeof(char *); i++) {
 		char *e = getenv(env_names[i]);
