@@ -1,3 +1,12 @@
+/*	rm - toolbox
+	Copyright 2007-2015 PC GO Ld.
+	Copyright 2015 libdll.so
+
+	This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
+
+	This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+*/
+
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
@@ -15,7 +24,7 @@ static void usage() {
 #if defined _WIN32 && !defined _WIN32_WNT_NATIVE
 		".exe"
 #endif
-		" [-rR] [-f] <target>\n");
+		" [-rR] [-f] <target> [...]\n");
 	//return -1;
 }
 
@@ -84,7 +93,7 @@ int main(int argc, char *argv[])
 	/* check flags */
 	while(1) {
 		int c = getopt(argc, argv, "frR");
-		if(c == EOF) break;
+		if(c == -1) break;
 		switch (c) {
 			case 'f':
 				flags |= OPT_FORCE;

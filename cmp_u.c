@@ -27,7 +27,7 @@ int cmp_main(int argc, char *argv[]) {
 
 	while(1) {
 		int c = getopt(argc, argv, "bln:");
-		if(c == EOF) break;
+		if(c == -1) break;
 		switch(c) {
 			case 'b':
 				show_byte = 1;

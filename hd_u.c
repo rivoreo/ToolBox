@@ -32,7 +32,7 @@ int hd_main(int argc, char *argv[]) {
 
 	while(1) {
 		int c = getopt(argc, argv, "b:c:r:");
-		if(c == EOF) break;
+		if(c == -1) break;
 		switch(c) {
 			case 'b':
 				base = strtol(optarg, NULL, 0);

@@ -49,7 +49,7 @@ int notify_main(int argc, char *argv[]) {
 	}
 
 	if (argc <= optind) {
-		fprintf(stderr, "Usage: %s [-m <eventmask>] [-c <count>] [-p] [-v <verbosity>] <path> [<path>] [...]\n", argv[0]);
+		fprintf(stderr, "Usage: %s [-m <eventmask>] [-c <count>] [-p] [-v <verbosity>] <path> [...]\n", argv[0]);
 		return 1;
 	}
 

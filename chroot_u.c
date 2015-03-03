@@ -26,10 +26,46 @@ static void print_usage(const char *name) {
 		"	-G, --groups	Set a group list as <g1>[,<g2>[,...]]\n\n", name);
 }
 
-/*
-static int set_other_groups(const char *group_list) {
+static gid_t atogid(const char *group) {
+	if(isdigit(*group)) return atoi(group);
+	struct group *gr = getgrnam(group);
+	if(!gr) return (gid_t)-1;
+	return gr->gr_gid;
 }
-*/
+
+static int set_other_groups(const char *group_list) {
+	char buffer[32];
+	const char *p = group_list;
+	gid_t gid_list[32];
+	int i = 0, j = 0;
+	while(i < 32 && j < 32) {
+		if(!p[i] || p[i] == ':') {
+			buffer[i] = 0;
+			gid_t gid = atogid(buffer);
+			if(gid == (gid_t)-1) {
+				fprintf(stderr, "%s: No such group\n", buffer);
+				return -1;
+			}
+			gid_list[j++] = gid;
+
+			if(p[i]) {
+				p += i + 1;
+				i = 0;
+				continue;
+			}
+
+			if(setgroups(j, gid_list) < 0) {
+				perror("setgroups");
+				return -1;
+			}
+			return 0;
+		}
+		buffer[i] = p[i];
+		i++;
+	}
+	fprintf(stderr, "Too many groups or group name too long\n");
+	return -1;
+}
 
 int chroot_main(int argc, char **argv) {
 	static struct option long_options[5] = {
@@ -58,14 +94,10 @@ int chroot_main(int argc, char **argv) {
 				}
 				break;
 			case 'g':
-				if(isdigit(*optarg)) gid = atoi(optarg);
-				else {
-					struct group *gr = getgrnam(optarg);
-					if(!gr) {
-						fprintf(stderr, "%s: %s: No such group\n", argv[0], optarg);
-						return 1;
-					}
-					gid = gr->gr_gid;
+				gid = atogid(optarg);
+				if(gid == (gid_t)-1) {
+					fprintf(stderr, "%s: %s: No such group\n", argv[0], optarg);
+					return 1;
 				}
 				break;
 			case 'G':
@@ -81,6 +113,11 @@ int chroot_main(int argc, char **argv) {
 	if(argc == optind) {
 		print_usage(argv[0]);
 		return -1;
+	}
+
+	if(group_list && set_other_groups(group_list) < 0) {
+		// Error message already printed in that function
+		return 1;
 	}
 
 	if(chroot(argv[optind]) < 0) {
@@ -100,19 +137,8 @@ int chroot_main(int argc, char **argv) {
 		perror("setgid");
 		return 1;
 	}
-#if 0
-	if(group_list && set_other_groups(group_list) < 0) {
-		// Error message already printed in that function
-		return 1;
-	}
-#else
-	if(group_list) {
-		fprintf(stderr, "%s: set_other_groups: %s\n", argv[0], strerror(ENOSYS));
-		return 1;
-	}
-#endif
 
-	if(argc < optind) {
+	if(argc <= optind + 1) {
 		char *shell = getenv("SHELL");
 		argv[0] = shell ? : DEFAULT_SHELL;
 		argv[1] = NULL;

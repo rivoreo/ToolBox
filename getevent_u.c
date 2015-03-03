@@ -1217,7 +1217,7 @@ int getevent_main(int argc, char *argv[])
 	opterr = 0;
 	while(1) {
 		int c = getopt(argc, argv, "tns:Sv::dpilqc:rh");
-		if(c == EOF) break;
+		if(c == -1) break;
 		switch (c) {
 			case 't':
 				get_time = 1;
