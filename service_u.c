@@ -25,6 +25,10 @@ static void print_usage(const char *name) {
 }
 
 
+static char service_script[PATH_MAX+1];
+static size_t name_len;
+static char *env[sizeof env_names / sizeof(char *) + 1];
+
 int service_main(int argc, char **argv) {
 	/* TODO USE getoptlong */
 	static struct option long_options[] = {
@@ -55,13 +59,11 @@ int service_main(int argc, char **argv) {
 				return 0;
 		}
 	}
+	/* Check if no option, Avoid Segmentation fault */
 	if(optind == argc) {
 		print_usage(argv[0]);
 		return 0;
 	}	
-	char service_script[PATH_MAX+1];
-	size_t name_len;
-	char *env[sizeof env_names / sizeof(char *) + 1];
 	if(sizeof INIT_D_PATH + name_len > sizeof service_script) {
 		fprintf(stderr, "%s: Service name too long\n", argv[0]);
 		return 1;
