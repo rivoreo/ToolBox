@@ -24,41 +24,48 @@ static void print_usage(const char *name) {
 	fprintf(stderr, "Usage: %s <service> [<action>] [<options>]\n", name);
 }
 
-static char service_script[PATH_MAX+1];
-static size_t name_len;
-static char *env[sizeof env_names / sizeof(char *) + 1];
 
 int service_main(int argc, char **argv) {
 	/* TODO USE getoptlong */
 	static struct option long_options[] = {
 		{"help",	no_argument, 0, 'h'},
-		{"status_all",	no_argument, 0, 0}
+		{"status-all",	no_argument, 0, 0},
+		{0,		0,	0,	0}
 	};
 	while(1) {
 		int option_index = 0;
-		int c = getopt_long(argc, argv, "h0", long_options, &option_index);
-		if(c==-1) break;
+		int c = getopt_long(argc, argv, "h", long_options, &option_index);
+		if(c==-1) {
+			print_usage(argv[0]);
+			return 0;
+		}
 		switch(c) {
 			case 'h':
 				print_usage(argv[0]);
 				return -1;
-			case '0':
-				if(strcmp(long_options[option_index].name, "status-all")) {
+			case 0:
+				//printf("%s\n", long_options[option_index].name);
+				if(strcmp(long_options[option_index].name, "status-all")== 0) {
 					// TODO
+					printf("TODO\n");
 					return 1;
 				}
+				break;
 			case '?':
 				return -1;
 			default:
 				print_usage(argv[0]);
 				return 0;
 		}
-		if(optind < argc) {
+		if(optind == argc) {
 				print_usage(argv[0]);
 				return 0;
 		}	
 	}
 		
+	char service_script[PATH_MAX+1];
+	size_t name_len;
+	char *env[sizeof env_names / sizeof(char *) + 1];
 	if(sizeof INIT_D_PATH + name_len > sizeof service_script) {
 		fprintf(stderr, "%s: Service name too long\n", argv[0]);
 		return 1;
