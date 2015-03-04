@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#include <getopt.h>
 
 #define INIT_D_PATH "/etc/init.d/"
 
@@ -29,19 +30,35 @@ static char *env[sizeof env_names / sizeof(char *) + 1];
 
 int service_main(int argc, char **argv) {
 	/* TODO USE getoptlong */
-	if(argc < 2) {
-		print_usage(argv[0]);
-		return -1;
+	static struct option long_options[] = {
+		{"help",	no_argument, 0, 'h'},
+		{"status_all",	no_argument, 0, 0}
+	};
+	while(1) {
+		int option_index = 0;
+		int c = getopt_long(argc, argv, "h0", long_options, &option_index);
+		if(c==-1) break;
+		switch(c) {
+			case 'h':
+				print_usage(argv[0]);
+				return -1;
+			case '0':
+				if(strcmp(long_options[option_index].name, "status-all")) {
+					// TODO
+					return 1;
+				}
+			case '?':
+				return -1;
+			default:
+				print_usage(argv[0]);
+				return 0;
+		}
+		if(optind < argc) {
+				print_usage(argv[0]);
+				return 0;
+		}	
 	}
-	if(strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0) {
-		print_usage(argv[0]);
-		return 0;
-	}
-	if(strcmp(argv[1], "--status-all") == 0) {
-		// TODO
-		return 1;
-	}
-
+		
 	if(sizeof INIT_D_PATH + name_len > sizeof service_script) {
 		fprintf(stderr, "%s: Service name too long\n", argv[0]);
 		return 1;
