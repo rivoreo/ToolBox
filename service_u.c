@@ -28,6 +28,7 @@ static size_t name_len;
 static char *env[sizeof env_names / sizeof(char *) + 1];
 
 int service_main(int argc, char **argv) {
+	/* TODO USE getoptlong */
 	if(argc < 2) {
 		print_usage(argv[0]);
 		return -1;
@@ -51,11 +52,14 @@ int service_main(int argc, char **argv) {
 		return 1;
 	}
 	int i;
+	/* Copy the value of TERM LANG PATH to env point */
 	name_len = strlen(argv[1]);
 	service_script[PATH_MAX+1] = INIT_D_PATH;
 	char **p = env;
+	/* How many options the env_names have. */
 	for(i = 0; i < sizeof env_names / sizeof(char *); i++) {
 		char *e = getenv(env_names[i]);
+		/* Copy HEAD to env[i] */
 		if(e) *p++ = e;
 	}
 	*p = NULL;
