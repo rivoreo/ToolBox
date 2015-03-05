@@ -13,6 +13,11 @@
 #include <stdio.h>
 #include <assert.h>
 #include <getopt.h>
+#include <errno.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <dirent.h>
+
 
 #define INIT_D_PATH "/etc/init.d/"
 
@@ -28,6 +33,20 @@ static void print_usage(const char *name) {
 static char service_script[PATH_MAX+1];
 static size_t name_len;
 static char *env[sizeof env_names / sizeof(char *) + 1];
+
+static int status_all() {
+	struct dirent *de;
+	char tmp[1024];
+	DIR *d = opendir(INIT_D_PATH);
+	while(de = readdir(d)) {
+		if((strcmp(de->d_name, ".") == 0) || (strcmp(de->d_name, "..") == 0)) continue;
+		//const char slash = "/";
+		snprintf(tmp,sizeof(tmp),INIT_D_PATH"%s",de->d_name);
+		if(access(tmp, X_OK) == 0)
+		fprintf(stdout, "%s\n", de->d_name);
+	}
+	return 0;
+}
 
 int service_main(int argc, char **argv) {
 	/* TODO USE getoptlong */
@@ -48,7 +67,7 @@ int service_main(int argc, char **argv) {
 				//printf("%s\n", long_options[option_index].name);
 				if(strcmp(long_options[option_index].name, "status-all")== 0) {
 					// TODO
-					printf("TODO\n");
+					status_all();
 					return 1;
 				}
 				break;
