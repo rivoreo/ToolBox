@@ -36,14 +36,22 @@ static char *env[sizeof env_names / sizeof(char *) + 1];
 
 static int status_all() {
 	struct dirent *de;
+	struct stat s;
 	char tmp[1024];
 	DIR *d = opendir(INIT_D_PATH);
 	while(de = readdir(d)) {
 		if((strcmp(de->d_name, ".") == 0) || (strcmp(de->d_name, "..") == 0)) continue;
 		//const char slash = "/";
 		snprintf(tmp,sizeof(tmp),INIT_D_PATH"%s",de->d_name);
-		if(access(tmp, X_OK) == 0)
-		fprintf(stdout, "%s\n", de->d_name);
+
+		if(lstat(tmp, &s) < 0) {
+			fprintf(stderr, "stat: %s failed: %s", tmp, strerror(errno));
+			return -1;
+		}
+		if((s.st_mode & S_IFMT) != S_IFDIR) {
+			if(access(tmp, X_OK) == 0)
+				fprintf(stdout, "%s\n", de->d_name);
+		}
 	}
 	return 0;
 }
