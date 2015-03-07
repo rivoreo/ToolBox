@@ -27,7 +27,7 @@ static int _sethostname(const char *name, size_t len) {
 #ifdef _WIN32_WCE
 	/* The Winsock2 for Windows CE have a sethostname implementation
 	 * but a quite incompatible with the BSD sethostname */
-	size_t name_len = strlen(name);
+	size_t name_len = strnlen(name, len);
 	if(!name_len) {
 		errno = EINVAL;
 		return -1;
