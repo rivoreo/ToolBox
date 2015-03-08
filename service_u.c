@@ -45,12 +45,14 @@ static int get_status(const char *pathname) {
 		if(waitpid(pid, &status, 0) < 0) return '?';
 		if(WIFSIGNALED(status)) return '?';
 		//fprintf(stderr, "%d\n", WEXITSTATUS(status));
-		return WEXITSTATUS(status) == 0 ? '+' : '-';
+		int e = WEXITSTATUS(status);
+		if(e == 1) return '?';
+		return e == 0 ? '+' : '-';
 	} else {
 		close(STDOUT_FILENO);
 		close(STDERR_FILENO);
 		execle(pathname, pathname, "status", NULL, env);
-		exit(2);
+		exit(1);
 	}
 }
 

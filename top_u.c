@@ -206,7 +206,7 @@ int top_main(int argc, char *argv[]) {
 		/* Test windows size */
 		//sz=(struct winsize*)malloc(sizeof(struct winsize));
 		//memset(sz,0x00,sizeof(struct winsize));
-		if(ioctl(0,TIOCGWINSZ,&sz) == -1) {
+		if(ioctl(0, TIOCGWINSZ, &sz) == -1) {
 			perror("Could not get Terminal window size");
 			return EXIT_FAILURE;
 		}
@@ -462,7 +462,7 @@ static void print_procs(void) {
 		/* Clear whole line (cursor position unchanged) */
 		printf("\x1b[2K");
 
-		if(ioctl(0,TIOCGWINSZ,&sz) == -1) {
+		if(ioctl(0, TIOCGWINSZ, &sz) == -1) {
 			perror("Could not get Terminal window size");
 			return;
 		}
@@ -485,10 +485,8 @@ static void print_procs(void) {
 		}
 	}
 
-	total_delta_time = (new_cpu.utime + new_cpu.ntime + new_cpu.stime + new_cpu.itime
-			+ new_cpu.iowtime + new_cpu.irqtime + new_cpu.sirqtime)
-		- (old_cpu.utime + old_cpu.ntime + old_cpu.stime + old_cpu.itime
-				+ old_cpu.iowtime + old_cpu.irqtime + old_cpu.sirqtime);
+	total_delta_time = (new_cpu.utime + new_cpu.ntime + new_cpu.stime + new_cpu.itime + new_cpu.iowtime + new_cpu.irqtime + new_cpu.sirqtime) -
+		(old_cpu.utime + old_cpu.ntime + old_cpu.stime + old_cpu.itime + old_cpu.iowtime + old_cpu.irqtime + old_cpu.sirqtime);
 
 	qsort(new_procs, num_new_procs, sizeof(struct proc_info *), proc_cmp);
 

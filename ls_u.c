@@ -47,14 +47,6 @@
 #include <selinux/selinux.h>
 #endif
 #elif defined _WIN32_WNT_NATIVE
-/*
-#ifndef MAJOR
-#define MAJOR(A) (0)
-#endif
-#ifndef MINOR
-#define MINOR(A) (0)
-#endif
-*/
 #ifndef major
 #define major(d) (0)
 #endif
@@ -1325,7 +1317,7 @@ not_an_option:
 	fprintf(stderr, "%s: You need to specify at least one file\n", argv[0]);
 	return 1;
 #else
-	// list working directory if no files or directories were specified    
+	// list working directory if no files or directories were specified
 	return -listpath(".", flags);
 #endif
 }
