@@ -118,7 +118,7 @@ int service_main(int argc, char **argv) {
 				return -1;
 			case 0:
 				//printf("%s\n", long_options[option_index].name);
-				if(strcmp(long_options[option_index].name, "status-all")== 0) {
+				if(option_index == 1) {
 					init_env();
 					status_all();
 					return 1;
