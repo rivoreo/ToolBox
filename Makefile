@@ -284,6 +284,7 @@ TRAN_SRC = \
 	exists.c \
 	getenforce.c \
 	getevent.c \
+	getopt.c \
 	hd.c \
 	hostname.c \
 	id.c \
