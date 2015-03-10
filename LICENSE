@@ -19,6 +19,7 @@ Files
 	exists_u.c,
 	getenforce_u.c,
 	getevent_u.c,
+	getopt_u.c,
 	hd_u.c,
 	hostname_u.c,
 	id_u.c,

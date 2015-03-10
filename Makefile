@@ -80,6 +80,7 @@ ALL_TOOLS := \
 	df_u.o \
 	du_u.o \
 	exists_u.o \
+	getopt_u.o \
 	hd_u.o \
 	hostname_u.o \
 	id_u.o \
@@ -248,6 +249,7 @@ BASE_TOOLS := \
 	date$(SUFFIX) \
 	df$(SUFFIX) \
 	exists$(SUFFIX) \
+	getopt$(SUFFIX) \
 	hd$(SUFFIX) \
 	hostname$(SUFFIX) \
 	ioctl$(SUFFIX) \
@@ -399,6 +401,9 @@ exists.exe:	exists.c
 
 getenforce:	getenforce.c
 	$(CC) $(CFLAGS) $(LDFLAGS) getenforce.c -o $@ $(LIBS) $(SELINUX_LIBS)
+
+getopt.exe:	getopt.c
+	$(CC) $(CFLAGS) $(LDFLAGS) getopt.c -o $@ $(LIBS)
 
 hd.exe:	hd.c
 	$(CC) $(CFLAGS) $(LDFLAGS) hd.c -o hd.exe $(LIBS)
