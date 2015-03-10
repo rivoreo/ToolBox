@@ -5,7 +5,7 @@
 
 static int usage()
 {
-    fprintf(stderr,"rmdir <directory>\n");
+    fprintf(stderr,"rmdir <directory> [...]\n");
     return -1;
 }
 

@@ -159,8 +159,8 @@ int main(int argc, char *argv[]) {
 	}
 end_of_options_processing:
 #endif		
-	argc -= (optind - 1);
-	argv += (optind - 1);
+	//argc -= (optind - 1);
+	//argv += (optind - 1);
 
 	jcl(argv);
 	setup();

@@ -43,6 +43,7 @@ int parse_prio(const char *prio_str) {
 int swapon_main(int argc, char **argv) {
 	int flags = 0;
 	int prio;
+
 	opterr = 0;
 
 	while(1) {
@@ -68,7 +69,7 @@ int swapon_main(int argc, char **argv) {
 				usage(argv[0]);
 				return 0;
 			case '?':
-				fprintf(stderr, "unknown option: '-%c'\n", optopt);
+				fprintf(stderr, "Unknown option: '-%c'\n", optopt);
 				return -EINVAL;
 		}
 	}
