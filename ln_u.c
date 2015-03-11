@@ -18,9 +18,12 @@ int ln_main(int argc, char *argv[])
 	char new_name[PATH_MAX + 1];
 	int symbolic = 0;
 	int ret;
+	int i;
 
-	if(argc > 2 && strcmp(argv[1], "-s") == 0) {
+	for(i=0; i<argc; i++) if(strcmp(argv[i], "-s") == 0 || strcmp(argv[i], "--symbolic") == 0) {
+		int j;
 		symbolic = 1;
+		for(j=i; j>0; j--) argv[j] = argv[j - 1];
 		argc--;
 		argv++;
 	}

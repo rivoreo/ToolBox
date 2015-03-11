@@ -32,6 +32,7 @@ TOOL(getenforce)
 #ifdef __linux__
 TOOL(getevent)
 #endif
+TOOL(getopt)
 TOOL(hd)
 #ifndef _WIN32_WNT_NATIVE
 TOOL(hostname)

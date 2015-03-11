@@ -11,6 +11,7 @@ TOOLS_OBJS = \
 	date_u.o \
 	df_u.o \
 	exists_u.o \
+	getopt_u.o \
 	hd_u.o \
 	ioctl_u.o \
 	ln_u.o \
@@ -36,6 +37,7 @@ TOOLS = \
 	date \
 	df \
 	exists \
+	getopt \
 	hd \
 	ioctl \
 	link \

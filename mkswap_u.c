@@ -8,6 +8,7 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include <getopt.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -62,8 +63,15 @@ int mkswap_main(int argc, char **argv) {
 	int pagesize = 0;
 	struct linux_swap_header sw_hdr = { .version = 1 };
 
+	static struct option long_options[] = {
+		{ "pagesize", 1, NULL, 'p' },
+		{ "label", 1, NULL, 'L' },
+		{ "uuid", 1, NULL, 'U' },
+		{ NULL, 0, NULL, 0 }
+	};
+
 	while(1) {
-		int c = getopt(argc, argv, "p:L:U:");
+		int c = getopt_long(argc, argv, "p:L:U:", long_options, NULL);
 		if(c == -1) break;
 		switch(c) {
 			case 'p':

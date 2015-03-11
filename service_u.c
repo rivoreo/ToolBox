@@ -6,6 +6,15 @@
 	This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 */
 
+#ifdef _WIN32
+#ifdef _WIN32_WCE
+#include "service.wce.c"
+#else
+#error "Not implemented"
+#endif
+
+#else
+
 #include <unistd.h>
 #include <limits.h>
 #include <string.h>
@@ -154,3 +163,5 @@ int service_main(int argc, char **argv) {
 	perror(argv[0]);
 	return 1;
 }
+
+#endif
