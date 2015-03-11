@@ -93,6 +93,7 @@ ALL_TOOLS := \
 	ls_u.o \
 	lsof_u.o \
 	md5_u.o \
+	more_u.o \
 	mkdir_u.o \
 	mknod_u.o \
 	mkswap_u.o \
