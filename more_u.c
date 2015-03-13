@@ -3,6 +3,10 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/ioctl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+
 #include <termios.h>
 #include <errno.h>
 
@@ -12,7 +16,6 @@ static struct termios old, new;
 static int use_tty, use_pipe;
 static int page_col, page_row;
 static char filename[1024];
-static char end_line_text[] = "--More--";
 
 /* Initialize new terminal i/o settings */
 static void initTermios(int echo) 
@@ -89,17 +92,20 @@ static int read_more() {
 
 static int read_file(FILE *fp, int use_pipe) {
 	char line[page_col];
+	int seek;
 	if(!use_pipe) {
+		struct stat filestat;
+		lstat(filename, &filestat);
 		while(fgets(line, page_col, fp) != NULL) {
 			if(page_row != 1) {
 				fprintf(stdout,"%s",line);
 				//fflush(stdout);
 				page_row--;
 			} else {
-				/* Save current cursor position */
-				//printf("\x1b[7");
-			fprintf(stdout, "%s", end_line_text);
-			read_more();
+				seek=ftell(fp);
+				int percent = ((float)seek/(float)filestat.st_size) * 100;
+				fprintf(stdout, "--More-- (%%%d)",percent);
+				read_more();
 			}
 
 		}
@@ -126,7 +132,8 @@ static int read_file(FILE *fp, int use_pipe) {
 			perror("Error open TTY");
 			return errno;
 		}
-		printf("test\n");
+
+		int line_num = i -1;
 		int l = 0;
 		for(i-- ;i > 0; i--) {
 			if(page_row != 1) {
@@ -134,13 +141,21 @@ static int read_file(FILE *fp, int use_pipe) {
 				//fflush(stdout);
 				page_row--;
 			} else {
-				/* Save current cursor position */
-				//printf("\x1b[7");
-			fprintf(stdout, "%s", end_line_text);
-			read_more();
+				int percent = ((float)l/(float)line_num) * 100;
+				fprintf(stdout, "--More-- (%%%d)",percent);
+				read_more();
 			}
 			l++;
 		}
+		/* Free memory */
+		for(i=0;i<=line_num;i++) {
+			free(buff[i]);
+		}
+		free(buff);
+	}
+	if(fclose(fp) != 0) {
+		perror("Error to close");
+		return errno;
 	}
 	return 0;
 }
@@ -199,7 +214,7 @@ int more_main(int argc, char *argv[]) {
 	}
 
 
-	read_file(fp,use_pipe);
+	read_file(fp, use_pipe);
 
 	return 0;
 }
