@@ -202,11 +202,10 @@ int more_main(int argc, char *argv[]) {
 			perror("Error open file");
 			return errno;
 		}
-	}
-	
-	/* If a pipe */
-	if(use_pipe) {
-		
+	}else if(argc == 1 && !use_pipe) {
+		usage(argv[0]);
+		return 1;
+	} else if(use_pipe) {
 		if((fp = fdopen(STDIN_FILENO,"r")) == NULL) {
 			perror("Error open STDIN_FILENO");
 			return errno;
