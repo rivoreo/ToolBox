@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
+#include <stdlib.h>
 #include <sys/ioctl.h>
 #include <termios.h>
 #include <errno.h>
@@ -8,7 +9,7 @@
 static struct winsize winsz;
 static struct termios old, new;
 
-static int use_tty;
+static int use_tty, not_use_pipe;
 static int page_col, page_row;
 static char filename[1024];
 static char end_line_text[] = "--More--";
@@ -86,20 +87,60 @@ static int read_more() {
 	return 0;
 }
 
-static int read_file(FILE *fp) {
+static int read_file(FILE *fp, int not_use_pipe) {
 	char line[page_col];
-	while(fgets(line, page_col, fp) != NULL) {
-		if(page_row != 1) {
-			fprintf(stdout,"%s",line);
-			//fflush(stdout);
-			page_row--;
-		} else {
-			/* Save current cursor position */
-			//printf("\x1b[7");
+	if(not_use_pipe) {
+		while(fgets(line, page_col, fp) != NULL) {
+			if(page_row != 1) {
+				fprintf(stdout,"%s",line);
+				//fflush(stdout);
+				page_row--;
+			} else {
+				/* Save current cursor position */
+				//printf("\x1b[7");
 			fprintf(stdout, "%s", end_line_text);
 			read_more();
-		}
+			}
 
+		}
+	} else {
+		char **buff;
+		int i = 1;
+		char line[page_col];
+		/* First alloc */
+		buff = (char **)malloc(sizeof(char *));
+		while(fgets(line, page_col, fp) != NULL) {
+			/* Alloc buff[i-1] */
+			buff[i-1] = (char *)malloc(sizeof(char)*page_col+1);
+			strcpy(buff[i-1], line);
+			i++;
+			/* realloc */
+			buff = (char **)realloc(buff, sizeof(char *)*i);
+			//printf("%s",buff[i-1]);
+		}
+		if(close(STDIN_FILENO)) {
+			perror("STDIN_FILENO close faild");
+			return errno;
+		}
+		if((fp = fopen("/dev/tty","r")) == NULL) {
+			perror("Error open TTY");
+			return errno;
+		}
+		printf("test\n");
+		int l = 0;
+		for(i-- ;i > 0; i--) {
+			if(page_row != 1) {
+				fprintf(stdout,"%s",buff[l]);
+				//fflush(stdout);
+				page_row--;
+			} else {
+				/* Save current cursor position */
+				//printf("\x1b[7");
+			fprintf(stdout, "%s", end_line_text);
+			read_more();
+			}
+			l++;
+		}
 	}
 	return 0;
 }
@@ -107,6 +148,7 @@ static int read_file(FILE *fp) {
 
 int more_main(int argc, char *argv[]) {
 	use_tty = isatty(STDOUT_FILENO);
+	not_use_pipe = isatty(STDIN_FILENO);
 
 	if(use_tty) {
 		/*
@@ -146,17 +188,17 @@ int more_main(int argc, char *argv[]) {
 		}
 	}
 	
-	/* If not a pipe */
-	if(!isatty(STDIN_FILENO)) {
+	/* If a pipe */
+	if(!not_use_pipe) {
 		
-		if((fp = fopen(STDIN_FILENO,"r")) == NULL) {
+		if((fp = fdopen(STDIN_FILENO,"r")) == NULL) {
 			perror("Error open STDIN_FILENO");
 			return errno;
 		}
 	}
 
 
-	read_file(fp);
+	read_file(fp,not_use_pipe);
 
 	return 0;
 }
