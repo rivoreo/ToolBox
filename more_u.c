@@ -9,7 +9,7 @@
 static struct winsize winsz;
 static struct termios old, new;
 
-static int use_tty, not_use_pipe;
+static int use_tty, use_pipe;
 static int page_col, page_row;
 static char filename[1024];
 static char end_line_text[] = "--More--";
@@ -87,9 +87,9 @@ static int read_more() {
 	return 0;
 }
 
-static int read_file(FILE *fp, int not_use_pipe) {
+static int read_file(FILE *fp, int use_pipe) {
 	char line[page_col];
-	if(not_use_pipe) {
+	if(!use_pipe) {
 		while(fgets(line, page_col, fp) != NULL) {
 			if(page_row != 1) {
 				fprintf(stdout,"%s",line);
@@ -148,7 +148,8 @@ static int read_file(FILE *fp, int not_use_pipe) {
 
 int more_main(int argc, char *argv[]) {
 	use_tty = isatty(STDOUT_FILENO);
-	not_use_pipe = isatty(STDIN_FILENO);
+	int use_pipe = !isatty(STDIN_FILENO);
+
 
 	if(use_tty) {
 		/*
@@ -189,7 +190,7 @@ int more_main(int argc, char *argv[]) {
 	}
 	
 	/* If a pipe */
-	if(!not_use_pipe) {
+	if(use_pipe) {
 		
 		if((fp = fdopen(STDIN_FILENO,"r")) == NULL) {
 			perror("Error open STDIN_FILENO");
@@ -198,7 +199,7 @@ int more_main(int argc, char *argv[]) {
 	}
 
 
-	read_file(fp,not_use_pipe);
+	read_file(fp,use_pipe);
 
 	return 0;
 }
