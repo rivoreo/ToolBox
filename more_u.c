@@ -84,8 +84,8 @@ static int read_more() {
 			printf("\x1b[1K");
 			/* Set the cursor to the start of the line */
 			printf("\x1b[%d;0H",winsz.ws_row);
-			break;
-
+			/* If none input, return 1 */
+			return 1;
 	}
 	return 0;
 }
@@ -105,7 +105,9 @@ static int read_file(FILE *fp, int use_pipe) {
 				seek=ftell(fp);
 				int percent = ((float)seek/(float)filestat.st_size) * 100;
 				fprintf(stdout, "--More-- (%%%d)",percent);
-				read_more();
+				while(read_more() == 1) {
+					fprintf(stdout, "--More-- (%%%d)",percent);
+				}
 			}
 
 		}
