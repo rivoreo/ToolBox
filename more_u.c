@@ -5,8 +5,6 @@
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <unistd.h>
-
 #include <termios.h>
 #include <errno.h>
 
@@ -59,7 +57,9 @@ static char getche(void)
 
 static int usage(char *name) {
 	fprintf(stdout, "Usage:\n"
-				"%s [options] <file>...\n", name);
+				"%s [options] <file>...\n\n"
+				"Options:\n"
+				"-V	display version information and exit\n", name);
 	return 1;
 }
 
@@ -166,6 +166,7 @@ static int read_file(FILE *fp, int use_pipe) {
 int more_main(int argc, char *argv[]) {
 	use_tty = isatty(STDOUT_FILENO);
 	int use_pipe = !isatty(STDIN_FILENO);
+	int opt;
 
 
 	if(use_tty) {
@@ -190,7 +191,23 @@ int more_main(int argc, char *argv[]) {
 		usage(argv[0]);
 		return 1;
 	}
-	
+
+	/* getopt */
+	while((opt = getopt(argc, argv,"V")) != -1) {
+		switch(opt) {
+			case 'V':
+				fprintf(stdout,"%s, From Toolbox by libdll.so\n", argv[0]);
+				break;
+			default:
+				usage(argv[0]);
+				exit(EXIT_FAILURE);
+		}
+	}
+	if(optind == argc && !use_pipe) {
+		usage(argv[0]);
+		return 1;
+	}
+
 	/* 
 	 * Now only support open a file or pipe
 	 * So I dont use get opt now.
