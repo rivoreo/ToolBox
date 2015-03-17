@@ -67,7 +67,9 @@ static char filename[1024];
 
 static int usage(char *name) {
 	fprintf(stdout, "Usage:\n"
-		"%s [<options>] [<file>] [...]\n", name);
+		"%s [<options>] [<file>] [...]\n\n"
+		"Options:\n"
+		"	-V	display version information and exit\n\n", name);
 	return 1;
 }
 
@@ -92,8 +94,8 @@ static int read_more() {
 			printf("\x1b[1K");
 			/* Set the cursor to the start of the line */
 			printf("\x1b[%d;0H",winsz.ws_row);
-			break;
-
+			/* If none input, return 1 */
+			return 1;
 	}
 	return 0;
 }
@@ -113,7 +115,9 @@ static int read_file(FILE *fp, int use_pipe) {
 				seek=ftell(fp);
 				int percent = ((float)seek/(float)filestat.st_size) * 100;
 				fprintf(stdout, "--More-- (%%%d)",percent);
-				read_more();
+				while(read_more() == 1) {
+					fprintf(stdout, "--More-- (%%%d)",percent);
+				}
 			}
 
 		}
@@ -172,6 +176,7 @@ static int read_file(FILE *fp, int use_pipe) {
 int more_main(int argc, char *argv[]) {
 	int use_tty = isatty(STDOUT_FILENO);
 	int use_pipe = !isatty(STDIN_FILENO);
+	int opt;
 
 	if(use_tty) {
 		/*
@@ -195,7 +200,23 @@ int more_main(int argc, char *argv[]) {
 		usage(argv[0]);
 		return 1;
 	}
-	
+
+	/* getopt */
+	while((opt = getopt(argc, argv, "V")) != -1) {
+		switch(opt) {
+			case 'V':
+				fprintf(stdout,"%s, From Toolbox by libdll.so\n", argv[0]);
+				break;
+			default:
+				usage(argv[0]);
+				return EXIT_FAILURE;
+		}
+	}
+	if(optind == argc && !use_pipe) {
+		usage(argv[0]);
+		return 1;
+	}
+
 	/* 
 	 * Now only support open a file or pipe
 	 * So I dont use get opt now.
@@ -223,4 +244,3 @@ int more_main(int argc, char *argv[]) {
 
 	return 0;
 }
-
