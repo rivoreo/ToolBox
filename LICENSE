@@ -41,6 +41,7 @@ Files
 	mkdir_u.c,
 	mknod_u.c,
 	mkswap_u.c,
+	more_u.c,
 	mtd.h,
 	mtdread*,
 	mv_u.c,

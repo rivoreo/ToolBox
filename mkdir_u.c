@@ -27,24 +27,6 @@ static void usage() {
 
 int mkdir_main(int argc, char *argv[]) {
 	int ret;
-/*
-    if(argc < 2 || strcmp(argv[1], "--help") == 0) {
-        return usage();
-    }
-
-    int recursive = (strcmp(argv[1], "-p") == 0 ||
-                     strcmp(argv[1], "--parents") == 0) ? 1 : 0;
-
-    if(recursive && argc < 3) {
-        // -p specified without a path
-        return usage();
-    }
-
-    if(recursive) {
-        argc--;
-        argv++;
-    }
-*/
 	int recursive = 0;
 	if(argc > 1 && (strcmp(argv[1], "-p") == 0 || strcmp(argv[1], "--parents") == 0)) {
 		recursive = 1;

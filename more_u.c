@@ -1,25 +1,32 @@
+/*	more - toolbox
+	Copyright 2015 libdll.so
+
+	This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
+
+	This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+*/
+
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
-#include <sys/ioctl.h>
-#include <sys/stat.h>
 #include <sys/types.h>
-#include <unistd.h>
-
-#include <termios.h>
+#include <sys/stat.h>
 #include <errno.h>
+
+#ifdef _WIN32
+#include <windows.h>
+#include <winioctl.h>
+#include <conio.h>
+#else
+#include <sys/ioctl.h>
+#include <termios.h>
 
 static struct winsize winsz;
 static struct termios old, new;
 
-static int use_tty, use_pipe;
-static int page_col, page_row;
-static char filename[1024];
-
 /* Initialize new terminal i/o settings */
-static void initTermios(int echo) 
-{
+static void set_terminal(int echo) {
 	tcgetattr(0, &old); /* grab old terminal i/o settings */
 	new = old; /* make new settings same as old settings */
 	new.c_iflag &= ~ICRNL; /* Translate carriage return to newline on input (unless IGNCR is set) */
@@ -29,37 +36,38 @@ static void initTermios(int echo)
 }
 
 /* Restore old terminal i/o settings */
-static void resetTermios(void) 
-{
+static void reset_terminal(void) {
 	tcsetattr(0, TCSANOW, &old);
 }
 
 /* Read 1 character - echo defines echo mode */
-static char getch_(int echo) 
-{
+static char getch_(int echo) {
 	char ch;
-	initTermios(echo);
+	set_terminal(echo);
 	ch = getchar();
-	resetTermios();
+	reset_terminal();
 	return ch;
 }
 
 /* Read 1 character without echo */
-static char getch(void) 
-{
+static char getch(void) {
 	return getch_(0);
 }
 
+#if 0		/* Not used */
 /* Read 1 character with echo */
-static char getche(void) 
-{
+static char getche(void) {
 	return getch_(1);
 }
+#endif
+#endif
 
+static int page_col, page_row;
+static char filename[1024];
 
 static int usage(char *name) {
 	fprintf(stdout, "Usage:\n"
-				"%s [options] <file>...\n", name);
+		"%s [<options>] [<file>] [...]\n", name);
 	return 1;
 }
 
@@ -128,14 +136,14 @@ static int read_file(FILE *fp, int use_pipe) {
 			perror("STDIN_FILENO close faild");
 			return errno;
 		}
-		if((fp = fopen("/dev/tty","r")) == NULL) {
+		if((fp = fopen("/dev/tty", "r")) == NULL) {
 			perror("Error open TTY");
 			return errno;
 		}
 
 		int line_num = i -1;
 		int l = 0;
-		for(i-- ;i > 0; i--) {
+		for(i-- ; i > 0; i--) {
 			if(page_row != 1) {
 				fprintf(stdout,"%s",buff[l]);
 				//fflush(stdout);
@@ -148,7 +156,7 @@ static int read_file(FILE *fp, int use_pipe) {
 			l++;
 		}
 		/* Free memory */
-		for(i=0;i<=line_num;i++) {
+		for(i=0; i<=line_num; i++) {
 			free(buff[i]);
 		}
 		free(buff);
@@ -162,9 +170,8 @@ static int read_file(FILE *fp, int use_pipe) {
 
 
 int more_main(int argc, char *argv[]) {
-	use_tty = isatty(STDOUT_FILENO);
+	int use_tty = isatty(STDOUT_FILENO);
 	int use_pipe = !isatty(STDIN_FILENO);
-
 
 	if(use_tty) {
 		/*
@@ -202,7 +209,7 @@ int more_main(int argc, char *argv[]) {
 			perror("Error open file");
 			return errno;
 		}
-	}else if(argc == 1 && !use_pipe) {
+	} else if(argc == 1 && !use_pipe) {
 		usage(argv[0]);
 		return 1;
 	} else if(use_pipe) {
@@ -211,7 +218,6 @@ int more_main(int argc, char *argv[]) {
 			return errno;
 		}
 	}
-
 
 	read_file(fp, use_pipe);
 

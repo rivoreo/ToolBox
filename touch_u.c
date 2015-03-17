@@ -42,7 +42,7 @@ static void usage(void) {
 }
 
 int touch_main(int argc, char *argv[]) {
-	int i, aflag = 0, mflag = 0, flags = 0, debug = 0;
+	int i, aflag = 0, mflag = 0, flags = 0, debug = 0, end_of_options = 0;
 	char *file = NULL;
 #ifdef _NO_UTIMENSAT
 	int tflag = 0;
@@ -55,9 +55,9 @@ int touch_main(int argc, char *argv[]) {
 	specified_time.tv_nsec = UTIME_NOW;
 #endif
 	for(i = 1; i < argc; i++) {
-		if(argv[i][0] == '-') {
+		if(!end_of_options && argv[i][0] == '-' && argv[i][1]) {
 			/* an option */
-			const char *arg = argv[i]+1;
+			const char *arg = argv[i] + 1;
 			while(arg[0]) {
 				switch(arg[0]) {
 					case 'a': aflag = 1; break;
@@ -83,6 +83,14 @@ int touch_main(int argc, char *argv[]) {
 					case 'l': flags |= AT_SYMLINK_NOFOLLOW; break;
 #endif
 					case 'd': debug = 1; break;
+					case '-':
+						if(arg[0]) {
+							usage();
+							return -1;
+						} else {
+							end_of_options = 1;
+							break;
+						}
 					default:
 						usage();
 						return -1;

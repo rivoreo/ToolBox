@@ -153,6 +153,7 @@ EXTRA_TOOLS := \
 	ln \
 	lsof \
 	mknod \
+	more \
 	mtdread \
 	netstat \
 	ps \
@@ -301,6 +302,7 @@ TRAN_SRC = \
 	mknod.c \
 	mkswap.c \
 	modexe.c \
+	more.c \
 	mv.c \
 	netstat.c \
 	nohup.c \
