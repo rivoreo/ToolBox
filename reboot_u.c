@@ -34,7 +34,7 @@ extern int WINAPI KernelIoControl(unsigned long int, void *, unsigned long int, 
 #ifndef SE_SHUTDOWN_PRIVILEGE
 #define SE_SHUTDOWN_PRIVILEGE (19)
 #endif
-#ifndef _WIN32_WCE
+//#ifndef _WIN32_WCE
 // Custom errno mapping for reboot
 static int __set_errno_from_oserror() {
 	switch(GetLastError()) {
@@ -46,10 +46,10 @@ static int __set_errno_from_oserror() {
 			return errno = EINVAL;
 	}
 }
-#endif
+//#endif
 #endif
 static int enable_shutdown_privilege() {
-	void *token = NULL;
+	void *token;
 	TOKEN_PRIVILEGES privilege;
 	memset(&privilege, 0, sizeof privilege);
 	privilege.PrivilegeCount = 1;
@@ -80,7 +80,7 @@ static int enable_shutdown_privilege() {
 	int ok = AdjustTokenPrivileges(token, 0, &privilege, sizeof privilege, NULL, NULL);
 	if(!ok) __set_errno_from_oserror();
 	CloseHandle(token);
-	return ok ? 0 : 1;
+	return ok ? 0 : -1;
 #endif
 }
 #endif		/* _WIN32_WCE */

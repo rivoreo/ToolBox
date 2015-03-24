@@ -70,6 +70,10 @@ static int status_all() {
 	struct stat s;
 	DIR *d = opendir(INIT_D_PATH);
 	int i;
+	if(!d) {
+		perror(INIT_D_PATH);
+		return 1;
+	}
 first_loop:
 	while((de = readdir(d))) {
 		if((strcmp(de->d_name, ".") == 0) || (strcmp(de->d_name, "..") == 0)) continue;
