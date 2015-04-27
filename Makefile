@@ -175,9 +175,8 @@ EXTRA_TOOLS := \
 ifdef DARWIN
 NO_SELINUX = 1
 CFLAGS += -D_NO_UTIMENSAT -fnested-functions
+LIBS += -Lmaclib
 NEED_LIBGETOPT = 1
-#LIBS += -Lmaclib -lgetopt
-#DEPEND += maclib/libgetopt.a
 ifndef SHARED_OBJECT
 ALL_TOOLS += printenv_u.o
 endif
