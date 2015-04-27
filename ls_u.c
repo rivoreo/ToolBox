@@ -7,10 +7,12 @@
 	This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 */
 
+#define _ALL_SOURCE
 #define __USE_ISOC99
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <sys/types.h>
 #include <dirent.h>
 #include <errno.h>
@@ -46,13 +48,6 @@
 #ifndef _NO_SELINUX
 #include <selinux/selinux.h>
 #endif
-#elif defined _WIN32_WNT_NATIVE
-#ifndef major
-#define major(d) (0)
-#endif
-#ifndef minor
-#define minor(d) (0)
-#endif
 #endif
 
 #include <limits.h>
@@ -66,6 +61,12 @@
 // Using ntdll's _snprintf
 extern int _snprintf(char *, size_t, const char *, ...);
 #define snprintf _snprintf
+#endif
+#ifndef major
+#define major(d) (0)
+#endif
+#ifndef minor
+#define minor(d) (0)
 #endif
 #else
 #include <windows.h>
@@ -87,6 +88,16 @@ extern int _snprintf(char *, size_t, const char *, ...);
 #endif
 #endif		/* !_WIN32_WCE */
 #endif		/* _WIN32_WNT_NATIVE */
+#else
+#if !defined major || !defined minor
+#include <sys/mkdev.h>
+#endif
+#endif
+
+#ifndef NAN
+//#if __GNUC_PREREQ (3,3)
+#define NAN (__builtin_nanf(""))
+//#endif
 #endif
 
 /* Test COLOR */
@@ -217,30 +228,37 @@ static int printf_color(int color, const char *format, ...) {
 	unsigned short int get_console_attribute(int t) {
 		switch(t) {
 			case COLOR_BLACK:
-			case COLOR_BOLD_BLACK:
 				return 0;
-			case COLOR_RED:
-			case COLOR_BOLD_RED:
-				return FOREGROUND_RED;
-			case COLOR_GREEN:
-			case COLOR_BOLD_GREEN:
-				return FOREGROUND_GREEN;
-			case COLOR_BLUE:
-			case COLOR_BOLD_BLUE:
-				return FOREGROUND_BLUE;
-			case COLOR_PURPLE:
-			case COLOR_BOLD_PURPLE:
-				return FOREGROUND_RED | FOREGROUND_BLUE;
-			case COLOR_YELLOW:
-			case COLOR_BOLD_YELLOW:
-				return FOREGROUND_RED | FOREGROUND_GREEN;
-			case COLOR_CRAN:
-			case COLOR_BOLD_CRAN:
-				return FOREGROUND_BLUE | FOREGROUND_GREEN;
-			case COLOR_BOLD_WHITE:
-				return FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
-			case COLOR_GRAY:
+			case COLOR_BOLD_BLACK:
 				return FOREGROUND_INTENSITY;
+			case COLOR_RED:
+				return FOREGROUND_RED;
+			case COLOR_BOLD_RED:
+				return FOREGROUND_RED | FOREGROUND_INTENSITY;
+			case COLOR_GREEN:
+				return FOREGROUND_GREEN;
+			case COLOR_BOLD_GREEN:
+				return FOREGROUND_GREEN | FOREGROUND_INTENSITY;
+			case COLOR_BLUE:
+				return FOREGROUND_BLUE;
+			case COLOR_BOLD_BLUE:
+				return FOREGROUND_BLUE | FOREGROUND_INTENSITY;
+			case COLOR_PURPLE:
+				return FOREGROUND_RED | FOREGROUND_BLUE;
+			case COLOR_BOLD_PURPLE:
+				return FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
+			case COLOR_YELLOW:
+				return FOREGROUND_RED | FOREGROUND_GREEN;
+			case COLOR_BOLD_YELLOW:
+				return FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY;
+			case COLOR_CRAN:
+				return FOREGROUND_BLUE | FOREGROUND_GREEN;
+			case COLOR_BOLD_CRAN:
+				return FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_INTENSITY;
+			case COLOR_BOLD_WHITE:
+				return FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
+			//case COLOR_GRAY:
+			//	return FOREGROUND_INTENSITY;
 			case COLOR_BACKGROUND_BLACK:
 				return 0;
 			case COLOR_BACKGROUND_RED:
@@ -259,6 +277,7 @@ static int printf_color(int color, const char *format, ...) {
 				return BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE;
 			default:
 				fprintf(stderr, "toolbox warning: ls: printf_color: get_console_attribute: color %d not supported\n", color);
+			case NO_COLOR:
 				return FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
 		}
 	}
@@ -793,8 +812,13 @@ static int listfile_long(const char *path, int flags) {
 #ifndef _WIN32
 	if(flags & LIST_NUMERIC_ID) {
 #endif
-		sprintf(user, "%u", s.st_uid);
-		sprintf(group, "%u", s.st_gid);
+//#ifdef __INTERIX
+//		sprintf(user, "%lu", s.st_uid);
+//		sprintf(group, "%lu", s.st_gid);
+//#else
+		sprintf(user, "%u", (unsigned int)s.st_uid);
+		sprintf(group, "%u", (unsigned int)s.st_gid);
+//#endif
 #ifndef _WIN32
 	} else {
 		user2str(s.st_uid, user);
@@ -970,8 +994,8 @@ static int listfile_maclabel(const char *path, int flags) {
 #ifndef _WIN32
 	if(flags & LIST_NUMERIC_ID) {
 #endif
-		sprintf(user, "%u", s.st_uid);
-		sprintf(group, "%u", s.st_gid);
+		sprintf(user, "%u", (unsigned int)s.st_uid);
+		sprintf(group, "%u", (unsigned int)s.st_gid);
 #ifndef _WIN32
 	} else {
 		user2str(s.st_uid, user);

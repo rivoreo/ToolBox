@@ -28,6 +28,9 @@ CC_VERSION = $(shell gcc --version | grep -E "gcc.+[0-9]\.[0-9]\.[0-9]" | grep -
 ifeq ($(CC_VERSION),.9)
 NEED_LIBPCRE = 1
 endif
+ifneq ($(OS_NAME),Linux)
+NO_SELINUX = 1
+endif
 ifeq ($(OS_NAME),Darwin)
 DARWIN = 1
 endif
