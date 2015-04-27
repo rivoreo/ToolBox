@@ -124,6 +124,10 @@ ALL_TOOLS := \
 	uptime_u.o \
 	which_u.o
 
+ifdef INTERIX
+NEED_LIBGETOPT = 1
+endif
+
 ifdef MINGW
 SUFFIX := .exe
 CFLAGS += -D_NO_SELINUX
@@ -171,8 +175,9 @@ EXTRA_TOOLS := \
 ifdef DARWIN
 NO_SELINUX = 1
 CFLAGS += -D_NO_UTIMENSAT -fnested-functions
-LIBS += -Lmaclib -lgetopt
-DEPEND += maclib/libgetopt.a
+NEED_LIBGETOPT = 1
+#LIBS += -Lmaclib -lgetopt
+#DEPEND += maclib/libgetopt.a
 ifndef SHARED_OBJECT
 ALL_TOOLS += printenv_u.o
 endif
@@ -277,6 +282,11 @@ BASE_TOOLS := \
 	uptime$(SUFFIX) \
 	which$(SUFFIX)
 
+ifdef NEED_LIBGETOPT
+LIBS += -Llibgetopt -lgetopt
+DEPEND += libgetopt/libgetopt.a
+endif
+LDLIBS = $(LIBS)
 
 TRAN_SRC = \
 	cat.c \
@@ -357,6 +367,7 @@ cleanc:
 
 clean:	cleanc
 	/bin/rm -f toolbox toolbox.dll $(LIB_NAME) $(BASE_TOOLS) $(EXTRA_TOOLS) *.o *.exe
+	$(MAKE) -C libgetopt $@
 	$(MAKE) -C posix-io-for-windows distclean
 
 help:
@@ -493,8 +504,9 @@ uptime$(SUFFIX):	uptime.c
 which.exe:	which.c
 	$(CC) $(CFLAGS) $(LDFLAGS) which.c -o $@ $(LIBS)
 
-maclib/libgetopt.a:
-	$(MAKE) -C maclib libgetopt.a
+libgetopt/libgetopt.a:	libgetopt/getopt.o
+#	CC="$(CC)" CFLAGS="$(CFLAGS)" $(MAKE) -C libgetopt libgetopt.a
+	$(AR) -rs $@ $^
 
 posix-io-for-windows/libposixio.a:
 	$(MAKE) -C posix-io-for-windows
