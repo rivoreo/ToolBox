@@ -282,6 +282,7 @@ BASE_TOOLS := \
 	which$(SUFFIX)
 
 ifdef NEED_LIBGETOPT
+CFLAGS += -Ilibgetopt
 LIBS += -Llibgetopt -lgetopt
 DEPEND += libgetopt/libgetopt.a
 endif
