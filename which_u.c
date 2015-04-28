@@ -20,7 +20,7 @@
 #endif
 
 static void print_usage(const char *name) {
-	fprintf(stderr, "Usage: %s [-a|-s] <name>\n", name);
+	fprintf(stderr, "Usage: %s [-a|-s] <name> [...]\n", name);
 }
 
 int which(const char *path, const char *filename, char *rpath) {

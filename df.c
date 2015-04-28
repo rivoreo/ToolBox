@@ -47,16 +47,15 @@ static void printsize(long long int n) {
 
 static void sdf(const struct statfs *st, const char *s, int always) {
 	if(st->f_blocks == 0 && !always) return;
-#if defined __GNU__ || defined __linux__ || (defined _WIN32 && !defined _WIN32_WNT_NATIVE)
-	printf("%-20s  ", s);
+#if defined __GNU__ || defined __linux__ || (defined _WIN32 && !defined _WIN32_WNT_NATIVE) || (defined __APPLE__ && defined _NO_STATFS)
 #else
 	printf("%-20s  ", st->f_mntfromname);
 #endif
-	printsize((long long)st->f_blocks * (long long)st->f_bsize);
+	printsize((long long int)st->f_blocks * (long long int)st->f_bsize);
 	printf("  ");
-	printsize((long long)(st->f_blocks - (long long)st->f_bfree) * st->f_bsize);
+	printsize((long long int)(st->f_blocks - (long long int)st->f_bfree) * st->f_bsize);
 	printf("  ");
-	printsize((long long)st->f_bfree * (long long)st->f_bsize);
+	printsize((long long int)st->f_bfree * (long long int)st->f_bsize);
 	printf("   %d\n", (int)st->f_bsize);
 }
 
@@ -90,7 +89,7 @@ int main(int argc, char *argv[]) {
 	}
 #endif
 	puts(
-#if defined __GNU__ || defined __linux__ || (defined _WIN32 && !defined _WIN32_WNT_NATIVE)
+#if defined __GNU__ || defined __linux__ || (defined _WIN32 && !defined _WIN32_WNT_NATIVE) || (defined __APPLE__ && defined _NO_STATFS)
 	//"Mounted on"
 	"File system"
 #else

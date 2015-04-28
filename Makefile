@@ -370,7 +370,8 @@ cleanc:
 
 clean:	cleanc
 	/bin/rm -f toolbox toolbox.dll $(LIB_NAME) $(BASE_TOOLS) $(EXTRA_TOOLS) *.o *.exe
-	$(MAKE) -C libgetopt $@
+#	$(MAKE) -C libgetopt $@
+	/bin/rm -f libgetopt/*.o libgetopt/*.a
 	$(MAKE) -C posix-io-for-windows distclean
 
 help:
