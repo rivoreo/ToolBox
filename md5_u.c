@@ -14,7 +14,14 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#ifdef _NO_OPENSSL
+#include <md5.h>
+#define MD5_Init MD5Init
+#define MD5_Update MD5Update
+#define MD5_Final MD5Final
+#else
 #include <openssl/md5.h>
+#endif
 
 #ifndef MD5_DIGEST_LENGTH
 #define MD5_DIGEST_LENGTH 16

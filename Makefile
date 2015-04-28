@@ -114,7 +114,6 @@ ALL_TOOLS := \
 	r_u.o \
 	readlink_u.o \
 	readtty_u.o \
-	reboot_u.o \
 	renice_u.o \
 	rm_u.o \
 	rmdir_u.o \
@@ -127,9 +126,11 @@ ALL_TOOLS := \
 	uptime_u.o \
 	which_u.o
 
-ifdef INTERIX
-CFLAGS += -D_ALL_SOURCE
-NEED_LIBGETOPT = 1
+ifdef NO_OPENSSL
+CFLAGS += -D_NO_OPENSSL
+CRYPT_LIB = -lcrypt
+else
+CRYPT_LIB = -lcrypto
 endif
 
 ifdef MINGW
@@ -274,7 +275,6 @@ BASE_TOOLS := \
 	modexeb$(SUFFIX) \
 	mv$(SUFFIX) \
 	printenv$(SUFFIX) \
-	reboot$(SUFFIX) \
 	rm$(SUFFIX) \
 	rmdir$(SUFFIX) \
 	sleep$(SUFFIX) \
@@ -283,6 +283,16 @@ BASE_TOOLS := \
 	unlink$(SUFFIX) \
 	uptime$(SUFFIX) \
 	which$(SUFFIX)
+
+ifdef INTERIX
+CFLAGS += -D_ALL_SOURCE -D_NO_UTIMENSAT
+NEED_LIBGETOPT = 1
+else
+ALL_TOOLS += \
+	reboot_u.o
+BASE_TOOLS += \
+	reboot$(SUFFIX)
+endif
 
 ifdef NEED_LIBGETOPT
 CFLAGS += -Ilibgetopt
@@ -358,7 +368,7 @@ $(LIB_NAME):
 endif
 
 $(OUTFILE):	$(ALL_TOOLS) toolbox.o
-	$(CC) $(LDFLAGS) $(UNITY_LDFLAGS) $^ -o $@ $(LIBS) $(SELINUX_LIBS) $(TIMELIB) -lcrypto -lpthread
+	$(CC) $(LDFLAGS) $(UNITY_LDFLAGS) $^ -o $@ $(LIBS) $(SELINUX_LIBS) $(TIMELIB) $(CRYPT_LIB) -lpthread
 
 #separate-mingw:
 
@@ -446,7 +456,7 @@ ls.exe:	ls.c
 	$(CC) -D_USE_LIBPORT=2 $(CFLAGS) $(LDFLAGS) ls.c -o $@ $(LIBS)
 
 md5$(SUFFIX):	md5.c
-	$(CC) $(CFLAGS) $(LDFLAGS) md5.c -o $@ $(LIBS) -lcrypto
+	$(CC) $(CFLAGS) $(LDFLAGS) md5.c -o $@ $(LIBS) $(CRYPT_LIB)
 
 mkdir.exe:	mkdir.c
 	$(CC) $(CFLAGS) $(LDFLAGS) mkdir.c -o mkdir.exe $(LIBS)

@@ -116,7 +116,11 @@ int ioctl_main(int argc, char *argv[]) {
 		ioctl_argp_save = ioctl_argp = ioctl_args;
 		rem = length;
 		while(optind < argc) {
+#ifdef __INTERIX
+			unsigned long int tmp = strtoul(argv[optind], NULL, 0);
+#else
 			uint64_t tmp = strtoull(argv[optind], NULL, 0);
+#endif
 			if(rem < arg_size) {
 				fprintf(stderr, "%s: too many arguments\n", argv[0]);
 				//return 1;
