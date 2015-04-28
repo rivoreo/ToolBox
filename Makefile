@@ -37,6 +37,9 @@ endif
 ifeq ($(OS_NAME),GNU)
 GNU = 1
 endif
+ifeq ($(OS_NAME),Interix)
+INTERIX = 1
+endif
 endif
 
 CFLAGS += -Iinclude -O1 -Wall
@@ -125,6 +128,7 @@ ALL_TOOLS := \
 	which_u.o
 
 ifdef INTERIX
+CFLAGS += -D_ALL_SOURCE
 NEED_LIBGETOPT = 1
 endif
 
@@ -149,7 +153,6 @@ EXTRA_TOOLS := \
 	chown \
 	chroot \
 	dd \
-	df \
 	du \
 	id \
 	ifconfig \

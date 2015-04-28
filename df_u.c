@@ -1,12 +1,22 @@
+#ifdef __INTERIX
+#define _NO_STATFS
+#include <dirent.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#ifdef _NO_STATFS
+#include <sys/statvfs.h>
+#define statfs statvfs
+#else
 #if defined __GLIBC__ || defined _WIN32
 #include <sys/statfs.h>
 #else
 #include <sys/param.h>
 #include <sys/mount.h>
+#endif
 #endif
 
 static int ok = EXIT_SUCCESS;
@@ -98,6 +108,19 @@ int df_main(int argc, char *argv[]) {
         }
 
         fclose(f);
+#elif defined __INTERIX
+		DIR *d = opendir("/dev/fs");
+		if(!d) {
+			perror("/dev/fs");
+			return 1;
+		}
+		struct dirent *de;
+		while((de = readdir(d))) {
+			char buffer[10] = "/dev/fs/";
+			memcpy(buffer + 8, de->d_name, 2);
+			df(buffer, 0);
+		}
+		closedir(d);
 #else
 		int len = getfsstat(NULL, 0, MNT_NOWAIT), i;
 		if(len < 0) {
