@@ -90,12 +90,8 @@ ALL_TOOLS := \
 	hd_u.o \
 	hostname_u.o \
 	id_u.o \
-	ifconfig_u.o \
-	iftop_u.o \
 	ioctl_u.o \
-	isptrace1allowed_u.o \
 	kill_u.o \
-	kill1_u.o \
 	ln_u.o \
 	ls_u.o \
 	lsof_u.o \
@@ -108,10 +104,8 @@ ALL_TOOLS := \
 	modexeb_u.o \
 	mtdread_u.o \
 	mv_u.o \
-	netstat_u.o \
 	nohup_u.o \
 	ps_u.o \
-	r_u.o \
 	readlink_u.o \
 	readtty_u.o \
 	renice_u.o \
@@ -120,7 +114,6 @@ ALL_TOOLS := \
 	schedtop_u.o \
 	service_u.o \
 	sleep_u.o \
-	sync_u.o \
 	tee_u.o \
 	touch_u.o \
 	uptime_u.o \
@@ -156,25 +149,18 @@ EXTRA_TOOLS := \
 	dd \
 	du \
 	id \
-	ifconfig \
-	iftop \
-	isptrace1allowed \
 	kill \
-	kill1 \
 	ln \
 	lsof \
 	mknod \
 	more \
 	mtdread \
-	netstat \
 	ps \
-	r \
 	readlink \
 	readtty \
 	renice \
 	schedtop \
-	service \
-	sync
+	service
 
 ifdef DARWIN
 NO_SELINUX = 1
@@ -185,21 +171,26 @@ ifndef SHARED_OBJECT
 ALL_TOOLS += printenv_u.o
 endif
 else
+ifndef INTERIX
 ALL_TOOLS += \
 	dmesg_u.o \
-	printenv_u.o \
-	top_u.o \
 	vmstat_u.o
 EXTRA_TOOLS += \
 	dmesg \
-	top \
 	vmstat
+endif
+ALL_TOOLS += \
+	printenv_u.o \
+	top_u.o
+EXTRA_TOOLS += \
+	top
 TIMELIB = -lrt
 ifdef GNU
 NO_SELINUX = 1
 # utimensat is not implemented in GNU/Hurd
 CFLAGS += "-DPATH_MAX=(512)" -D_NO_UTIMENSAT
 else
+ifndef INTERIX
 ALL_TOOLS += \
 	getevent_u.o \
 	insmod_u.o \
@@ -226,6 +217,7 @@ EXTRA_TOOLS +=  \
 	setkey \
 	swapoff \
 	swapon
+endif
 endif		# GNU
 endif		# DARWIN
 ifdef NO_SELINUX
@@ -285,13 +277,31 @@ BASE_TOOLS := \
 	which$(SUFFIX)
 
 ifdef INTERIX
-CFLAGS += -D_ALL_SOURCE -D_NO_UTIMENSAT
+CFLAGS += -D_ALL_SOURCE -D_NO_UTIMENSAT -D_NO_UTIMES
 NEED_LIBGETOPT = 1
+TIMELIB =
 else
 ALL_TOOLS += \
-	reboot_u.o
+	ifconfig_u.o \
+	iftop_u.o \
+	isptrace1allowed_u.o \
+	netstat_u.o \
+	kill1_u.o \
+	r_u.o \
+	reboot_u.o \
+	sync_u.o
 BASE_TOOLS += \
 	reboot$(SUFFIX)
+ifndef MINGW
+EXTRA_TOOLS += \
+	ifconfig \
+	iftop \
+	isptrace1allowed \
+	kill1 \
+	netstat \
+	r \
+	sync
+endif
 endif
 
 ifdef NEED_LIBGETOPT

@@ -17,6 +17,17 @@
 #include <dirent.h>
 #include <pwd.h>
 
+#ifdef __INTERIX
+static char *nextline(char **s) {
+	while(**s && *(*s)++ != '\n');
+	return *s;
+}
+
+static char *getvalue(char **s) {
+	while(**s && *(*s)++ != '	');
+	return *s;
+}
+#else
 static char *nexttoksep(char **strp, const char *sep) {
 	char *p = strsep(strp, sep);
 	return p ? : "";
@@ -25,10 +36,11 @@ static char *nexttoksep(char **strp, const char *sep) {
 static char *nexttok(char **strp) {
 	return nexttoksep(strp, " ");
 }
+#endif
 
 #define SHOW_PRIO 1
 #define SHOW_TIME 2
-#define SHOW_POLICY 4
+//#define SHOW_POLICY 4
 #define SHOW_CPU  8
 #define SHOW_MACLABEL 16
 
@@ -43,22 +55,28 @@ static int ps_line(int pid, int tid, const char *namefilter) {
 	int fd, r;
 	char *ptr, *name, *state;
 	int ppid, tty;
-	unsigned wchan, rss, vss, eip;
-	unsigned utime, stime;
-	int prio, nice, rtprio, sched, psr;
+	unsigned int wchan, rss = 0, vss, eip = 0;
+	unsigned int utime, stime;
+	int prio = 0, nice = 0, rtprio = 0, sched = 0, psr = 0;
 	struct passwd *pw;
 	
 	sprintf(statline, "/proc/%d", pid);
 	stat(statline, &stats);
 
+#ifdef __linux__
 	if(tid) {
 		sprintf(statline, "/proc/%d/task/%d/stat", pid, tid);
 		command[0] = 0;
 		snprintf(macline, sizeof(macline), "/proc/%d/task/%d/attr/current", pid, tid);
 	} else {
+#endif
+#ifndef __FreeBSD__
 		sprintf(statline, "/proc/%d/stat", pid);
+#endif
 		sprintf(command, "/proc/%d/cmdline", pid);
+#ifdef __linux__
 		snprintf(macline, sizeof(macline), "/proc/%d/attr/current", pid);
+#endif
 		fd = open(command, O_RDONLY);
 		if(fd == -1) {
 			r = 0;
@@ -68,8 +86,10 @@ static int ps_line(int pid, int tid, const char *namefilter) {
 			if(r < 0) r = 0;
 		}
 		command[r] = 0;
+#ifdef __linux__
 	}
-	
+#endif
+#ifndef __FreeBSD__
 	fd = open(statline, O_RDONLY);
 	if(fd == -1) return -1;
 	r = read(fd, statline, 1023);
@@ -78,13 +98,64 @@ static int ps_line(int pid, int tid, const char *namefilter) {
 	statline[r] = 0;
 
 	ptr = statline;
+#ifdef __INTERIX
+	name = getvalue(&ptr);
+	nextline(&ptr)[-1] = 0;
+#else
 	nexttok(&ptr); // skip pid
 	ptr++;	       // skip "("
-
 	name = ptr;
 	ptr = strrchr(ptr, ')'); // Skip to *last* occurence of ')',
 	*ptr++ = '\0';		 // and null-terminate name.
+#endif
 
+#ifdef __INTERIX
+	nextline(&ptr);		// skip pid
+
+	ppid = atoi(getvalue(&ptr));
+	nextline(&ptr);
+
+	nextline(&ptr);		// pgrp
+	nextline(&ptr);		// ruser
+	nextline(&ptr);		// user
+	nextline(&ptr);		// rgroup
+	nextline(&ptr);		// group
+
+	utime = atoi(getvalue(&ptr));
+	nextline(&ptr);
+	stime = atoi(getvalue(&ptr));
+	nextline(&ptr);
+	nextline(&ptr);		// cutime
+	nextline(&ptr);		// cstime
+
+	tty = atoi(getvalue(&ptr));
+	nextline(&ptr);
+
+	state = getvalue(&ptr);
+	nextline(&ptr)[-1] = 0;
+
+	nextline(&ptr);		// flags
+	nextline(&ptr);		// etime
+
+	vss = strtoul(getvalue(&ptr), 0, 10); // vsize
+	nextline(&ptr);
+
+	nextline(&ptr);		// wsize
+	nextline(&ptr);		// sid
+	nextline(&ptr);		// inpsx
+	nextline(&ptr);		// natpid
+	nextline(&ptr);		// natsid
+
+	nice = atoi(getvalue(&ptr));
+	nextline(&ptr);
+
+	wchan = strtoul(getvalue(&ptr), 0, 10); // wchan
+	nextline(&ptr);
+#if 0
+	nextline(&ptr);		// sttime
+	nextline(&ptr);		// openfdcount
+#endif
+#else
 	ptr++;		  // skip " "
 	state = nexttok(&ptr);
 	ppid = atoi(nexttok(&ptr));
@@ -133,14 +204,17 @@ static int ps_line(int pid, int tid, const char *namefilter) {
 	sched = atoi(nexttok(&ptr)); // scheduling policy
 	
 	tty = atoi(nexttok(&ptr));
-	
+#ifdef __linux__
 	if(tid != 0) {
 		ppid = pid;
 		pid = tid;
 	}
+#endif
+#endif
+#endif
 
 	pw = getpwuid(stats.st_uid);
-	if(pw == 0) {
+	if(!pw) {
 		sprintf(user, "%d", (int)stats.st_uid);
 	} else {
 		strcpy(user, pw->pw_name);
@@ -171,6 +245,7 @@ static int ps_line(int pid, int tid, const char *namefilter) {
 	return 0;
 }
 
+#ifdef __linux__
 static void ps_threads(int pid, const char *namefilter) {
 	char tmp[128];
 	DIR *d;
@@ -188,13 +263,16 @@ static void ps_threads(int pid, const char *namefilter) {
 	}
 	closedir(d);
 }
+#endif
 
 int ps_main(int argc, char **argv) {
 	DIR *d;
 	struct dirent *de;
 	const char *namefilter = 0;
 	int pidfilter = 0;
+#ifdef __linux__
 	int threads = 0;
+#endif
 
 	d = opendir("/proc");
 	if(!d) {
@@ -203,14 +281,17 @@ int ps_main(int argc, char **argv) {
 	}
 
 	while(argc > 1) {
+#ifdef __linux__
 		if(strcmp(argv[1], "-t") == 0) {
 			threads = 1;
-		} else if(strcmp(argv[1],"-x") == 0) {
+		} else
+#endif
+		if(strcmp(argv[1],"-x") == 0) {
 			display_flags |= SHOW_TIME;
+#ifdef __linux__
 		} else if(strcmp(argv[1], "-Z") == 0) {
 			display_flags |= SHOW_MACLABEL;
-		} else if(strcmp(argv[1], "-P") == 0) {
-			display_flags |= SHOW_POLICY;
+#endif
 		} else if(strcmp(argv[1], "-p") == 0) {
 			display_flags |= SHOW_PRIO;
 		} else if(strcmp(argv[1], "-c") == 0) {
@@ -227,17 +308,18 @@ int ps_main(int argc, char **argv) {
 	if (display_flags & SHOW_MACLABEL) {
 		printf("LABEL                          USER     PID   PPID  NAME\n");
 	} else {
-		printf("USER     PID   PPID  VSIZE  RSS   %s%s %s WCHAN    PC         NAME\n",
+		printf("USER      PID   PPID  VSIZE  RSS  %s%s WCHAN    PC         NAME\n",
 			(display_flags & SHOW_CPU) ? "CPU " : "",
-			(display_flags & SHOW_PRIO) ? "PRIO  NICE  RTPRI SCHED " : "",
-			(display_flags & SHOW_POLICY) ? "PCY " : "");
+			(display_flags & SHOW_PRIO) ? "PRIO  NICE  RTPRI SCHED " : "");
 	}
 	while((de = readdir(d))) {
 		if(isdigit(de->d_name[0])) {
 			int pid = atoi(de->d_name);
 			if(!pidfilter || pidfilter == pid) {
 				ps_line(pid, 0, namefilter);
+#ifdef __linux__
 				if(threads) ps_threads(pid, namefilter);
+#endif
 			}
 		}
 	}

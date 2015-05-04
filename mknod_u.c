@@ -12,6 +12,10 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#ifndef makedev
+#include <sys/mkdev.h>
+#define makedev mkdev
+#endif
 
 static void print_usage(const char *name) {
 	fprintf(stderr, "Usage: %s [{-m|--mode} <mode>] <name> <type> [<major> <minor>]\n", name);

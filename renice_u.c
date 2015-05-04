@@ -23,14 +23,14 @@
 #include <ctype.h>
 
 static void usage(const char *s) {
-#ifdef __APPLE__
-	fprintf(stderr, "Usage: %s <pid> [...]\n", s);
+#if defined __APPLE__ || defined __INTERIX
+	fprintf(stderr, "Usage: %s <priority> <pid> [...]\n", s);
 #else
 	fprintf(stderr, "Usage: %s { [-r] <priority> <pid> [...] | -g <pid> }\n", s);
 #endif
 }
 
-#ifndef __APPLE__
+#if !defined __APPLE__ && !defined __INTERIX
 void print_prio(pid_t pid) {
 	int sched;
 	struct sched_param sp;
@@ -68,7 +68,7 @@ void print_prio(pid_t pid) {
 int renice_main(int argc, char *argv[]) {
 	int prio;
 	int r = 0;
-#ifndef __APPLE__
+#if !defined __APPLE__ && !defined __INTERIX
 	int realtime = 0;
 	while(1) {
 		int c = getopt(argc, argv, "rg:h");
@@ -104,7 +104,7 @@ int renice_main(int argc, char *argv[]) {
 
 	while(*argv) {
 		pid_t pid = atoi(*argv++);
-#ifndef __APPLE__
+#if !defined __APPLE__ && !defined __INTERIX
 		if(realtime) {
 			struct sched_param sp = { .sched_priority = prio };
 			if(sched_setscheduler(pid, SCHED_RR, &sp) < 0) {
@@ -119,7 +119,7 @@ int renice_main(int argc, char *argv[]) {
 				//return EXIT_FAILURE;
 				r++;
 			}
-#ifndef __APPLE__
+#if !defined __APPLE__ && !defined __INTERIX
 		}
 #endif
 	}
