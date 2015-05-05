@@ -18,6 +18,15 @@
 #include <windows.h>
 #include <winioctl.h>
 #include <conio.h>
+#ifndef IOCTL_CONSOLE_GETSCREENROWS
+#define IOCTL_CONSOLE_GETSCREENROWS CTL_CODE(FILE_DEVICE_CONSOLE, 7, METHOD_BUFFERED, FILE_ANY_ACCESS)
+#endif
+#ifndef IOCTL_CONSOLE_GETSCREENCOLS
+#define IOCTL_CONSOLE_GETSCREENCOLS CTL_CODE(FILE_DEVICE_CONSOLE, 9, METHOD_BUFFERED, FILE_ANY_ACCESS)
+#endif
+#ifndef FILE_DEVICE_CONSOLE
+#define FILE_DEVICE_CONSOLE 0x00000102
+#endif
 #else
 #include <sys/ioctl.h>
 #include <termios.h>
@@ -89,6 +98,9 @@ static int read_more() {
 			/* Set the cursor to the start of the line */
 			printf("\x1b[%d;0H",winsz.ws_row);
 			break;
+		case 'q':
+			putchar('\n');
+			exit(0);
 		default:
 			/* Clean the current line */
 			printf("\x1b[1K");
@@ -179,8 +191,20 @@ int more_main(int argc, char *argv[]) {
 	int opt;
 
 	if(use_tty) {
+#ifdef _WIN32
+		unsigned long int row, col, rszie;
+		if(!DeviceIoControl((void *)STDOUT_FILENO, IOCTL_CONSOLE_GETSCREENROWS, NULL, 0, &row, sizeof row, &rsize, NULL)) {
+			return -errno;
+		}
+		if(!DeviceIoControl((void *)STDOUT_FILENO, IOCTL_CONSOLE_GETSCREENCOLS, NULL, 0, &col, sizeof col, &rszie, NULL)) {
+			return -errno;
+		}
+
+		page_row = row;
+		page_col = col;
+#else
 		/*
-		 * Get windows size 
+		 * Get terminal size 
 		 *
 		 * struct winsize {
 		 *	unsigned short ws_row;
@@ -190,14 +214,15 @@ int more_main(int argc, char *argv[]) {
 		 *};
 		 */
 		if(ioctl(STDOUT_FILENO, TIOCGWINSZ, &winsz) == -1) {
-			return errno;
+			return -errno;
 		}
 
-		page_row = winsz.ws_row;
 		page_col = winsz.ws_col;
-
+		page_row = winsz.ws_row;
+#endif
 	} else {
-		usage(argv[0]);
+		//usage(argv[0]);
+		fprintf(stderr, "%s: Not a terminal\n", argv[0]);
 		return 1;
 	}
 
