@@ -15,6 +15,7 @@
 #include <linux/sockios.h>
 #else
 #include <net/if.h>
+#include <sys/param.h>
 #endif
 #include <arpa/inet.h>
 
@@ -50,7 +51,7 @@ static void setdstaddr(int s, struct ifreq *ifr, const char *addr)
     if(ioctl(s, SIOCSIFDSTADDR, ifr) < 0) die("SIOCSIFDSTADDR");
 }
 
-#ifndef __APPLE__
+#ifndef BSD
 static void setnetmask(int s, struct ifreq *ifr, const char *addr)
 {
     init_sockaddr_in((struct sockaddr_in *) &ifr->ifr_netmask, addr);
@@ -153,7 +154,7 @@ int ifconfig_main(int argc, char *argv[])
             setflags(s, &ifr, IFF_POINTOPOINT, 0);
         } else if(strcmp(argv[0], "down") == 0) {
             setflags(s, &ifr, 0, IFF_UP);
-#ifndef __APPLE__
+#ifndef BSD
         } else if(strcmp(argv[0], "netmask") == 0) {
             argc--, argv++;
             if(!argc) { 

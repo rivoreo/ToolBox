@@ -20,9 +20,7 @@ int main(int, char **);
 #if defined _SHARED && defined __PIC__
 #include <stdarg.h>
 #include <errno.h>
-#define ARG_MAX 255
-
-int toolbox_main(int, char **);
+#define ARG_MAX 256
 
 int toolbox(const char *arg, ...) {
 	int argc = 0;
@@ -40,14 +38,13 @@ int toolbox(const char *arg, ...) {
 	} while(argc < ARG_MAX && (arg = va_arg(ap, const char *)));
 	va_end(ap);
 	argv[argc] = NULL;
-	int r = toolbox_main(argc, argv);
+	int r = main(argc, argv);
 	while(argc) free(argv[--argc]);
 	return r;
 }
-#else
-static
 #endif
-int toolbox_main(int argc, char **argv) {
+
+static int toolbox_main(int argc, char **argv) {
 	if(argc > 1) {
 		if(strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0 ||
 		strcmp(argv[1], "-l") == 0 || strcmp(argv[1], "--list") == 0) {

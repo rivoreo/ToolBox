@@ -6,6 +6,8 @@
 	This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 */
 
+// This util is used to make a Linux swap space
+
 #include <stdio.h>
 #include <unistd.h>
 #include <getopt.h>
@@ -96,6 +98,9 @@ int mkswap_main(int argc, char **argv) {
 	}
 
 	if(argc != optind + 1) {
+#ifndef __linux__
+		fprintf(stderr, "This tool will set up a Linux swap space that is not suit your system\n");
+#endif
 		fprintf(stderr, "Usage: %s "
 #ifdef __linux__
 			"[-p <page size>]"

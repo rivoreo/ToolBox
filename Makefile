@@ -40,6 +40,9 @@ endif
 ifeq ($(OS_NAME),Interix)
 INTERIX = 1
 endif
+ifeq ($(OS_NAME),FreeBSD)
+FREEBSD = 1
+endif
 endif
 
 CFLAGS += -Iinclude -O1 -Wall
@@ -174,10 +177,17 @@ endif
 else
 ifndef INTERIX
 ALL_TOOLS += \
-	dmesg_u.o \
+	dmesg_u.o
+EXTRA_TOOLS += \
+	dmesg
+endif
+ifdef FREEBSD
+CFLAGS += -D_NO_UTIMENSAT
+NEED_LIBGETOPT = 1
+else
+ALL_TOOLS += \
 	vmstat_u.o
 EXTRA_TOOLS += \
-	dmesg \
 	vmstat
 endif
 ALL_TOOLS += \
@@ -192,6 +202,7 @@ NO_SELINUX = 1
 CFLAGS += "-DPATH_MAX=(512)" -D_NO_UTIMENSAT
 else
 ifndef INTERIX
+ifndef FREEBSD
 ALL_TOOLS += \
 	getevent_u.o \
 	insmod_u.o \
@@ -202,9 +213,7 @@ ALL_TOOLS += \
 	route_u.o \
 	sendevent_u.o \
 	setconsole_u.o \
-	setkey_u.o \
-	swapoff_u.o \
-	swapon_u.o
+	setkey_u.o
 EXTRA_TOOLS +=  \
 	getevent \
 	insmod \
@@ -215,10 +224,15 @@ EXTRA_TOOLS +=  \
 	route \
 	sendevent \
 	setconsole \
-	setkey \
+	setkey
+endif		# !FREEBSD
+ALL_TOOLS += \
+	swapoff_u.o \
+	swapon_u.o
+EXTRA_TOOLS +=  \
 	swapoff \
 	swapon
-endif
+endif		# !INTERIX
 endif		# GNU
 endif		# DARWIN
 ifdef NO_SELINUX

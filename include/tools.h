@@ -150,7 +150,7 @@ TOOL(top)
 #endif
 TOOL(touch)
 TOOL(uptime)
-#if !defined __APPLE__ && !defined _WIN32_WNT_NATIVE && !defined __INTERIX
+#if !defined __APPLE__ && !defined _WIN32_WNT_NATIVE && !defined __FreeBSD__ && !defined __INTERIX
 TOOL(vmstat)
 #endif
 TOOL(which)

@@ -59,9 +59,7 @@
 #else
 extern int fdatasync(int);
 #endif
-#endif
-
-#ifdef __INTERIX
+#elif defined __FreeBSD__ || defined __INTERIX
 #define fdatasync fsync
 #endif
 

@@ -41,8 +41,10 @@ int parse_prio(const char *prio_str) {
 #endif
 
 int swapon_main(int argc, char **argv) {
+#if defined __linux__ || defined __gnu_hurd__
 	int flags = 0;
 	int prio;
+#endif
 
 	opterr = 0;
 

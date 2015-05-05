@@ -12,7 +12,7 @@
 
 #include <sys/ioctl.h>
 
-#if defined __APPLE__ || defined __INTERIX
+#if defined __APPLE__ || defined __FreeBSD__ || defined __INTERIX
 static loff_t lseek64(int fd, loff_t offset, int whence) {
 	if(whence == SEEK_SET || whence == SEEK_END) {
 		if(lseek(fd, 0, whence) < 0) return -1;

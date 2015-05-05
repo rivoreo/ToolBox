@@ -8,8 +8,9 @@
 
 #include <stdio.h>
 #include <unistd.h>
-//#include <asm/page.h>
+#if defined __linux__ || defined __gnu_hurd__
 #include <sys/swap.h>
+#endif
 #include <string.h>
 #include <errno.h>
 
