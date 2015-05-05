@@ -40,9 +40,9 @@
 #define NAN (__builtin_nanf(""))
 #endif
 
-#ifdef __APPLE__
-#define _USE_SYSCTL
-#endif
+//#ifdef __APPLE__
+//#define _USE_SYSCTL
+//#endif
 
 static void format_time(int time, char *buffer) {
 	int seconds, minutes, hours, days;

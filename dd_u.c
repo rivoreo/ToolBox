@@ -61,6 +61,10 @@ extern int fdatasync(int);
 #endif
 #endif
 
+#ifdef __INTERIX
+#define fdatasync fsync
+#endif
+
 //#define NO_CONV
 
 static void block(void);

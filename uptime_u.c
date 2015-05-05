@@ -14,14 +14,21 @@
  */
 
 #include <sys/time.h>
-#ifdef __APPLE__
+#if defined __APPLE__ || defined __FreeBSD__
 #include <sys/sysctl.h>
 #else
 #include <string.h>
 #endif
+#ifndef _WIN32
+#include <utmpx.h>
+#endif
 #include <fcntl.h>
 #include <stdio.h>
 #include <time.h>
+#include <math.h>
+#ifndef NAN
+#define NAN (__builtin_nanf(""))
+#endif
 
 static void format_time(int time, char* buffer) {
     int seconds, minutes, hours, days;
@@ -38,20 +45,18 @@ static void format_time(int time, char* buffer) {
 }
 
 int uptime_main() {
-	float up_time;
+	float up_time = NAN;
 	char up_string[100];
-#ifdef __APPLE__
+#if defined __APPLE__ || defined __FreeBSD__
 	struct timeval boot_tv;
 	size_t len = sizeof boot_tv;
 	int mib[2] = { CTL_KERN, KERN_BOOTTIME };
-	if(sysctl(mib, 2, &boot_tv, &len, NULL, 0) < 0) {
-		perror("sysctl");
-		return 1;
+	if(sysctl(mib, 2, &boot_tv, &len, NULL, 0) == 0) {
+		up_time = difftime(time(NULL), boot_tv.tv_sec);
 	}
-	up_time = difftime(time(NULL), boot_tv.tv_sec);
-#else
+#elif defined __linux__ || defined _WIN32
 	struct timespec up_timespec;
-#ifndef _WIN32
+#ifdef __linux__
 	float idle_time;
 	char idle_string[100];
     FILE* file = fopen("/proc/uptime", "r");
@@ -68,18 +73,37 @@ int uptime_main() {
 		fclose(file);
     }
 #endif
-    if (clock_gettime(CLOCK_MONOTONIC, &up_timespec) < 0) {
+    if(clock_gettime(CLOCK_MONOTONIC, &up_timespec) < 0) {
         fprintf(stderr, "Could not get monotonic time\n");
 	return -1;
     }
     up_time = up_timespec.tv_sec + up_timespec.tv_nsec / 1e9;
 #endif
 
-    format_time(up_time, up_string);
-#if !defined __APPLE__ && !defined _WIN32
-    printf("up time: %s,  idle time: %s\n", up_string, idle_string);
+#ifndef _WIN32
+	if(isnan(up_time)) {
+		int up = -1;
+		setutxent();
+		struct utmpx *t;
+		while((t = getutxent())) {
+			if(t->ut_type == BOOT_TIME) {
+				up = time(NULL) - t->ut_tv.tv_sec;
+				break;
+			}
+		}
+		if(up < 0) {
+			fprintf(stderr, "Could not get up time\n");
+			return 2;
+		}
+		up_time = up;
+	}
+#endif
+
+	format_time(up_time, up_string);
+#ifdef __linux__
+	printf("up time: %s,  idle time: %s\n", up_string, idle_string);
 #else
 	printf("up time: %s\n", up_string);
 #endif
-    return 0;
+	return 0;
 }

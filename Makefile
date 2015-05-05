@@ -155,6 +155,7 @@ EXTRA_TOOLS := \
 	mknod \
 	more \
 	mtdread \
+	nohup \
 	ps \
 	readlink \
 	readtty \
