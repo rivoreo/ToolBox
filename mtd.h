@@ -40,7 +40,7 @@
 #include <sys/types.h>
 #ifdef __APPLE__
 typedef quad_t loff_t;
-#else
+#elif !defined __GNU__
 //typedef off64_t loff_t;
 typedef uint64_t loff_t;
 #endif
