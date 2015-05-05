@@ -18,6 +18,17 @@
 #include <stdlib.h>
 #ifdef _NO_UTIMENSAT
 #include <sys/time.h>
+#ifdef _NO_UTIMES
+#include <utime.h>
+
+static int utimes(const char *filename, const struct timeval *times) {
+	struct utimbuf buf = {
+		.actime = times[0].tv_sec,
+		.modtime = times[1].tv_sec
+	};
+	return utime(filename, &buf);
+}
+#endif
 #endif
 
 #ifndef _NO_UTIMENSAT

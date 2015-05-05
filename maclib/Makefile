@@ -1,9 +1,9 @@
 CFLAGS = -Wall -arch i386 -arch x86_64 -arch ppc -mmacosx-version-min=10.4
 
-first:	libgetopt.a libcrypto.dylib
+#first:	libgetopt.a libcrypto.dylib
 
-libgetopt.a:	getopt.o
-	ar -rs $@ $^
+#libgetopt.a:	getopt.o
+#	ar -rs $@ $^
 
 libcrypto.dylib:	libcrypto.0.9.7.dylib
 	strip $^ -o $@

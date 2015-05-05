@@ -10,6 +10,7 @@
 //#include "timefunc.h"
 #define _BSD_SOURCE		/* For settimeofday */
 //#define _XOPEN_SOURCE		/* For strptime */
+#define _POSIX_C_SOURCE 200112L	/* For gmtime_r and localtime_r */
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>

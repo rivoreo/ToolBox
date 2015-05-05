@@ -57,7 +57,11 @@ static int _sethostname(const char *name, size_t len) {
 #define sethostname _sethostname
 #else
 #ifndef HOST_NAME_MAX
+#ifdef _POSIX_HOST_NAME_MAX
 #define HOST_NAME_MAX _POSIX_HOST_NAME_MAX
+#else
+#define HOST_NAME_MAX MAXHOSTNAMELEN
+#endif
 #endif
 #endif
 
@@ -176,9 +180,14 @@ int hostname_main(int argc, char **argv) {
 			return 0;
 		}
 	}
+#ifdef __INTERIX
+	fprintf(stderr, "%s: %s\n", argv[0], strerror(ENOSYS));
+	return 1;
+#else
 	if(sethostname(hostname, strlen(hostname)) < 0) {
 		perror("sethostname");
 		return 1;
 	}
 	return 0;
+#endif
 }

@@ -12,7 +12,7 @@
 
 #include <sys/ioctl.h>
 
-#ifdef __APPLE__
+#if defined __APPLE__ || defined __INTERIX
 static loff_t lseek64(int fd, loff_t offset, int whence) {
 	if(whence == SEEK_SET || whence == SEEK_END) {
 		if(lseek(fd, 0, whence) < 0) return -1;
@@ -74,10 +74,18 @@ int main(int argc, char **argv) {
 				spare_size = atoi(optarg);
 				break;
 			case 'S':
+#ifdef __INTERIX
+				start = strtol(optarg, NULL, 0);
+#else
 				start = strtoll(optarg, NULL, 0);
+#endif
 				break;
 			case 'L':
+#ifdef __INTERIX
+				len = strtol(optarg, NULL, 0);
+#else
 				len = strtoll(optarg, NULL, 0);
+#endif
 				break;
 			case 'R':
 				rawmode = 1;

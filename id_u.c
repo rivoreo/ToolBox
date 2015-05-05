@@ -15,7 +15,7 @@ static void print_uid(uid_t uid) {
 		printf("%d",uid);
 	}
 */
-	printf("%u", uid);
+	printf("%u", (unsigned int)uid);
 	if(pw) printf("(%s)", pw->pw_name);
 }
 
@@ -28,7 +28,7 @@ static void print_gid(gid_t gid) {
 		printf("%d",gid);
 	}
 */
-	printf("%u", gid);
+	printf("%u", (unsigned int)gid);
 	if(gr) printf("(%s)", gr->gr_name);
 }
 
@@ -39,15 +39,15 @@ int id_main(int argc, char **argv) {
 
 	if(argc > 1) {
 		if(strcmp(argv[1], "-u") == 0 || strcmp(argv[1], "--user") == 0) {
-			printf("%u\n", geteuid());
+			printf("%u\n", (unsigned int)geteuid());
 			return 0;
 		}
 		if(strcmp(argv[1], "-r") == 0 || strcmp(argv[1], "--real") == 0) {
-			printf("%u\n", getuid());
+			printf("%u\n", (unsigned int)getuid());
 			return 0;
 		}
 		if(strcmp(argv[1], "-g") == 0 || strcmp(argv[1], "--group") == 0) {
-			printf("%u\n", getegid());
+			printf("%u\n", (unsigned int)getegid());
 			return 0;
 		}
 		if(strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0) {

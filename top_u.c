@@ -270,7 +270,7 @@ static void read_procs(void) {
 	DIR *proc_dir, *task_dir;
 	struct dirent *pid_dir, *tid_dir;
 	char filename[64];
-	FILE *file;
+	//FILE *file;
 	int proc_num;
 	struct proc_info *proc;
 	pid_t pid, tid;
@@ -282,13 +282,13 @@ static void read_procs(void) {
 
 	new_procs = calloc(INIT_PROCS * (threads ? THREAD_MULT : 1), sizeof(struct proc_info *));
 	num_new_procs = INIT_PROCS * (threads ? THREAD_MULT : 1);
-
-	file = fopen("/proc/stat", "r");
+#ifdef __linux__
+	FILE *file = fopen("/proc/stat", "r");
 	if(!file) die("Could not open /proc/stat.\n");
 	fscanf(file, "cpu  %lu %lu %lu %lu %lu %lu %lu", &new_cpu.utime, &new_cpu.ntime, &new_cpu.stime,
 			&new_cpu.itime, &new_cpu.iowtime, &new_cpu.irqtime, &new_cpu.sirqtime);
 	fclose(file);
-
+#endif
 	proc_num = 0;
 	while((pid_dir = readdir(proc_dir))) {
 		if(!isdigit(pid_dir->d_name[0])) continue;
@@ -301,29 +301,29 @@ static void read_procs(void) {
 			proc = alloc_proc();
 			proc->pid = proc->tid = pid;
 
-			sprintf(filename, "/proc/%d/stat", pid);
+			sprintf(filename, "/proc/%d/stat", (int)pid);
 			read_stat(filename, proc);
 
-			sprintf(filename, "/proc/%d/cmdline", pid);
+			sprintf(filename, "/proc/%d/cmdline", (int)pid);
 			read_cmdline(filename, proc);
 
-			sprintf(filename, "/proc/%d/status", pid);
+			sprintf(filename, "/proc/%d/status", (int)pid);
 			read_status(filename, proc);
 
 			//read_policy(pid, proc);
 
 			proc->num_threads = 0;
 		} else {
-			sprintf(filename, "/proc/%d/cmdline", pid);
+			sprintf(filename, "/proc/%d/cmdline", (int)pid);
 			read_cmdline(filename, &cur_proc);
 
-			sprintf(filename, "/proc/%d/status", pid);
+			sprintf(filename, "/proc/%d/status", (int)pid);
 			read_status(filename, &cur_proc);
 
 			proc = NULL;
 		}
 
-		sprintf(filename, "/proc/%d/task", pid);
+		sprintf(filename, "/proc/%d/task", (int)pid);
 		task_dir = opendir(filename);
 		if(!task_dir) continue;
 
@@ -336,7 +336,7 @@ static void read_procs(void) {
 				proc = alloc_proc();
 				proc->pid = pid; proc->tid = tid;
 
-				sprintf(filename, "/proc/%d/task/%d/stat", pid, tid);
+				sprintf(filename, "/proc/%d/task/%d/stat", (int)pid, (int)tid);
 				read_stat(filename, proc);
 
 				//read_policy(tid, proc);
@@ -493,6 +493,7 @@ static void print_procs(void) {
 	//printf("\n\n\n");
 	if(!use_tty) putchar('\n');
 
+#ifdef __linux__
 	snprintf(buf, sizeof(buf), "User %ld%%, System %ld%%, IOW %ld%%, IRQ %ld%%",
 			((new_cpu.utime + new_cpu.ntime) - (old_cpu.utime + old_cpu.ntime)) * 100  / total_delta_time,
 			((new_cpu.stime ) - (old_cpu.stime)) * 100 / total_delta_time,
@@ -510,6 +511,7 @@ static void print_procs(void) {
 			new_cpu.sirqtime - old_cpu.sirqtime,
 			total_delta_time);
 	PRINT_BUF();
+#endif
 
 	if(!threads) {
 		snprintf(buf, sizeof(buf), "%5s %2s %4s %1s %5s %9s %9s %-8s %s", "PID", "PR", "CPU%", "S", "#THR", "VSS", "RSS", "USER", "COMMAND");
@@ -531,7 +533,7 @@ static void print_procs(void) {
 		if(user && user->pw_name) {
 			user_str = user->pw_name;
 		} else {
-			snprintf(user_buf, 20, "%d", proc->uid);
+			snprintf(user_buf, 20, "%d", (int)proc->uid);
 			user_str = user_buf;
 		}
 		/*
@@ -542,11 +544,11 @@ static void print_procs(void) {
 		   group_str = group_buf;
 		   }*/
 		if(!threads) {
-			snprintf(buf, sizeof(buf), "%5d %2d %3ld%% %c %5d %7luKi %7luKi %-8.8s %s", proc->pid, proc->prs, proc->delta_time * 100 / total_delta_time, proc->state, proc->num_threads,
+			snprintf(buf, sizeof(buf), "%5d %2d %3ld%% %c %5d %7luKi %7luKi %-8.8s %s", (int)proc->pid, proc->prs, proc->delta_time * 100 / total_delta_time, proc->state, proc->num_threads,
 				proc->vss / 1024, proc->rss * getpagesize() / 1024, user_str, *proc->name ? proc->name : proc->tname);
 			PRINT_BUF();
 		} else {
-			snprintf(buf, sizeof(buf), "%5d %5d %2d %3ld%% %c %7luKi %7luKi %-8.8s %-15s %s", proc->pid, proc->tid, proc->prs, proc->delta_time * 100 / total_delta_time, proc->state,
+			snprintf(buf, sizeof(buf), "%5d %5d %2d %3ld%% %c %7luKi %7luKi %-8.8s %-15s %s", (int)proc->pid, (int)proc->tid, proc->prs, proc->delta_time * 100 / total_delta_time, proc->state,
 				proc->vss / 1024, proc->rss * getpagesize() / 1024, user_str, proc->tname, proc->name);
 			PRINT_BUF();
 		}

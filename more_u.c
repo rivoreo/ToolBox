@@ -247,7 +247,7 @@ int more_main(int argc, char *argv[]) {
 	 * So I dont use get opt now.
 	 */
 	FILE *fp;
-	
+
 	if(argc != 1) {
 		strcpy(filename, argv[1]);
 		

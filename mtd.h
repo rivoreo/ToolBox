@@ -37,9 +37,12 @@
 #define __u8 uint8_t
 #define __u32 uint32_t
 #define __u64 uint64_t
-#ifdef __APPLE__
 #include <sys/types.h>
+#ifdef __APPLE__
 typedef quad_t loff_t;
+#else
+//typedef off64_t loff_t;
+typedef uint64_t loff_t;
 #endif
 typedef loff_t __kernel_loff_t;
 #endif

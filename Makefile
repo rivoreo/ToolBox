@@ -28,11 +28,17 @@ CC_VERSION = $(shell gcc --version | grep -E "gcc.+[0-9]\.[0-9]\.[0-9]" | grep -
 ifeq ($(CC_VERSION),.9)
 NEED_LIBPCRE = 1
 endif
+ifneq ($(OS_NAME),Linux)
+NO_SELINUX = 1
+endif
 ifeq ($(OS_NAME),Darwin)
 DARWIN = 1
 endif
 ifeq ($(OS_NAME),GNU)
 GNU = 1
+endif
+ifeq ($(OS_NAME),Interix)
+INTERIX = 1
 endif
 endif
 
@@ -84,12 +90,8 @@ ALL_TOOLS := \
 	hd_u.o \
 	hostname_u.o \
 	id_u.o \
-	ifconfig_u.o \
-	iftop_u.o \
 	ioctl_u.o \
-	isptrace1allowed_u.o \
 	kill_u.o \
-	kill1_u.o \
 	ln_u.o \
 	ls_u.o \
 	lsof_u.o \
@@ -102,24 +104,27 @@ ALL_TOOLS := \
 	modexeb_u.o \
 	mtdread_u.o \
 	mv_u.o \
-	netstat_u.o \
 	nohup_u.o \
 	ps_u.o \
-	r_u.o \
 	readlink_u.o \
 	readtty_u.o \
-	reboot_u.o \
 	renice_u.o \
 	rm_u.o \
 	rmdir_u.o \
 	schedtop_u.o \
 	service_u.o \
 	sleep_u.o \
-	sync_u.o \
 	tee_u.o \
 	touch_u.o \
 	uptime_u.o \
 	which_u.o
+
+ifdef NO_OPENSSL
+CFLAGS += -D_NO_OPENSSL
+CRYPT_LIB = -lcrypt
+else
+CRYPT_LIB = -lcrypto
+endif
 
 ifdef MINGW
 SUFFIX := .exe
@@ -142,53 +147,51 @@ EXTRA_TOOLS := \
 	chown \
 	chroot \
 	dd \
-	df \
 	du \
 	id \
-	ifconfig \
-	iftop \
-	isptrace1allowed \
 	kill \
-	kill1 \
 	ln \
 	lsof \
 	mknod \
 	more \
 	mtdread \
-	netstat \
+	nohup \
 	ps \
-	r \
 	readlink \
 	readtty \
 	renice \
 	schedtop \
-	service \
-	sync
+	service
 
 ifdef DARWIN
 NO_SELINUX = 1
 CFLAGS += -D_NO_UTIMENSAT -fnested-functions
-LIBS += -Lmaclib -lgetopt
-DEPEND += maclib/libgetopt.a
+LIBS += -Lmaclib
+NEED_LIBGETOPT = 1
 ifndef SHARED_OBJECT
 ALL_TOOLS += printenv_u.o
 endif
 else
+ifndef INTERIX
 ALL_TOOLS += \
 	dmesg_u.o \
-	printenv_u.o \
-	top_u.o \
 	vmstat_u.o
 EXTRA_TOOLS += \
 	dmesg \
-	top \
 	vmstat
+endif
+ALL_TOOLS += \
+	printenv_u.o \
+	top_u.o
+EXTRA_TOOLS += \
+	top
 TIMELIB = -lrt
 ifdef GNU
 NO_SELINUX = 1
 # utimensat is not implemented in GNU/Hurd
 CFLAGS += "-DPATH_MAX=(512)" -D_NO_UTIMENSAT
 else
+ifndef INTERIX
 ALL_TOOLS += \
 	getevent_u.o \
 	insmod_u.o \
@@ -215,6 +218,7 @@ EXTRA_TOOLS +=  \
 	setkey \
 	swapoff \
 	swapon
+endif
 endif		# GNU
 endif		# DARWIN
 ifdef NO_SELINUX
@@ -264,7 +268,6 @@ BASE_TOOLS := \
 	modexeb$(SUFFIX) \
 	mv$(SUFFIX) \
 	printenv$(SUFFIX) \
-	reboot$(SUFFIX) \
 	rm$(SUFFIX) \
 	rmdir$(SUFFIX) \
 	sleep$(SUFFIX) \
@@ -274,6 +277,40 @@ BASE_TOOLS := \
 	uptime$(SUFFIX) \
 	which$(SUFFIX)
 
+ifdef INTERIX
+CFLAGS += -D_ALL_SOURCE -D_NO_UTIMENSAT -D_NO_UTIMES
+NEED_LIBGETOPT = 1
+TIMELIB =
+else
+ALL_TOOLS += \
+	ifconfig_u.o \
+	iftop_u.o \
+	isptrace1allowed_u.o \
+	netstat_u.o \
+	kill1_u.o \
+	r_u.o \
+	reboot_u.o \
+	sync_u.o
+BASE_TOOLS += \
+	reboot$(SUFFIX)
+ifndef MINGW
+EXTRA_TOOLS += \
+	ifconfig \
+	iftop \
+	isptrace1allowed \
+	kill1 \
+	netstat \
+	r \
+	sync
+endif
+endif
+
+ifdef NEED_LIBGETOPT
+CFLAGS += -Ilibgetopt
+LIBS += -Llibgetopt -lgetopt
+DEPEND += libgetopt/libgetopt.a
+endif
+LDLIBS = $(LIBS)
 
 TRAN_SRC = \
 	cat.c \
@@ -342,7 +379,7 @@ $(LIB_NAME):
 endif
 
 $(OUTFILE):	$(ALL_TOOLS) toolbox.o
-	$(CC) $(LDFLAGS) $(UNITY_LDFLAGS) $^ -o $@ $(LIBS) $(SELINUX_LIBS) $(TIMELIB) -lcrypto -lpthread
+	$(CC) $(LDFLAGS) $(UNITY_LDFLAGS) $^ -o $@ $(LIBS) $(SELINUX_LIBS) $(TIMELIB) $(CRYPT_LIB) -lpthread
 
 #separate-mingw:
 
@@ -354,6 +391,8 @@ cleanc:
 
 clean:	cleanc
 	/bin/rm -f toolbox toolbox.dll $(LIB_NAME) $(BASE_TOOLS) $(EXTRA_TOOLS) *.o *.exe
+#	$(MAKE) -C libgetopt $@
+	/bin/rm -f libgetopt/*.o libgetopt/*.a
 	$(MAKE) -C posix-io-for-windows distclean
 
 help:
@@ -428,7 +467,7 @@ ls.exe:	ls.c
 	$(CC) -D_USE_LIBPORT=2 $(CFLAGS) $(LDFLAGS) ls.c -o $@ $(LIBS)
 
 md5$(SUFFIX):	md5.c
-	$(CC) $(CFLAGS) $(LDFLAGS) md5.c -o $@ $(LIBS) -lcrypto
+	$(CC) $(CFLAGS) $(LDFLAGS) md5.c -o $@ $(LIBS) $(CRYPT_LIB)
 
 mkdir.exe:	mkdir.c
 	$(CC) $(CFLAGS) $(LDFLAGS) mkdir.c -o mkdir.exe $(LIBS)
@@ -490,8 +529,9 @@ uptime$(SUFFIX):	uptime.c
 which.exe:	which.c
 	$(CC) $(CFLAGS) $(LDFLAGS) which.c -o $@ $(LIBS)
 
-maclib/libgetopt.a:
-	$(MAKE) -C maclib libgetopt.a
+libgetopt/libgetopt.a:	libgetopt/getopt.o
+#	CC="$(CC)" CFLAGS="$(CFLAGS)" $(MAKE) -C libgetopt libgetopt.a
+	$(AR) -rs $@ $^
 
 posix-io-for-windows/libposixio.a:
 	$(MAKE) -C posix-io-for-windows

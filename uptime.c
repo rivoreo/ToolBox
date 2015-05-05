@@ -24,14 +24,25 @@
 #elif defined __linux__
 //#include <sys/ioctl.h>
 //#include <linux/rtc.h>
-#elif defined __APPLE__
+#elif defined __APPLE__ || defined __FreeBSD__
 #include <sys/sysctl.h>
+#endif
+#ifndef _WIN32
+#include <utmpx.h>
 #endif
 //#include <linux/android_alarm.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <time.h>
+#include <math.h>
 
+#ifndef NAN
+#define NAN (__builtin_nanf(""))
+#endif
+
+//#ifdef __APPLE__
+//#define _USE_SYSCTL
+//#endif
 
 static void format_time(int time, char *buffer) {
 	int seconds, minutes, hours, days;
@@ -68,34 +79,28 @@ int64_t elapsedRealtime()
 }*/
 
 int main() {
-	float run_time;
+	float run_time = NAN;
 	char total_string[100];
 	//float elapsed;
-#ifdef __APPLE__
+#if defined __APPLE__ || defined __FreeBSD__
 	struct timeval boot_tv;
 	size_t len = sizeof boot_tv;
 	int mib[2] = { CTL_KERN, KERN_BOOTTIME };
-	if(sysctl(mib, 2, &boot_tv, &len, NULL, 0) < 0) {
-		perror("sysctl");
-		return 1;
+	if(sysctl(mib, 2, &boot_tv, &len, NULL, 0) == 0) {
+		run_time = difftime(time(NULL), boot_tv.tv_sec);
 	}
-	run_time = difftime(time(NULL), boot_tv.tv_sec);
-#else
+#elif defined __linux__ || defined _WIN32
 	struct timespec up_timespec;
-#ifndef _WIN32
-	float total_time, idle_time;
+#ifdef __linux__
+	float total_time = NAN, idle_time = NAN;
 	char idle_string[100], sleep_string[100];
 	int run_time_only = 0;
 	FILE *file = fopen("/proc/uptime", "r");
-	if(!file) {
-		//fprintf(stderr, "Could not open /proc/uptime\n");
-		//return -1;
-		run_time_only = 1;
-	} else {
+	if(file) {
 		if(fscanf(file, "%f %f", &total_time, &idle_time) < 2) {
 			fprintf(stderr, "Could not parse /proc/uptime\n");
 			fclose(file);
-			return -1;
+			return 1;
 		}
 		fclose(file);
 	}
@@ -120,6 +125,7 @@ int main() {
 		return 2;
 	}
 	run_time = up_timespec.tv_sec + up_timespec.tv_nsec / 1e9;
+#endif
 /*
 	elapsed = elapsedRealtime();
 	if (elapsed < 0) {
@@ -127,9 +133,38 @@ int main() {
 		return -1;
 	}
 */
+#ifndef _WIN32
+#ifdef __linux__
+	if(isnan(total_time)) {
+#else
+	if(isnan(run_time)) {
+#endif
+		int up = -1;
+		setutxent();
+		struct utmpx *t;
+		while((t = getutxent())) {
+			if(t->ut_type == BOOT_TIME) {
+				up = time(NULL) - t->ut_tv.tv_sec;
+				break;
+			}
+		}
+		if(up < 0) {
+#ifdef __linux__
+			run_time_only = 1;
+#else
+			fprintf(stderr, "Could not get up time\n");
+			return 2;
+#endif
+		}
+#ifdef __linux__
+		total_time = up;
+#else
+		run_time = up;
+#endif
+	}
 #endif
 
-#if !defined _WIN32 && !defined __APPLE__
+#ifdef __linux__
 	if(!run_time_only) {
 		format_time(total_time, total_string);
 		format_time((int)idle_time, idle_string);

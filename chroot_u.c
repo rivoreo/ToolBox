@@ -34,6 +34,10 @@ static gid_t atogid(const char *group) {
 }
 
 static int set_other_groups(const char *group_list) {
+#ifdef __INTERIX
+	fprintf(stderr, "setgroups: %s\n", strerror(ENOSYS));
+	return -1;
+#else
 	char buffer[32];
 	const char *p = group_list;
 	gid_t gid_list[32];
@@ -65,6 +69,7 @@ static int set_other_groups(const char *group_list) {
 	}
 	fprintf(stderr, "Too many groups or group name too long\n");
 	return -1;
+#endif
 }
 
 int chroot_main(int argc, char **argv) {

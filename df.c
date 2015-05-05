@@ -1,12 +1,22 @@
+#ifdef __INTERIX
+#define _NO_STATFS
+#include <dirent.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 //#include <errno.h>
+#ifdef _NO_STATFS
+#include <sys/statvfs.h>
+#define statfs statvfs
+#else
 #if defined __GLIBC__ || defined _WIN32
 #include <sys/statfs.h>
 #else
 #include <sys/param.h>
 #include <sys/mount.h>
+#endif
 #endif
 
 static int ok = EXIT_SUCCESS;
@@ -37,16 +47,15 @@ static void printsize(long long int n) {
 
 static void sdf(const struct statfs *st, const char *s, int always) {
 	if(st->f_blocks == 0 && !always) return;
-#if defined __GNU__ || defined __linux__ || (defined _WIN32 && !defined _WIN32_WNT_NATIVE)
-	printf("%-20s  ", s);
+#if defined __GNU__ || defined __linux__ || (defined _WIN32 && !defined _WIN32_WNT_NATIVE) || (defined __APPLE__ && defined _NO_STATFS)
 #else
 	printf("%-20s  ", st->f_mntfromname);
 #endif
-	printsize((long long)st->f_blocks * (long long)st->f_bsize);
+	printsize((long long int)st->f_blocks * (long long int)st->f_bsize);
 	printf("  ");
-	printsize((long long)(st->f_blocks - (long long)st->f_bfree) * st->f_bsize);
+	printsize((long long int)(st->f_blocks - (long long int)st->f_bfree) * st->f_bsize);
 	printf("  ");
-	printsize((long long)st->f_bfree * (long long)st->f_bsize);
+	printsize((long long int)st->f_bfree * (long long int)st->f_bsize);
 	printf("   %d\n", (int)st->f_bsize);
 }
 
@@ -73,14 +82,14 @@ int main(int argc, char *argv[]) {
 		argc--;
 		argv++;
 	}
-#ifdef _WIN32
+#if defined _WIN32
 	if(argc == 1) {
 		fprintf(stderr, "df: You need to specify at least one path\n");
 		return -1;
 	}
 #endif
 	puts(
-#if defined __GNU__ || defined __linux__ || (defined _WIN32 && !defined _WIN32_WNT_NATIVE)
+#if defined __GNU__ || defined __linux__ || (defined _WIN32 && !defined _WIN32_WNT_NATIVE) || (defined __APPLE__ && defined _NO_STATFS)
 	//"Mounted on"
 	"File system"
 #else
@@ -120,6 +129,19 @@ int main(int argc, char *argv[]) {
 		}
 
 		fclose(f);
+#elif defined __INTERIX
+		DIR *d = opendir("/dev/fs");
+		if(!d) {
+			perror("/dev/fs");
+			return 1;
+		}
+		struct dirent *de;
+		while((de = readdir(d))) {
+			char buffer[10] = "/dev/fs/";
+			memcpy(buffer + 8, de->d_name, 2);
+			df(buffer, all);
+		}
+		closedir(d);
 #else
 		int i;
 		//struct statfs buffer[200];

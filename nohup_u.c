@@ -94,7 +94,9 @@ int nohup_main(int argc, char *argv[]) {
 	}
 	if(isatty(STDERR_FILENO)) {
 		err_fd = dup(STDERR_FILENO);
+#ifndef __INTERIX
 		if(err_fd != -1) stderr = fdopen(err_fd, "w");
+#endif
 		if(dup2(STDOUT_FILENO, STDERR_FILENO) == -1) {
 			perror("dup2");
 			return 126;
@@ -130,6 +132,9 @@ int nohup_main(int argc, char *argv[]) {
 	argv++;
 	execvp(*argv, argv);
 	int e = errno;
+#ifdef __INTERIX
+	if(err_fd != -1) dup2(err_fd, STDERR_FILENO);
+#endif
 	//perror("execvp");
 	perror(argv[0]);
 	if(err_fd != -1) close(err_fd);
