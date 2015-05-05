@@ -1,4 +1,5 @@
 #define _BSD_SOURCE
+#define __BSD_VISIBLE 1
 #define _POSIX_C_SOURCE 200112L
 #include <stdio.h>
 #include <stdlib.h>
