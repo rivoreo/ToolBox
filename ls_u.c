@@ -902,7 +902,7 @@ static int listfile_long(const char *path, int flags) {
 			int len;
 			int color = COLOR_BOLD_CRAN;
 			struct stat st_linkto;
-			int suffix = 0;
+			const char *suffix = "";
 
 			len = readlink(path, linkto, 256);
 			if(len < 0) color = COLOR_BOLD_RED;
@@ -926,13 +926,13 @@ static int listfile_long(const char *path, int flags) {
 			}
 			if(color == COLOR_BOLD_CRAN) {
 				color = get_file_color_by_mode(st_linkto.st_mode, NULL);
-				if((flags & LIST_PATH_SLASH) && S_ISDIR(st_linkto.st_mode)) suffix = '/';
+				if((flags & LIST_PATH_SLASH) && S_ISDIR(st_linkto.st_mode)) suffix = "/";
 				else if(flags & LIST_FILE_TYPE) switch(st_linkto.st_mode & S_IFMT) {
 					case S_IFIFO:
-						suffix = '|';
+						suffix = "|";
 						break;
 					case S_IFSOCK:
-						suffix = '=';
+						suffix = "=";
 						break;
 				}
 			}
@@ -1046,13 +1046,13 @@ static int listfile_maclabel(const char *path, int flags) {
 			}
 			if(color == COLOR_BOLD_CRAN) {
 				color = get_file_color_by_mode(st_linkto.st_mode, NULL);
-				if((flags & LIST_PATH_SLASH) && S_ISDIR(st_linkto.st_mode)) suffix = '/';
+				if((flags & LIST_PATH_SLASH) && S_ISDIR(st_linkto.st_mode)) suffix = "/";
 				else if(flags & LIST_FILE_TYPE) switch(st_linkto.st_mode & S_IFMT) {
 					case S_IFIFO:
-						suffix = '|';
+						suffix = "|";
 						break;
 					case S_IFSOCK:
-						suffix = '=';
+						suffix = "=";
 						break;
 				}
 			} else suffix = 0;

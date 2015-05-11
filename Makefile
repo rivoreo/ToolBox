@@ -129,6 +129,10 @@ else
 CRYPT_LIB = -lcrypto
 endif
 
+ifdef NO_UTMPX
+CFLAGS += -D_NO_UTMPX
+endif
+
 ifdef MINGW
 SUFFIX := .exe
 CFLAGS += -D_NO_SELINUX
@@ -180,7 +184,6 @@ ALL_TOOLS += \
 	dmesg_u.o
 EXTRA_TOOLS += \
 	dmesg
-endif
 ifdef FREEBSD
 CFLAGS += -D_NO_UTIMENSAT
 NEED_LIBGETOPT = 1
@@ -189,6 +192,7 @@ ALL_TOOLS += \
 	vmstat_u.o
 EXTRA_TOOLS += \
 	vmstat
+endif
 endif
 ALL_TOOLS += \
 	printenv_u.o \

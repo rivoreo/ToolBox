@@ -27,7 +27,7 @@
 #elif defined __APPLE__ || defined __FreeBSD__
 #include <sys/sysctl.h>
 #endif
-#ifndef _WIN32
+#if !defined _WIN32 && !defined _NO_UTMPX
 #include <utmpx.h>
 #endif
 //#include <linux/android_alarm.h>
@@ -139,6 +139,7 @@ int main() {
 #else
 	if(isnan(run_time)) {
 #endif
+#ifndef _NO_UTMPX
 		int up = -1;
 		setutxent();
 		struct utmpx *t;
@@ -149,17 +150,20 @@ int main() {
 			}
 		}
 		if(up < 0) {
+#endif
 #ifdef __linux__
 			run_time_only = 1;
 #else
 			fprintf(stderr, "Could not get up time\n");
 			return 2;
 #endif
+#ifndef _NO_UTMPX
 		}
 #ifdef __linux__
 		total_time = up;
 #else
 		run_time = up;
+#endif
 #endif
 	}
 #endif

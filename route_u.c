@@ -62,7 +62,7 @@ int route_main(int argc, char *argv[])
             }
 
             /* route add default gw 192.168.1.1 dev wlan0 */
-            if (argc > 6 && !strcmp(argv[3], "gw") && !strcmp(argv[5], "dev")) {
+            if (argc > 6 && strcmp(argv[3], "gw") == 0 && strcmp(argv[5], "dev") == 0) {
                 rt.rt_flags = RTF_UP | RTF_GATEWAY;
                 rt.rt_dev = argv[6];
                 if (set_address(argv[4], &rt.rt_gateway)) {
@@ -73,21 +73,21 @@ int route_main(int argc, char *argv[])
         }
 
         /* route add -net 192.168.1.2 netmask 255.255.255.0 gw 192.168.1.1 */
-        if (argc > 7 && !strcmp(argv[2], "-net") &&
-                !strcmp(argv[4], "netmask")) {
-            if (!strcmp(argv[6], "gw")) {
+        if(argc > 7 && (strcmp(argv[2], "-net") == 0 || strcmp(argv[2], "--net") == 0) &&
+        strcmp(argv[4], "netmask") == 0) {
+            if(strcmp(argv[6], "gw") == 0) {
                 rt.rt_flags = RTF_UP | RTF_GATEWAY;
-                if (set_address(argv[3], &rt.rt_dst) &&
-                    set_address(argv[5], &rt.rt_genmask) &&
-                    set_address(argv[7], &rt.rt_gateway)) {
+                if(set_address(argv[3], &rt.rt_dst) &&
+                set_address(argv[5], &rt.rt_genmask) &&
+                set_address(argv[7], &rt.rt_gateway)) {
                     errno = 0;
                 }
                 goto apply;
-            } else if (!strcmp(argv[6], "dev")) {
+            } else if(strcmp(argv[6], "dev") == 0) {
                 rt.rt_flags = RTF_UP;
                 rt.rt_dev = argv[7];
                 if (set_address(argv[3], &rt.rt_dst) &&
-                    set_address(argv[5], &rt.rt_genmask)) {
+                set_address(argv[5], &rt.rt_genmask)) {
                     errno = 0;
                 }
                 goto apply;

@@ -250,7 +250,6 @@ int more_main(int argc, char *argv[]) {
 
 	if(argc != 1) {
 		strcpy(filename, argv[1]);
-		
 		if((fp = fopen(filename,"r")) == NULL) {
 			perror("Error open file");
 			return errno;
@@ -263,6 +262,9 @@ int more_main(int argc, char *argv[]) {
 			perror("Error open STDIN_FILENO");
 			return errno;
 		}
+	} else {
+		fprintf(stderr, "%s: Cannot read from a terminal\n", argv[0]);
+		return 1;
 	}
 
 	read_file(fp, use_pipe);

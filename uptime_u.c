@@ -19,7 +19,7 @@
 #else
 #include <string.h>
 #endif
-#ifndef _WIN32
+#if !defined _WIN32 && !defined _NO_UTMPX
 #include <utmpx.h>
 #endif
 #include <fcntl.h>
@@ -73,15 +73,14 @@ int uptime_main() {
 		fclose(file);
     }
 #endif
-    if(clock_gettime(CLOCK_MONOTONIC, &up_timespec) < 0) {
-        fprintf(stderr, "Could not get monotonic time\n");
-	return -1;
+    if(clock_gettime(CLOCK_MONOTONIC, &up_timespec) == 0) {
+        up_time = up_timespec.tv_sec + up_timespec.tv_nsec / 1e9;
     }
-    up_time = up_timespec.tv_sec + up_timespec.tv_nsec / 1e9;
 #endif
 
 #ifndef _WIN32
 	if(isnan(up_time)) {
+#ifndef _NO_UTMPX
 		int up = -1;
 		setutxent();
 		struct utmpx *t;
@@ -92,10 +91,13 @@ int uptime_main() {
 			}
 		}
 		if(up < 0) {
+#endif
 			fprintf(stderr, "Could not get up time\n");
 			return 2;
+#ifndef _NO_UTMPX
 		}
 		up_time = up;
+#endif
 	}
 #endif
 
