@@ -17,10 +17,24 @@
 static void help(void);
 int main(int, char **);
 
-#if defined _SHARED && defined __PIC__
+#if defined _SHARED
 #include <stdarg.h>
 #include <errno.h>
 #define ARG_MAX 256
+
+//#ifdef __INTERIX
+//void __main() {}
+//void ___main() {}
+//#endif
+
+#if 1
+// To avoid calling main in library
+int main1(int, char **);
+int main(int argc, char **argv) {
+	return main1(argc, argv);
+}
+#define main main1
+#endif
 
 int toolbox(const char *arg, ...) {
 	int argc = 0;

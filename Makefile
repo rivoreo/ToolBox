@@ -54,7 +54,9 @@ LIB_NAME = libtoolbox.so
 endif
 
 ifdef SHARED_OBJECT
+ifndef INTERIX		# PIC in Interix default gcc is buggy; let him to use relocation
 CFLAGS += -fPIC
+endif
 CFLAGS += -D_SHARED
 ifdef DARWIN
 LDFLAGS += --shared
@@ -160,7 +162,6 @@ EXTRA_TOOLS := \
 	ln \
 	lsof \
 	mknod \
-	more \
 	mtdread \
 	nohup \
 	ps \
@@ -284,6 +285,7 @@ BASE_TOOLS := \
 	mkswap$(SUFFIX) \
 	modexe$(SUFFIX) \
 	modexeb$(SUFFIX) \
+	more$(SUFFIX) \
 	mv$(SUFFIX) \
 	printenv$(SUFFIX) \
 	rm$(SUFFIX) \
@@ -498,6 +500,9 @@ modexe.exe:	modexe.c
 
 modexeb.exe:	modexeb.c
 	$(CC) $(CFLAGS) $(LDFLAGS) modexeb.c -o $@ $(LIBS)
+
+more.exe:	more.c
+	$(CC) $(CFLAGS) $(LDFLAGS) more.c -o $@ $(LIBS)
 
 mv.exe:	mv.c
 	$(CC) $(CFLAGS) $(LDFLAGS) mv.c -o mv.exe $(LIBS)

@@ -20,6 +20,10 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+#ifdef _WIN32
+extern int fsync(int);
+#endif
+
 /* XXX This needs to be obtained from kernel headers. See b/9336527 */
 struct linux_swap_header {
 	char           bootbits[1024];		/* Space for disklabel etc. */
