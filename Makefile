@@ -367,6 +367,7 @@ TRAN_SRC = \
 	ps.c \
 	tee.c \
 	top.c \
+	readlink.c \
 	readtty.c \
 	reboot.c \
 	renice.c \

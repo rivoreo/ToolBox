@@ -15,6 +15,9 @@ Mac OS X:
 	osx (>=10.4)
 Interix (SFU/SUA):
 	interix (>=3.5)
+Windows:
+	msvcrt (>=6)
+	linkcore
 Windows CE:
 	ceos (>=3.0)
 	celibc (>=1.8)
