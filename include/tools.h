@@ -64,7 +64,9 @@ TOOL(lsmod)
 TOOL(lsof)
 #endif
 TOOL(md5)
+#ifndef _WIN32_WNT_NATIVE
 TOOL(more)
+#endif
 TOOL(mkdir)
 #ifndef _WIN32_WNT_NATIVE
 TOOL(mknod)
