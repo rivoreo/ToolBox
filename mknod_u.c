@@ -14,7 +14,9 @@
 #include <stdlib.h>
 #ifndef makedev
 #include <sys/mkdev.h>
+#ifndef makedev
 #define makedev mkdev
+#endif
 #endif
 
 static void print_usage(const char *name) {

@@ -92,7 +92,7 @@ extern int		progress;
 extern const uint8_t	*ctab;
 
 #ifndef MIN
-#define MIN(a, u_charb) ((a) < (b) ? (a) : (b))
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
 #ifndef MAX
 #define MAX(a, b) ((a) > (b) ? (a) : (b))

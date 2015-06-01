@@ -43,6 +43,9 @@ endif
 ifeq ($(OS_NAME),FreeBSD)
 FREEBSD = 1
 endif
+ifeq ($(OS_NAME),SunOS)
+SUNOS = 1
+endif
 endif
 
 CFLAGS += -Iinclude -O1 -Wall
@@ -208,6 +211,7 @@ CFLAGS += "-DPATH_MAX=(512)" -D_NO_UTIMENSAT
 else
 ifndef INTERIX
 ifndef FREEBSD
+ifndef SUNOS
 ALL_TOOLS += \
 	getevent_u.o \
 	insmod_u.o \
@@ -230,6 +234,7 @@ EXTRA_TOOLS +=  \
 	sendevent \
 	setconsole \
 	setkey
+endif		# !SUNOS
 endif		# !FREEBSD
 ALL_TOOLS += \
 	swapoff_u.o \
@@ -302,12 +307,23 @@ CFLAGS += -D_ALL_SOURCE -D_NO_UTIMENSAT -D_NO_UTIMES
 NEED_LIBGETOPT = 1
 TIMELIB =
 else
+ifdef SUNOS
+CFLAGS += -D__EXTENSIONS__ -D_NO_STATFS -std=gnu99
+else
+ifndef MINGW
+ALL_TOOLS += \
+	isptrace1allowed_u.o \
+	kill1_u.o
+EXTRA_TOOLS += \
+	isptrace1allowed \
+	kill1
+endif
+endif		# SUNOS
+
 ALL_TOOLS += \
 	ifconfig_u.o \
 	iftop_u.o \
-	isptrace1allowed_u.o \
 	netstat_u.o \
-	kill1_u.o \
 	r_u.o \
 	reboot_u.o \
 	sync_u.o
@@ -317,13 +333,11 @@ ifndef MINGW
 EXTRA_TOOLS += \
 	ifconfig \
 	iftop \
-	isptrace1allowed \
-	kill1 \
 	netstat \
 	r \
 	sync
 endif
-endif
+endif		# INTERIX
 
 ifdef NEED_LIBGETOPT
 CFLAGS += -Ilibgetopt

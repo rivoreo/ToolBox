@@ -44,7 +44,7 @@ static void printsize(long long n)
 
 static void sdf(const struct statfs *st, const char *s, int always) {
 	if(st->f_blocks == 0 && !always) return;
-#if defined __GNU__ || defined __linux__
+#if defined __GNU__ || defined __linux__ || defined __sun
 	printf("%-20s  ", s);
 #else
 	printf("%-20s  ", st->f_mntfromname);

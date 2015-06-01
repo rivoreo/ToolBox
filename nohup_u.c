@@ -94,7 +94,7 @@ int nohup_main(int argc, char *argv[]) {
 	}
 	if(isatty(STDERR_FILENO)) {
 		err_fd = dup(STDERR_FILENO);
-#ifndef __INTERIX
+#if !defined __INTERIX && !defined __sun
 		if(err_fd != -1) stderr = fdopen(err_fd, "w");
 #endif
 		if(dup2(STDOUT_FILENO, STDERR_FILENO) == -1) {
