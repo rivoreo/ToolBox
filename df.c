@@ -68,6 +68,9 @@ static void df(const char *s, int always) {
 		perror(s);
 		ok = EXIT_FAILURE;
 	} else {
+#ifdef __sun
+		st.f_bsize = st.f_frsize;
+#endif
 		sdf(&st, s, always);
 	}
 }
@@ -90,7 +93,7 @@ int main(int argc, char *argv[]) {
 	}
 #endif
 	puts(
-#if defined __GNU__ || defined __linux__ || (defined _WIN32 && !defined _WIN32_WNT_NATIVE) || (defined __APPLE__ && defined _NO_STATFS)
+#if defined __GNU__ || defined __linux__ || (defined _WIN32 && !defined _WIN32_WNT_NATIVE) || (defined __APPLE__ && defined _NO_STATFS) || defined __sun
 	//"Mounted on"
 	"File system"
 #else
@@ -127,6 +130,28 @@ int main(int argc, char *argv[]) {
 			}
 
 			df(e, all);
+		}
+
+		fclose(f);
+#elif defined __SVR4
+		char s[2000];
+		FILE *f = fopen("/etc/mnttab", "r");
+		if(!f) {
+			perror("/etc/mnttab");
+			return 1;
+		}
+
+		while(fgets(s, sizeof s, f)) {
+			char *c = s;
+			while(*c) if(*c++ == '	') {
+				char *e = c;
+				while(*++c) if(*c == '	') {
+					*c = 0;
+					break;
+				}
+				df(e, all);
+				break;
+			}
 		}
 
 		fclose(f);

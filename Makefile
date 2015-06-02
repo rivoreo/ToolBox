@@ -308,13 +308,16 @@ NEED_LIBGETOPT = 1
 TIMELIB =
 else
 ifdef SUNOS
-CFLAGS += -D__EXTENSIONS__ -D_NO_STATFS -std=gnu99
+CFLAGS += -D__EXTENSIONS__ -D_NO_STATFS -D_NO_UTIMENSAT -std=gnu99
+LIBS += -lsocket -lnsl
 else
 ifndef MINGW
 ALL_TOOLS += \
+	iftop_u.o \
 	isptrace1allowed_u.o \
 	kill1_u.o
 EXTRA_TOOLS += \
+	iftop \
 	isptrace1allowed \
 	kill1
 endif
@@ -322,7 +325,6 @@ endif		# SUNOS
 
 ALL_TOOLS += \
 	ifconfig_u.o \
-	iftop_u.o \
 	netstat_u.o \
 	r_u.o \
 	reboot_u.o \
@@ -332,7 +334,6 @@ BASE_TOOLS += \
 ifndef MINGW
 EXTRA_TOOLS += \
 	ifconfig \
-	iftop \
 	netstat \
 	r \
 	sync

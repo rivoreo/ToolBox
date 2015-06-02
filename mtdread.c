@@ -11,6 +11,9 @@
 //#include <mtd/mtd-user.h>
 
 #include <sys/ioctl.h>
+#ifdef __sun
+#include <sys/ioccom.h>
+#endif
 
 #if defined __APPLE__ || defined __FreeBSD__ || defined __INTERIX
 static loff_t lseek64(int fd, loff_t offset, int whence) {

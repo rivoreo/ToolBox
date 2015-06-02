@@ -33,7 +33,7 @@
  * SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
+//#include <sys/cdefs.h>
 
 #include <sys/param.h>
 #include <sys/stat.h>
@@ -61,6 +61,8 @@ extern int fdatasync(int);
 #endif
 #elif defined __FreeBSD__ || defined __INTERIX
 #define fdatasync fsync
+#elif defined __sun && !defined UINT_MAX
+#define UINT_MAX 4294967295U
 #endif
 
 //#define NO_CONV

@@ -39,19 +39,22 @@ static inline void init_sockaddr_in(struct sockaddr_in *sin, const char *addr)
     sin->sin_addr.s_addr = inet_addr(addr);
 }
 
+#ifndef __sun
 static void setmtu(int s, struct ifreq *ifr, const char *mtu)
 {
     int m = atoi(mtu);
     ifr->ifr_mtu = m;
     if(ioctl(s, SIOCSIFMTU, ifr) < 0) die("SIOCSIFMTU");
 }
+#endif
+
 static void setdstaddr(int s, struct ifreq *ifr, const char *addr)
 {
     init_sockaddr_in((struct sockaddr_in *) &ifr->ifr_dstaddr, addr);
     if(ioctl(s, SIOCSIFDSTADDR, ifr) < 0) die("SIOCSIFDSTADDR");
 }
 
-#ifndef BSD
+#if !defined BSD && !defined __sun
 static void setnetmask(int s, struct ifreq *ifr, const char *addr)
 {
     init_sockaddr_in((struct sockaddr_in *) &ifr->ifr_netmask, addr);
@@ -135,6 +138,7 @@ int ifconfig_main(int argc, char *argv[])
     while(argc > 0) {
         if(strcmp(argv[0], "up") == 0) {
             setflags(s, &ifr, IFF_UP, 0);
+#ifndef __sun
         } else if(strcmp(argv[0], "mtu") == 0) {
             argc--, argv++;
             if (!argc) {
@@ -142,6 +146,7 @@ int ifconfig_main(int argc, char *argv[])
                 die("expecting a value for parameter \"mtu\"");
             }
             setmtu(s, &ifr, argv[0]);
+#endif
         } else if(strcmp(argv[0], "-pointopoint") == 0) {
             setflags(s, &ifr, IFF_POINTOPOINT, 1);
         } else if(strcmp(argv[0], "pointopoint") == 0) {
@@ -154,7 +159,7 @@ int ifconfig_main(int argc, char *argv[])
             setflags(s, &ifr, IFF_POINTOPOINT, 0);
         } else if(strcmp(argv[0], "down") == 0) {
             setflags(s, &ifr, 0, IFF_UP);
-#ifndef BSD
+#if !defined BSD && !defined __sun
         } else if(strcmp(argv[0], "netmask") == 0) {
             argc--, argv++;
             if(!argc) { 

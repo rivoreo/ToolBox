@@ -53,7 +53,7 @@ static void usage(void) {
 }
 
 int touch_main(int argc, char *argv[]) {
-	int i, aflag = 0, mflag = 0, flags = 0, debug = 0, end_of_options = 0;
+	int i, aflag = 0, mflag = 0, debug = 0, end_of_options = 0;
 	char *file = NULL;
 #ifdef _NO_UTIMENSAT
 	int tflag = 0;
@@ -61,6 +61,7 @@ int touch_main(int argc, char *argv[]) {
 	specified_time.tv_sec = time(NULL);
 	specified_time.tv_usec = 0;
 #else
+	int flags = 0;
 	struct timespec specified_time, times[2];
 	specified_time.tv_sec = 0;
 	specified_time.tv_nsec = UTIME_NOW;

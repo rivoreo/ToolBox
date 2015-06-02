@@ -58,14 +58,17 @@ static void sdf(const struct statfs *st, const char *s, int always) {
 }
 
 static void df(const char *s, int always) {
-    struct statfs st;
+	struct statfs st;
 
-    if (statfs(s, &st) < 0) {
-        fprintf(stderr, "%s: %s\n", s, strerror(errno));
-        ok = EXIT_FAILURE;
-    } else {
+	if (statfs(s, &st) < 0) {
+		fprintf(stderr, "%s: %s\n", s, strerror(errno));
+		ok = EXIT_FAILURE;
+	} else {
+#ifdef __sun
+		st.f_bsize = st.f_frsize;
+#endif
 		sdf(&st, s, always);
-    }
+	}
 }
 
 int df_main(int argc, char *argv[]) {
@@ -108,6 +111,27 @@ int df_main(int argc, char *argv[]) {
         }
 
         fclose(f);
+#elif defined __SVR4
+		char s[2000];
+		FILE *f = fopen("/etc/mnttab", "r");
+		if(!f) {
+			perror("/etc/mnttab");
+			return 1;
+		}
+
+		while(fgets(s, sizeof s, f)) {
+			char *c = s;
+			while(*c) if(*c++ == '	') {
+				char *e = c;
+				while(*++c) if(*c == '	') {
+					*c = 0;
+					break;
+				}
+				df(e, all);
+				break;
+			}
+		}
+		fclose(f);
 #elif defined __INTERIX
 		DIR *d = opendir("/dev/fs");
 		if(!d) {

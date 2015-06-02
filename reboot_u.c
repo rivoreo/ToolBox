@@ -150,6 +150,9 @@ static int reboot(int flags) {
 }
 #else
 #include <sys/reboot.h>
+#ifdef __sun
+#define reboot(_howto) reboot(_howto,NULL)
+#endif
 #endif
 
 int reboot_main(int argc, char **argv) {
