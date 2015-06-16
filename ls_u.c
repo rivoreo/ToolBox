@@ -1152,7 +1152,7 @@ static int listdir(const char *name, int flags) {
 			struct stat s;
 			int err;
 
-			if(!list_all && (strcmp(de->d_name, ".") == 0 || strcmp(de->d_name, "..") == 0)) continue;
+			if(strcmp(de->d_name, ".") == 0 || strcmp(de->d_name, "..") == 0) continue;
 			if(de->d_name[0] == '.' && !list_all && !(flags & LIST_ALL_ALMOST)) continue;
 
 			const char *slash = "/";

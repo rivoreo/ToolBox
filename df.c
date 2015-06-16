@@ -3,6 +3,11 @@
 #include <dirent.h>
 #endif
 
+#ifdef __NetBSD__
+#define _NO_STATFS
+#define getfsstat getvfsstat
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,6 +15,7 @@
 #ifdef _NO_STATFS
 #include <sys/statvfs.h>
 #define statfs statvfs
+#define f_bsize f_frsize
 #else
 #if defined __GLIBC__ || defined _WIN32
 #include <sys/statfs.h>
@@ -47,7 +53,7 @@ static void printsize(long long int n) {
 
 static void sdf(const struct statfs *st, const char *s, int always) {
 	if(st->f_blocks == 0 && !always) return;
-#if defined __GNU__ || defined __linux__ || (defined _WIN32 && !defined _WIN32_WNT_NATIVE) || (defined __APPLE__ && defined _NO_STATFS) || defined __sun
+#if defined __GNU__ || defined __linux__ || (defined _WIN32 && !defined _WIN32_WNT_NATIVE) || (!defined __NetBSD__ && !defined __INTERIX && defined _NO_STATFS) || defined __sun
 	printf("%-20s  ", s);
 #else
 	printf("%-20s  ", st->f_mntfromname);
@@ -68,11 +74,23 @@ static void df(const char *s, int always) {
 		perror(s);
 		ok = EXIT_FAILURE;
 	} else {
-#ifdef __sun
-		st.f_bsize = st.f_frsize;
-#endif
+//#ifdef __sun
+//		st.f_bsize = st.f_frsize;
+//#endif
 		sdf(&st, s, always);
 	}
+}
+
+static void print_header() {
+	puts(
+#if defined __GNU__ || defined __linux__ || (defined _WIN32 && !defined _WIN32_WNT_NATIVE) || (defined __APPLE__ && defined _NO_STATFS) || defined __sun
+	//"Mounted on"
+	"File system"
+#else
+	//"Filesystem"
+	"Device     "
+#endif
+	"               Size      Used      Free   Block size");
 }
 
 int main(int argc, char *argv[]) {
@@ -86,23 +104,7 @@ int main(int argc, char *argv[]) {
 		argc--;
 		argv++;
 	}
-#if defined _WIN32
 	if(argc == 1) {
-		fprintf(stderr, "df: You need to specify at least one path\n");
-		return -1;
-	}
-#endif
-	puts(
-#if defined __GNU__ || defined __linux__ || (defined _WIN32 && !defined _WIN32_WNT_NATIVE) || (defined __APPLE__ && defined _NO_STATFS) || defined __sun
-	//"Mounted on"
-	"File system"
-#else
-	//"Filesystem"
-	"Device     "
-#endif
-	"               Size      Used      Free   Block size");
-	if(argc == 1) {
-#ifndef _WIN32
 #if defined __GNU__ || defined __linux__
 		char s[2000];
 		FILE *f = fopen("/proc/mounts", "r");
@@ -112,6 +114,7 @@ int main(int argc, char *argv[]) {
 			return 1;
 		}
 
+		print_header();
 		while(fgets(s, 2000, f)) {
 			char *c, *e = s;
 
@@ -141,6 +144,7 @@ int main(int argc, char *argv[]) {
 			return 1;
 		}
 
+		print_header();
 		while(fgets(s, sizeof s, f)) {
 			char *c = s;
 			while(*c) if(*c++ == '	') {
@@ -161,6 +165,7 @@ int main(int argc, char *argv[]) {
 			perror("/dev/fs");
 			return 1;
 		}
+		print_header();
 		struct dirent *de;
 		while((de = readdir(d))) {
 			char buffer[10] = "/dev/fs/";
@@ -168,26 +173,30 @@ int main(int argc, char *argv[]) {
 			df(buffer, all);
 		}
 		closedir(d);
-#else
+#elif (!defined _NO_STATFS || defined __NetBSD__) && !defined _WINDOWSNT_NATIVE && !defined _WIN32
 		int i;
 		//struct statfs buffer[200];
 		int len = getfsstat(NULL, 0, MNT_NOWAIT);
 		if(len < 0) {
-			perror("getstatfs");
+			perror("getfsstat");
 			return 1;
 		}
 		struct statfs buffer[len];
 		if(getfsstat(buffer, len * sizeof(struct statfs), MNT_NOWAIT) < 0) {
-			perror("getstatfs");
+			perror("getfsstat");
 			return 1;
 		}
+		print_header();
 		for(i = 0; i < len; i++) {
 			sdf(buffer + i, NULL, all);
 		}
-#endif
+#else
+		fprintf(stderr, "df: You need to specify at least one path\n");
+		return -1;
 #endif
 	} else {
 		int i;
+		print_header();
 		for(i = 1; i < argc; i++) {
 			df(argv[i], 1);
 		}

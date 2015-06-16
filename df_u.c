@@ -3,6 +3,11 @@
 #include <dirent.h>
 #endif
 
+#ifdef __NetBSD__
+#define _NO_STATFS
+#define getfsstat getvfsstat
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,6 +15,7 @@
 #ifdef _NO_STATFS
 #include <sys/statvfs.h>
 #define statfs statvfs
+#define f_bsize f_frsize
 #else
 #if defined __GLIBC__ || defined _WIN32
 #include <sys/statfs.h>
@@ -44,7 +50,7 @@ static void printsize(long long n)
 
 static void sdf(const struct statfs *st, const char *s, int always) {
 	if(st->f_blocks == 0 && !always) return;
-#if defined __GNU__ || defined __linux__ || defined __sun
+#if defined __GNU__ || defined __linux__ || (!defined __NetBSD__ && !defined __INTERIX && defined _NO_STATFS)
 	printf("%-20s  ", s);
 #else
 	printf("%-20s  ", st->f_mntfromname);
@@ -60,36 +66,30 @@ static void sdf(const struct statfs *st, const char *s, int always) {
 static void df(const char *s, int always) {
 	struct statfs st;
 
-	if (statfs(s, &st) < 0) {
+	if(statfs(s, &st) < 0) {
 		fprintf(stderr, "%s: %s\n", s, strerror(errno));
 		ok = EXIT_FAILURE;
 	} else {
-#ifdef __sun
-		st.f_bsize = st.f_frsize;
-#endif
 		sdf(&st, s, always);
 	}
 }
 
+static void print_header() {
+	puts("Filesystem                Size     Used     Free   Blksize");
+}
+
 int df_main(int argc, char *argv[]) {
-#ifdef _WIN32_WNT_NATIVE
-	if(argc == 1) {
-		fprintf(stderr, "df: You need to specify at least one path\n");
-		return -1;
-	}
-#endif
-    puts("Filesystem                Size     Used     Free   Blksize");
-    if (argc == 1) {
-#ifndef _WIN32_WNT_NATIVE
+	if (argc == 1) {
 #if defined __GNU__ || defined __linux__
-        char s[2000];
-        FILE *f = fopen("/proc/mounts", "r");
+		char s[2000];
+		FILE *f = fopen("/proc/mounts", "r");
 
 		if(!f) {
 			perror("/proc/mounts");
 			return 1;
 		}
 
+		print_header();
         while(fgets(s, 2000, f)) {
             char *c, *e = s;
 
@@ -119,6 +119,7 @@ int df_main(int argc, char *argv[]) {
 			return 1;
 		}
 
+		print_header();
 		while(fgets(s, sizeof s, f)) {
 			char *c = s;
 			while(*c) if(*c++ == '	') {
@@ -138,6 +139,7 @@ int df_main(int argc, char *argv[]) {
 			perror("/dev/fs");
 			return 1;
 		}
+		print_header();
 		struct dirent *de;
 		while((de = readdir(d))) {
 			char buffer[10] = "/dev/fs/";
@@ -145,27 +147,30 @@ int df_main(int argc, char *argv[]) {
 			df(buffer, 0);
 		}
 		closedir(d);
-#else
+#elif !defined _NO_STATFS || defined __NetBSD__
 		int len = getfsstat(NULL, 0, MNT_NOWAIT), i;
 		if(len < 0) {
-			perror("getstatfs");
+			perror("getfsstat");
 			return 1;
 		}
 		struct statfs buffer[len];
 		if(getfsstat(buffer, len * sizeof(struct statfs), MNT_NOWAIT) < 0) {
-			perror("getstatfs");
+			perror("getfsstat");
 			return 1;
 		}
+		print_header();
 		for(i = 0; i < len; i++) sdf(buffer + i, NULL, 0);
+#else
+		fprintf(stderr, "df: You need to specify at least one path\n");
+		return -1;
 #endif
-#endif
-    } else {
-        int i;
+	} else {
+		int i;
+		print_header();
+		for(i = 1; i < argc; i++) {
+			df(argv[i], 1);
+		}
+	}
 
-        for (i = 1; i < argc; i++) {
-            df(argv[i], 1);
-        }
-    }
-
-    exit(ok);
+	return ok;
 }

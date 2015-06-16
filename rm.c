@@ -158,13 +158,14 @@ int main(int argc, char *argv[])
 */
 		}
 
-		if (ret < 0) {
+		if(ret < 0 && (errno != ENOENT || !(flags & OPT_FORCE))) {
 //#ifdef _WIN32_WCE
 //			fprintf(stderr, "rm failed for %s\n", argv[i]);
 //#else
 			fprintf(stderr, "rm failed for %s, %s\n", argv[i], strerror(errno));
 //#endif
-			if(!(flags & OPT_FORCE)) return -1;
+			//if(errno != ENOENT || !(flags & OPT_FORCE)) return -1;
+			return -1;
 		}
 	}
 

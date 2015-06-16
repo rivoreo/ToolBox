@@ -97,13 +97,13 @@ int rm_main(int argc, char *argv[])
     /* loop over the file/directory args */
     for(i = optind; i < argc; i++) {
 
-        if (flags & OPT_RECURSIVE) {
+        if(flags & OPT_RECURSIVE) {
             ret = unlink_recursive(argv[i], flags);
         } else {
             ret = unlink(argv[i]);
         }
 
-        if (ret < 0 && !(flags & OPT_FORCE)) {
+        if(ret < 0 && (errno != ENOENT || !(flags & OPT_FORCE))) {
             fprintf(stderr, "rm failed for %s, %s\n", argv[i], strerror(errno));
             return -1;
         }
