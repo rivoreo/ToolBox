@@ -176,7 +176,8 @@ EXTRA_TOOLS := \
 
 ifdef DARWIN
 NO_SELINUX = 1
-CFLAGS += -D_NO_UTIMENSAT -fnested-functions
+NO_UTIMENSAT = 1
+CFLAGS += -fnested-functions
 LIBS += -Lmaclib
 NEED_LIBGETOPT = 1
 ifndef SHARED_OBJECT
@@ -189,7 +190,7 @@ ALL_TOOLS += \
 EXTRA_TOOLS += \
 	dmesg
 ifdef FREEBSD
-CFLAGS += -D_NO_UTIMENSAT
+NO_UTIMENSAT = 1
 NEED_LIBGETOPT = 1
 else
 ALL_TOOLS += \
@@ -207,7 +208,8 @@ TIMELIB = -lrt
 ifdef GNU
 NO_SELINUX = 1
 # utimensat is not implemented in GNU/Hurd
-CFLAGS += "-DPATH_MAX=(512)" -D_NO_UTIMENSAT
+NO_UTIMENSAT = 1
+CFLAGS += "-DPATH_MAX=(512)"
 else
 ifndef INTERIX
 ifndef FREEBSD
@@ -303,12 +305,14 @@ BASE_TOOLS := \
 	which$(SUFFIX)
 
 ifdef INTERIX
-CFLAGS += -D_ALL_SOURCE -D_NO_UTIMENSAT -D_NO_UTIMES
+NO_UTIMENSAT = 1
+CFLAGS += -D_ALL_SOURCE -D_NO_UTIMES
 NEED_LIBGETOPT = 1
 TIMELIB =
 else
 ifdef SUNOS
-CFLAGS += -D__EXTENSIONS__ -D_NO_STATFS -D_NO_UTIMENSAT -std=gnu99
+NO_UTIMENSAT = 1
+CFLAGS += -D__EXTENSIONS__ -D_NO_STATFS -std=gnu99
 LIBS += -lsocket -lnsl
 else
 ifndef MINGW
@@ -340,11 +344,16 @@ EXTRA_TOOLS += \
 endif
 endif		# INTERIX
 
+ifdef NO_UTIMENSAT
+CFLAGS += -D_NO_UTIMENSAT
+endif
+
 ifdef NEED_LIBGETOPT
 CFLAGS += -Ilibgetopt
 LIBS += -Llibgetopt -lgetopt
 DEPEND += libgetopt/libgetopt.a
 endif
+
 LDLIBS = $(LIBS)
 
 TRAN_SRC = \

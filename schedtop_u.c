@@ -143,8 +143,8 @@ static void add_threads(int pid, struct thread_info *proc_info)
 	struct dirent *de;
 	sprintf(path, "/proc/%d/task", pid);
 	d = opendir(path);
-	if(d == 0) return;
-	while((de = readdir(d)) != 0) {
+	if(!d) return;
+	while((de = readdir(d))) {
 		if(isdigit(de->d_name[0])) {
 			int tid = atoi(de->d_name);
 			add_thread(pid, tid, proc_info);
@@ -179,7 +179,7 @@ static void update_table(DIR *d, uint32_t flags)
 	struct dirent *de;
 
 	rewinddir(d);
-	while((de = readdir(d)) != 0) {
+	while((de = readdir(d))) {
 		//puts(de->d_name);
 		if(isdigit(de->d_name[0])) {
 			int pid = atoi(de->d_name);

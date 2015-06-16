@@ -147,7 +147,7 @@ int df_main(int argc, char *argv[]) {
 			df(buffer, 0);
 		}
 		closedir(d);
-#elif !defined _NO_STATFS || defined __NetBSD__
+#elif (!defined _NO_STATFS || defined __NetBSD__) && !defined _WINDOWSNT_NATIVE
 		int len = getfsstat(NULL, 0, MNT_NOWAIT), i;
 		if(len < 0) {
 			perror("getfsstat");

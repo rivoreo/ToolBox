@@ -75,7 +75,6 @@ static void df(const char *s, int always) {
 		ok = EXIT_FAILURE;
 	} else {
 //#ifdef __sun
-//		st.f_bsize = st.f_frsize;
 //#endif
 		sdf(&st, s, always);
 	}
