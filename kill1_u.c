@@ -77,7 +77,7 @@ first_loop:
 					}
 					signal1 = *++argv;
 					if(!signal1) {
-						fprintf(stderr, "Option '-s' need a argument\n");
+						fprintf(stderr, "Option '-s' need an argument\n");
 						return -2;
 					}
 					goto first_loop;

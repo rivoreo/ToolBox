@@ -40,6 +40,18 @@
 #define NAN (__builtin_nanf(""))
 #endif
 
+#ifdef __sun
+#if NAN == __builtin_nan
+#undef NAN
+#define NAN (nan(NULL))
+#endif
+#if isnan == __builtin_isnan
+#include <ieeefp.h>
+#undef isnan
+#define isnan isnand
+#endif
+#endif
+
 //#ifdef __APPLE__
 //#define _USE_SYSCTL
 //#endif

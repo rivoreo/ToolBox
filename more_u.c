@@ -104,6 +104,8 @@ static char getche(void) {
 #endif
 #endif
 
+#define SKIP_MULTI_BLACK_LINES (1 << 0)
+
 unsigned int term_row;
 
 static int page_col, page_row;
@@ -159,16 +161,23 @@ static int read_more() {
 	return 0;
 }
 
-static int read_file(FILE *fp, int use_pipe) {
+static int read_file(FILE *fp, int use_pipe, int flags) {
 	char line[page_col];
 	int seek;
 	off_t filesize = -1;
+	int black_line = 0;
 	if(!use_pipe) {
 		struct stat filestat;
 		stat(filename, &filestat);
 		filesize = filestat.st_size;
 	}
 	while(fgets(line, page_col, fp) != NULL) {
+		if((flags & SKIP_MULTI_BLACK_LINES)) {
+			if(*line == '\n') {
+				if(black_line) continue;
+				else black_line = 1;
+			} else black_line = 0;
+		}
 		if(page_row != 1) {
 			fprintf(stdout,"%s",line);
 			//fflush(stdout);
@@ -304,9 +313,13 @@ int more_main(int argc, char *argv[]) {
 		return 1;
 	}
 
+	int flags = 0;
 	/* getopt */
-	while((opt = getopt(argc, argv, "V")) != -1) {
+	while((opt = getopt(argc, argv, "sV")) != -1) {
 		switch(opt) {
+			case 's':
+				flags |= SKIP_MULTI_BLACK_LINES;
+				break;
 			case 'V':
 				fprintf(stdout,"%s, From ToolBox by libdll.so\n", argv[0]);
 				return 0;
@@ -329,7 +342,7 @@ int more_main(int argc, char *argv[]) {
 	FILE *fp;
 
 	if(argc != 1) {
-		strcpy(filename, argv[1]);
+		strcpy(filename, argv[optind]);
 		fp = fopen(filename, "r");
 		if(!fp) {
 			perror("Error open file");
@@ -373,7 +386,7 @@ int more_main(int argc, char *argv[]) {
 		return 1;
 	}
 
-	if(read_file(fp, use_pipe) < 0) {
+	if(read_file(fp, use_pipe, flags) < 0) {
 		perror(argv[0]);
 		r = 1;
 	}

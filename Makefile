@@ -312,8 +312,8 @@ TIMELIB =
 else
 ifdef SUNOS
 NO_UTIMENSAT = 1
-CFLAGS += -D__EXTENSIONS__ -D_NO_STATFS -std=gnu99
-LIBS += -lsocket -lnsl
+CFLAGS += -D__EXTENSIONS__ -D_NO_STATFS -D__C99FEATURES__ -std=gnu99
+LIBS += -lsocket -lnsl -lm
 else
 ifndef MINGW
 ALL_TOOLS += \

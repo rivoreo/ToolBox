@@ -96,8 +96,25 @@ extern int _snprintf(char *, size_t, const char *, ...);
 
 #ifndef NAN
 //#if __GNUC_PREREQ (3,3)
+//#ifdef __sun
+////#define NAN (__builtin_nan)
+//#define NAN (nan(NULL))
+//#else
 #define NAN (__builtin_nanf(""))
 //#endif
+//#endif
+#endif
+
+#ifdef __sun
+#if NAN == __builtin_nan
+#undef NAN
+#define NAN (nan(NULL))
+#endif
+#if isnan == __builtin_isnan
+#include <ieeefp.h>
+#undef isnan
+#define isnan isnand
+#endif
 #endif
 
 /* Test COLOR */
