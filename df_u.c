@@ -128,7 +128,7 @@ int df_main(int argc, char *argv[]) {
 					*c = 0;
 					break;
 				}
-				df(e, all);
+				df(e, 0);
 				break;
 			}
 		}

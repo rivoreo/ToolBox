@@ -102,7 +102,7 @@ int modexe_main(int argc, char **argv) {
 		return 5;
 	}
 	if(!pe_offset) {
-		fprintf(stderr, "Unexcepted PE offset, %s may not a valid PE file\n", argv[1]);
+		fprintf(stderr, "Unexpected PE offset, %s may not a valid PE file\n", argv[1]);
 		return 4;
 	}
 	lseek(fd, pe_offset, SEEK_SET);
