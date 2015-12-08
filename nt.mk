@@ -1,8 +1,18 @@
 NATIVETOOLSDIR := ../WindowsNT-NativeTools/
 include $(NATIVETOOLSDIR)rules.mk
 
-CFLAGS += -Wall -O1 -D_WIN32_WNT_NATIVE -D_NO_SELINUX "-Dfprintf(F,...)=printf(__VA_ARGS__)" -Iinclude
-#CFLAGS +=
+CFLAGS += -Wall -O1 -D_NO_SELINUX -Iinclude
+
+# Should already defined in the nativedefs.h
+CFLAGS += -D_WINDOWSNT_NATIVE
+
+# Deprecated
+CFLAGS += -D_WIN32_WNT_NATIVE
+
+# fprintf is not implemented yet in the nativelibc
+CFLAGS += "-Dfprintf(F,...)=printf(__VA_ARGS__)"
+
+
 #RM = $(shell which rm)
 
 TOOLS_OBJS = \

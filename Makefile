@@ -129,9 +129,18 @@ ALL_TOOLS := \
 
 ifdef NO_OPENSSL
 CFLAGS += -D_NO_OPENSSL
+ifdef SUNOS
+CRYPT_LIB = -lmd5
+else
 CRYPT_LIB = -lcrypt
+endif
+else
+ifdef SUNOS
+# Add lib path /lib for OpenSolaris
+CRYPT_LIB = -L/lib -L/usr/lib -lcrypto
 else
 CRYPT_LIB = -lcrypto
+endif
 endif
 
 ifdef NO_UTMPX
@@ -144,15 +153,15 @@ CFLAGS += -D_NO_SELINUX
 ifeq ($(CC),arm-mingw32ce-gcc)
 CFLAGS += --include include/wcedef.h
 LIBS += -Lwcelib -lc
-TIMELIB = -lmmtimer
-LIBWS2 = -lws2
+TIME_LIB = -lmmtimer
+SOCKET_LIB = -lws2
 endif
 ifeq ($(CC),i586-mingw32msvc-gcc)
 LIBS += -Lposix-io-for-windows -lposixio
 DEPEND = posix-io-for-windows/libposixio.a
 export CONSOLE = 1
-TIMELIB = -lwinmm
-LIBWS2 = -lws2_32
+TIME_LIB = -lwinmm
+SOCKET_LIB = -lws2_32
 endif
 else
 EXTRA_TOOLS := \
@@ -204,7 +213,7 @@ ALL_TOOLS += \
 	top_u.o
 EXTRA_TOOLS += \
 	top
-TIMELIB = -lrt
+TIME_LIB = -lrt
 ifdef GNU
 NO_SELINUX = 1
 # utimensat is not implemented in GNU/Hurd
@@ -308,12 +317,17 @@ ifdef INTERIX
 NO_UTIMENSAT = 1
 CFLAGS += -D_ALL_SOURCE -D_NO_UTIMES
 NEED_LIBGETOPT = 1
-TIMELIB =
+TIME_LIB =
 else
 ifdef SUNOS
 NO_UTIMENSAT = 1
 CFLAGS += -D__EXTENSIONS__ -D_NO_STATFS -D__C99FEATURES__ -std=gnu99
-LIBS += -lsocket -lnsl -lm
+LIBS += -lnsl -lm
+SOCKET_LIB = -lsocket
+#ifndef NO_OPENSSL
+# Add lib path /lib for OpenSolaris
+#CRYPT_LIB = -L/lib -lcrypto
+#endif
 else
 ifndef MINGW
 ALL_TOOLS += \
@@ -424,7 +438,7 @@ $(LIB_NAME):
 endif
 
 $(OUTFILE):	$(ALL_TOOLS) toolbox.o
-	$(CC) $(LDFLAGS) $(UNITY_LDFLAGS) $^ -o $@ $(LIBS) $(SELINUX_LIBS) $(TIMELIB) $(CRYPT_LIB) -lpthread
+	$(CC) $(LDFLAGS) $(UNITY_LDFLAGS) $^ -o $@ $(LIBS) $(SOCKET_LIB) $(SELINUX_LIBS) $(TIME_LIB) $(CRYPT_LIB) -lpthread
 
 #separate-mingw:
 
@@ -496,8 +510,8 @@ getopt.exe:	getopt.c
 hd.exe:	hd.c
 	$(CC) $(CFLAGS) $(LDFLAGS) hd.c -o hd.exe $(LIBS)
 
-hostname.exe:	hostname.c
-	$(CC) $(CFLAGS) $(LDFLAGS) hostname.c -o $@ $(LIBS) $(LIBWS2)
+hostname$(SUFFIX):	hostname.c
+	$(CC) $(CFLAGS) $(LDFLAGS) hostname.c -o $@ $(LIBS) $(SOCKET_LIB)
 
 ioctl.exe:	ioctl.c
 	$(CC) $(CFLAGS) $(LDFLAGS) ioctl.c -o $@ $(LIBS)
@@ -572,7 +586,7 @@ unlink.exe:	unlink.c
 	$(CC) $(CFLAGS) $(LDFLAGS) unlink.c -o unlink.exe $(LIBS)
 
 uptime$(SUFFIX):	uptime.c
-	$(CC) $(CFLAGS) $(LDFLAGS) uptime.c -o $@ $(LIBS) $(TIMELIB)
+	$(CC) $(CFLAGS) $(LDFLAGS) uptime.c -o $@ $(LIBS) $(TIME_LIB)
 
 which.exe:	which.c
 	$(CC) $(CFLAGS) $(LDFLAGS) which.c -o $@ $(LIBS)

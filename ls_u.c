@@ -106,10 +106,12 @@ extern int _snprintf(char *, size_t, const char *, ...);
 #endif
 
 #ifdef __sun
-#if NAN == __builtin_nan
+//#if NAN == __builtin_nan
+//#undef NAN
+//#define NAN (nan(NULL))
+//#endif
 #undef NAN
-#define NAN (nan(NULL))
-#endif
+#define NAN (__builtin_nanf(""))
 #if isnan == __builtin_isnan
 #include <ieeefp.h>
 #undef isnan

@@ -28,7 +28,7 @@ extern int WINAPI KernelIoControl(unsigned long int, void *, unsigned long int, 
 #include <pm.h>
 #endif
 #else
-#ifdef _WIN32_WNT_NATIVE
+#ifdef _WINDOWSNT_NATIVE
 #include <nt.h>
 #else
 #ifndef SE_SHUTDOWN_PRIVILEGE
@@ -56,7 +56,7 @@ static int enable_shutdown_privilege() {
 	privilege.Privileges[0].Luid.LowPart = SE_SHUTDOWN_PRIVILEGE;
 	privilege.Privileges[0].Luid.HighPart = 0;
 	privilege.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
-#ifdef _WIN32_WNT_NATIVE
+#ifdef _WINDOWSNT_NATIVE
 	long int status = NtOpenProcessToken((void *)-1, TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &token);
 	if(status < 0) {
 		__set_errno_from_ntstatus(status);
@@ -102,7 +102,7 @@ static int reboot(int flags) {
 #endif
 #else
 	if(enable_shutdown_privilege() < 0) return -1;
-#ifdef _WIN32_WNT_NATIVE
+#ifdef _WINDOWSNT_NATIVE
 	SHUTDOWN_ACTION action;
 	switch(flags) {
 		case RB_AUTOBOOT:
@@ -144,7 +144,7 @@ static int reboot(int flags) {
 		return -1;
 	}
 #endif
-#endif		/* _WIN32_WNT_NATIVE */
+#endif		/* _WINDOWSNT_NATIVE */
 #endif		/* _WIN32_WCE */
 	while(1) sleep(10000);
 }

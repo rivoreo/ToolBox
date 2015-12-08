@@ -54,7 +54,7 @@ static void recurse_chmod(const char *path, int mode) {
 
 static void usage() {
 	fprintf(stderr, "Usage: chmod"
-#if defined _WIN32 && !defined _WIN32_WNT_NATIVE
+#if defined _WIN32 && !defined _WINDOWSNT_NATIVE
 		".exe"
 #endif
 		" [<option>] <mode> <file>\n");
