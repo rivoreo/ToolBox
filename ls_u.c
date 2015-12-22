@@ -1279,7 +1279,7 @@ int ls_main(int argc, char **argv) {
 								} else if(strncmp(long_arg, "color=", 6) == 0) {
 									const char *a = long_arg + 6;
 									if(!*a) {
-										fprintf(stderr, "%s: You forgot to specify a argument for --color after '='\n",
+										fprintf(stderr, "%s: You forgot to specify an argument for --color after '='\n",
 											argv[0]);
 										return 1;
 									} else if(strcmp(a, "auto") == 0) {

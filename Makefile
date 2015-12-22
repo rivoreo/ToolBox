@@ -193,11 +193,6 @@ ifndef SHARED_OBJECT
 ALL_TOOLS += printenv_u.o
 endif
 else
-ifndef INTERIX
-ALL_TOOLS += \
-	dmesg_u.o
-EXTRA_TOOLS += \
-	dmesg
 ifdef FREEBSD
 NO_UTIMENSAT = 1
 NEED_LIBGETOPT = 1
@@ -206,7 +201,6 @@ ALL_TOOLS += \
 	vmstat_u.o
 EXTRA_TOOLS += \
 	vmstat
-endif
 endif
 ALL_TOOLS += \
 	printenv_u.o \
@@ -331,10 +325,12 @@ SOCKET_LIB = -lsocket
 else
 ifndef MINGW
 ALL_TOOLS += \
+	dmesg_u.o \
 	iftop_u.o \
 	isptrace1allowed_u.o \
 	kill1_u.o
 EXTRA_TOOLS += \
+	dmesg \
 	iftop \
 	isptrace1allowed \
 	kill1

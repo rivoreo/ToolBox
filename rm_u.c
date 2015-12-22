@@ -8,11 +8,11 @@
 #include <sys/types.h>
 
 #define OPT_RECURSIVE 1
-#define OPT_FORCE     2
+#define OPT_FORCE 2
 
 static int usage()
 {
-    fprintf(stderr,"Usage: rm [-rR] [-f] <target>\n");
+    fprintf(stderr,"Usage: rm [-rRf] <target> [...]\n");
     return -1;
 }
 
@@ -25,21 +25,21 @@ static int unlink_recursive(const char* name, int flags)
     int fail = 0;
 
     /* is it a file or directory? */
-    if (lstat(name, &st) < 0)
+    if(lstat(name, &st) < 0)
         return ((flags & OPT_FORCE) && errno == ENOENT) ? 0 : -1;
 
     /* a file, so unlink it */
-    if (!S_ISDIR(st.st_mode))
+    if(!S_ISDIR(st.st_mode))
         return unlink(name);
 
     /* a directory, so open handle */
     dir = opendir(name);
-    if (dir == NULL)
+    if(dir == NULL)
         return -1;
 
     /* recurse over components */
     errno = 0;
-    while ((de = readdir(dir)) != NULL) {
+    while((de = readdir(dir))) {
         char dn[PATH_MAX];
         if (!strcmp(de->d_name, "..") || !strcmp(de->d_name, "."))
             continue;
@@ -72,8 +72,6 @@ int rm_main(int argc, char *argv[])
     int i, c;
     int flags = 0;
 
-    if(argc < 2) return usage();
-
     /* check flags */
     while(1) {
         c = getopt(argc, argv, "frR");
@@ -89,14 +87,13 @@ int rm_main(int argc, char *argv[])
         }
     }
 
-    if(optind < 1 || optind >= argc) {
+    if(optind < 1 || (optind >= argc && !(flags & OPT_FORCE))) {
         usage();
         return -1;
     }
 
     /* loop over the file/directory args */
     for(i = optind; i < argc; i++) {
-
         if(flags & OPT_RECURSIVE) {
             ret = unlink_recursive(argv[i], flags);
         } else {
@@ -111,4 +108,3 @@ int rm_main(int argc, char *argv[])
 
     return 0;
 }
-
