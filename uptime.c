@@ -36,9 +36,6 @@
 #include <time.h>
 #include <math.h>
 
-#ifndef NAN
-#define NAN (__builtin_nanf(""))
-#endif
 
 #ifdef __sun
 #undef NAN
@@ -48,6 +45,8 @@
 #undef isnan
 #define isnan isnand
 #endif
+#elif !defined NAN
+#define NAN (__builtin_nanf(""))
 #endif
 
 //#ifdef __APPLE__

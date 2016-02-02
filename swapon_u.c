@@ -27,7 +27,11 @@
 #endif
 
 void usage(const char *name) {
-	fprintf(stderr, "Usage: %s [-p prio] <filename>\n", name);
+	fprintf(stderr, "Usage: %s "
+#if defined __linux__ || defined __gnu_hurd__
+		"[-p prio] "
+#endif
+		"<path>\n", name);
 #if defined __linux__ || defined __gnu_hurd__
 	fprintf(stderr, "	prio must be between 0 and %d\n", SWAP_FLAG_PRIO_MASK);
 #endif

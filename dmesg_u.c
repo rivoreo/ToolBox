@@ -51,16 +51,37 @@ extern int cat_main(int, char **);
 #include <errno.h>
 #endif
 
+static void print_usage(const char *name) {
+	fprintf(stderr, "Usage: %s"
+#ifndef _USE_APPLE_PROC_KMSGBUF
+		" [--read-clear|-c]"
+#endif
+		"\n", name);
+}
+
 int dmesg_main(int argc, char **argv) {
 	int clear = 0;
-	if(argc == 2 && (strcmp(argv[1], "-c") == 0 || strcmp(argv[1], "--read-clear") == 0)) {
-		clear = 1;
+	if(argc == 2) {
+		if(strcmp(argv[1], "-c") == 0 || strcmp(argv[1], "--read-clear") == 0) clear = 1;
+		else if(strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0) {
+			print_usage(argv[0]);
+			return 0;
+		}
 	}
+#if (defined __GNU__ && defined __MACH__) || (defined __sun && defined __SVR4)
+	char *cat_argv[] = { "cat",
 #if defined __GNU__ && defined __MACH__
-	char *cat_argv[] = { "cat", "/var/log/dmesg", NULL };
+		"/var/log/dmesg",
+#elif defined __sun && defined __SVR4
+		"/var/adm/messages",
+#else
+#error "Preprocessor fatal"
+#endif
+		NULL };
 	int r = cat_main(2, cat_argv);
 	if(r == 0) {
 		putchar('\n');
+#if defined __GNU__ && defined __MACH__
 		if(clear) {
 			int fd = open("/var/log/dmesg", O_TRUNC);
 			if(fd == -1 || close(fd) < 0) {
@@ -68,6 +89,7 @@ int dmesg_main(int argc, char **argv) {
 				return 1;
 			}
 		}
+#endif
 	}
 	return r;
 #else

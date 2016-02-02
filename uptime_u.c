@@ -26,9 +26,6 @@
 #include <stdio.h>
 #include <time.h>
 #include <math.h>
-#ifndef NAN
-#define NAN (__builtin_nanf(""))
-#endif
 
 #ifdef __sun
 #undef NAN
@@ -38,6 +35,8 @@
 #undef isnan
 #define isnan isnand
 #endif
+#elif !defined NAN
+#define NAN (__builtin_nanf(""))
 #endif
 
 static void format_time(int time, char* buffer) {

@@ -127,6 +127,9 @@ ALL_TOOLS := \
 	uptime_u.o \
 	which_u.o
 
+ifdef GNUTLS
+CRYPT_LIB = -lgnutls-openssl -lgnutls -lgpg-error
+else
 ifdef NO_OPENSSL
 CFLAGS += -D_NO_OPENSSL
 ifdef SUNOS
@@ -141,7 +144,8 @@ CRYPT_LIB = -L/lib -L/usr/lib -lcrypto
 else
 CRYPT_LIB = -lcrypto
 endif
-endif
+endif	# NO_OPENSSL
+endif	# GNUTLS
 
 ifdef NO_UTMPX
 CFLAGS += -D_NO_UTMPX
@@ -325,12 +329,10 @@ SOCKET_LIB = -lsocket
 else
 ifndef MINGW
 ALL_TOOLS += \
-	dmesg_u.o \
 	iftop_u.o \
 	isptrace1allowed_u.o \
 	kill1_u.o
 EXTRA_TOOLS += \
-	dmesg \
 	iftop \
 	isptrace1allowed \
 	kill1
@@ -338,6 +340,7 @@ endif
 endif		# SUNOS
 
 ALL_TOOLS += \
+	dmesg_u.o \
 	ifconfig_u.o \
 	netstat_u.o \
 	r_u.o \
@@ -347,6 +350,7 @@ BASE_TOOLS += \
 	reboot$(SUFFIX)
 ifndef MINGW
 EXTRA_TOOLS += \
+	dmesg \
 	ifconfig \
 	netstat \
 	r \

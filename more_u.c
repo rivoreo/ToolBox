@@ -54,7 +54,8 @@ static void set_terminal(int echo) {
 	unsigned long int rsize;
 	DeviceIoControl((void *)STDIN_FILENO, IOCTL_CONSOLE_GETMODE, NULL, 0, &old, sizeof old, &rsize, NULL);
 	new = old;
-	new &= echo ? CECONSOLE_MODE_ECHO_INPUT : ~CECONSOLE_MODE_ECHO_INPUT;
+	if(echo) new |= CECONSOLE_MODE_ECHO_INPUT;
+	else new &= ~CECONSOLE_MODE_ECHO_INPUT;
 	new &= ~CECONSOLE_MODE_LINE_INPUT;
 	DeviceIoControl((void *)STDIN_FILENO, IOCTL_CONSOLE_SETMODE, &new, sizeof new, NULL, 0, &rsize, NULL);
 }
@@ -72,7 +73,8 @@ static void set_terminal(int echo) {
 	new = old;					/* make new settings same as old settings */
 	new.c_iflag &= ~ICRNL;				/* Translate carriage return to newline on input (unless IGNCR is set) */
 	new.c_lflag &= ~ICANON;				/* disable buffered i/o */
-	new.c_lflag &= echo ? ECHO : ~ECHO;		/* set echo mode */
+	if(echo) new.c_lflag |= ECHO;			/* set echo mode */
+	else new.c_lflag &= ~ECHO;
 	tcsetattr(STDIN_FILENO, TCSANOW, &new);	/* use these new terminal i/o settings now */
 }
 

@@ -16,7 +16,6 @@ TOOL(date)
 TOOL(dd)
 #endif
 TOOL(df)
-//#ifdef __linux__
 #if !defined _WINDOWSNT_NATIVE && !defined __INTERIX
 TOOL(dmesg)
 #endif
@@ -24,12 +23,10 @@ TOOL(dmesg)
 TOOL(du)
 #endif
 TOOL(exists)
-#ifndef _WINDOWSNT_NATIVE
+#ifdef __linux__
 #ifndef _NO_SELINUX
 TOOL(getenforce)
 #endif
-#endif
-#ifdef __linux__
 TOOL(getevent)
 #endif
 TOOL(getopt)
@@ -124,9 +121,11 @@ TOOL(schedtop)
 #endif
 #ifdef __linux__
 TOOL(sendevent)
+#endif
 #ifndef _WINDOWSNT_NATIVE
 TOOL(service)
 #endif
+#ifdef __linux__
 TOOL(setconsole)
 #ifndef _NO_SELINUX
 TOOL(setenforce)
@@ -137,7 +136,7 @@ TOOL(setsebool)
 #endif
 #endif
 TOOL(sleep)
-#ifdef __linux__
+#if defined __linux__ || defined __FreeBSD__
 TOOL(swapoff)
 TOOL(swapon)
 #endif

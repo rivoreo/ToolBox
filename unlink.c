@@ -22,24 +22,34 @@ void welcome() {
 }
 
 int main(int argc, char *argv[]) {
-	int i;
-	if(argc == 1 || !strcmp(argv[1], "-h") || !strcmp(argv[1], "--help")) {
+	if(argc == 1 || strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0) {
 		welcome();
 		return -1;
 	}
+	if(argc > 1 && strcmp(argv[1], "--") == 0) {
+		if(argc < 3) {
+			fprintf(stderr, "%s: No target specified\n", argv[0]);
+			return 1;
+		}
+		argv[1] = argv[0];
+		argc--;
+		argv++;
+	}
+/*
 	if (optind < 1 || optind >= argc) {
 		fprintf(stderr, "Unknown arguments\n");
 		return 1;
+	}*/
+	if(argc > 2) {
+		fprintf(stderr, "%s: Too many arguments\n", argv[0]);
+		return 1;
 	}
-	for(i = optind; i < argc; i++) {
-#if defined _WIN32 && !defined _WIN32_WNT_NATIVE
-		if(access(argv[i], F_OK) == 0 && access(argv[i], W_OK) != 0) chmod(argv[i], 666);
+#if defined _WIN32 && !defined _WINDOWNSNT_NATIVE
+	if(access(argv[1], F_OK) == 0 && access(argv[1], W_OK) != 0) chmod(argv[1], 666);
 #endif
-		int ret = unlink(argv[i]);
-		if(ret < 0) {
-			fprintf(stderr, "unlink failed for %s, %s\n", argv[i], strerror(errno));
-			return 1;
-		}
+	if(unlink(argv[1]) < 0) {
+		fprintf(stderr, "unlink failed for %s, %s\n", argv[1], strerror(errno));
+		return 1;
 	}
 	return 0;
 }

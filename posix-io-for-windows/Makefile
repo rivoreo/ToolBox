@@ -13,6 +13,7 @@ CFLAGS = -O1 -Wall
 #OBJS = open.o read.o write.o close.o
 OBJS = \
 	close.o \
+	creat.o \
 	dup.o \
 	fileno.o \
 	fsync.o \

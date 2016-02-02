@@ -52,8 +52,7 @@
 
 #include <limits.h>
 
-#ifdef _WIN32
-#ifdef _WIN32_WNT_NATIVE
+#ifdef _WINDOWSNT_NATIVE
 // The nativelibc didn't implement snprintf yet
 #if 0
 #define snprintf(D, S, ...) sprintf(D, __VA_ARGS__)
@@ -68,7 +67,10 @@ extern int _snprintf(char *, size_t, const char *, ...);
 #ifndef minor
 #define minor(d) (0)
 #endif
+
 #else
+
+#ifdef _WIN32
 #include <windows.h>
 #define lstat stat
 #ifndef S_IXGRP
@@ -87,12 +89,12 @@ extern int _snprintf(char *, size_t, const char *, ...);
 #undef isatty
 #endif
 #endif		/* !_WIN32_WCE */
-#endif		/* _WIN32_WNT_NATIVE */
 #else
 #if !defined major || !defined minor
 #include <sys/mkdev.h>
 #endif
-#endif
+#endif		/* _WIN32 */
+#endif		/* _WINDOWSNT_NATIVE */
 
 #ifndef NAN
 //#if __GNUC_PREREQ (3,3)
@@ -191,7 +193,7 @@ enum color {
 	COLOR_BACKGROUND_GRAY
 };
 
-#if !defined _WIN32 || defined _WIN32_WNT_NATIVE
+#if !defined _WIN32 || defined _WINDOWSNT_NATIVE
 static const char *terminal_colors[] = {
 	//[COLOR_RESET] = "0",
 	[COLOR_BLACK] = "30",
@@ -236,7 +238,7 @@ static int printf_color(int color, const char *format, ...) {
 #if !defined _WIN32_WCE || defined _USE_LIBPORT
 	int high_color = color >> 16;
 	color &= 0xffff;
-#if defined _WIN32 && !defined _WIN32_WNT_NATIVE
+#if defined _WIN32 && !defined _WINDOWSNT_NATIVE
 	int j = 0;
 #ifdef _WIN32_WCE
 	//void *fh = (void *)fileno(stdout);
@@ -309,7 +311,7 @@ static int printf_color(int color, const char *format, ...) {
 			if(is_color && color != NO_COLOR) switch(format[1]) {
 				case 'V':
 #if !defined _WIN32_WCE || defined _USE_LIBPORT
-#if defined _WIN32 && !defined _WIN32_WNT_NATIVE
+#if defined _WIN32 && !defined _WINDOWSNT_NATIVE
 					buffer[i] = 0;
 					r += vprintf(buffer, ap);
 					i = 0;
@@ -329,7 +331,7 @@ static int printf_color(int color, const char *format, ...) {
 					continue;
 				case 'v':
 #if !defined _WIN32_WCE || defined _USE_LIBPORT
-#if defined _WIN32 && !defined _WIN32_WNT_NATIVE
+#if defined _WIN32 && !defined _WINDOWSNT_NATIVE
 					buffer[i] = 0;
 					r += vprintf(buffer, ap);
 					i = 0;
@@ -345,7 +347,7 @@ static int printf_color(int color, const char *format, ...) {
 #endif
 					format += 2;
 					continue;
-#if defined _WIN32 && !defined _WIN32_WNT_NATIVE && (!defined _WIN32_WCE || defined _USE_LIBPORT)
+#if defined _WIN32 && !defined _WINDOWSNT_NATIVE && (!defined _WIN32_WCE || defined _USE_LIBPORT)
 				default:
 					j++;
 #endif
@@ -569,7 +571,7 @@ static int listpath(const char *name, int flags);
 
 static char mode2kind(unsigned int mode) {
 	switch(mode & S_IFMT) {
-#if !defined _WIN32 || defined _WIN32_WNT_NATIVE
+#if !defined _WIN32 || defined _WINDOWSNT_NATIVE
 		case S_IFSOCK: return 's';
 		case S_IFLNK: return 'l';
 		case S_IFBLK: return 'b';
@@ -634,7 +636,7 @@ static int get_file_color_by_mode(mode_t mode, const char *pathname) {
 	switch(mode & S_IFMT) {
 		case S_IFDIR:
 			return COLOR_BOLD_BLUE;
-#if !defined _WIN32 || defined _WIN32_WNT_NATIVE
+#if !defined _WIN32 || defined _WINDOWSNT_NATIVE
 		case S_IFSOCK:
 			return COLOR_BOLD_PURPLE;
 		case S_IFBLK:
@@ -712,7 +714,7 @@ static int show_total_size(const char *dirname, DIR *d, int flags) {
 			rewinddir(d);
 			return -1;
 		}
-#if defined _WIN32 && !defined _WIN32_WNT_NATIVE
+#if defined _WIN32 && !defined _WINDOWSNT_NATIVE
 		sum += s.st_size / 1024;		// XXX
 #else
 		sum += s.st_blocks / 2;
@@ -731,7 +733,7 @@ static int show_total_size(const char *dirname, DIR *d, int flags) {
 
 static void show_inode(const struct stat *st) {
 	if(!st) return;
-#if defined _WIN32 && !defined _WIN32_WNT_NATIVE
+#if defined _WIN32 && !defined _WINDOWSNT_NATIVE
 	printf("%8lu ", (unsigned long int)st->st_ino);
 #else
 	printf("%8llu ", (unsigned long long int)st->st_ino);
@@ -752,7 +754,7 @@ static int listfile_other(const char *path, const char *filename, const struct s
 
 	/* blocks are 512 bytes, we want output to be KB */
 	if((flags & LIST_SIZE) != 0) {
-#if defined _WIN32 && !defined _WIN32_WNT_NATIVE
+#if defined _WIN32 && !defined _WINDOWSNT_NATIVE
 		long int size = st->st_size / 1024;		// XXX
 #else
 		long int size = st->st_blocks / 2;
@@ -782,7 +784,7 @@ static int listfile_other(const char *path, const char *filename, const struct s
 
 	const char *suffix = "";
 	if((flags & LIST_PATH_SLASH) && filetype == 'd') suffix = "/";
-#if !defined _WIN32 || defined _WIN32_WNT_NATIVE
+#if !defined _WIN32 || defined _WINDOWSNT_NATIVE
 	else if(flags & LIST_FILE_TYPE) switch(filetype) {
 		case 'p':
 			suffix = "|";
@@ -812,8 +814,7 @@ static int listfile_long(const char *path, int flags) {
 	const char *name;
 	char size[16];
 
-	if((flags & LIST_DIRECTORIES) || !(name = strrchr(path, '/'))) name = path;
-	else name++;
+	if((flags & LIST_DIRECTORIES) || !(name = strrchr(path, '/')) || !*++name) name = path;
 
 	if(lstat(path, &s) < 0) {
 		int e = errno;
@@ -854,7 +855,7 @@ static int listfile_long(const char *path, int flags) {
 			else sprintf(size, "%u", (unsigned int)s.st_size);
 		}
 	} else {
-#if defined _WIN32 && !defined _WIN32_WNT_NATIVE
+#if defined _WIN32 && !defined _WINDOWSNT_NATIVE
 		sprintf(size, "%8ld", s.st_size);
 #else
 		sprintf(size, "%8lld", (long long int)s.st_size);
@@ -873,14 +874,13 @@ static int listfile_long(const char *path, int flags) {
 				mode, (unsigned int)s.st_nlink, user, group, size, date,
 				name, flags & LIST_PATH_SLASH ? "/" : "");
 			break;
-#if !defined _WIN32 || defined _WIN32_WNT_NATIVE
+#if !defined _WIN32 || defined _WINDOWSNT_NATIVE
 		case S_IFSOCK:
 			//COLOR_PRINT(COLOR_BOLD_PURPLE, file, name);
 			printf_color(COLOR_BOLD_PURPLE, "%s %3u %-6s %-6s          %s %V%s%v%s\n",
 				mode, (unsigned int)s.st_nlink, user, group, date, name,
 				flags & LIST_FILE_TYPE ? "=" : "");
 			break;
-#ifndef _WIN32
 		case S_IFBLK:
 		case S_IFCHR:
 			//COLOR_PRINT(COLOR_BOLD_YELLOW, file, name);
@@ -889,7 +889,6 @@ static int listfile_long(const char *path, int flags) {
 				mode, (unsigned int)s.st_nlink, user, group,
 				(int)major(s.st_rdev), (int)minor(s.st_rdev), date, name);
 			break;
-#endif
 #endif
 		case S_IFIFO:
 			printf_color(COLOR_YELLOW | (COLOR_BACKGROUND_BLACK << 16),
@@ -915,7 +914,7 @@ static int listfile_long(const char *path, int flags) {
 					mode, (unsigned int)s.st_nlink, user, group, size, date, name);
 			}
 			break;
-#if !defined _WIN32 || defined _WIN32_WNT_NATIVE
+#if !defined _WIN32 || defined _WINDOWSNT_NATIVE
 		case S_IFLNK: {
 			char linkto[256];
 			int len;
@@ -977,8 +976,7 @@ static int listfile_maclabel(const char *path, int flags) {
 	const char *name;
 	char size[16];
 
-	if((flags & LIST_DIRECTORIES) || !(name = strrchr(path, '/'))) name = path;
-	else name++;
+	if((flags & LIST_DIRECTORIES) || !(name = strrchr(path, '/')) || !*++name) name = path;
 
 	if(lstat(path, &s) < 0) {
 		perror(path);

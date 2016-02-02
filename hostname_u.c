@@ -56,13 +56,22 @@ static int _sethostname(const char *name, size_t len) {
 }
 #define sethostname _sethostname
 #else
+#include <sys/param.h>
+#ifdef __SVR4
+#include <netdb.h>
+#endif
 #ifndef HOST_NAME_MAX
-#ifdef _POSIX_HOST_NAME_MAX
+//#if defined _SC_HOST_NAME_MAX && defined _POSIX_HOST_NAME_MAX && _POSIX_HOST_NAME_MAX != (-1)
+#if 0
+#define HOST_NAME_MAX (sysconf(_SC_HOST_NAME_MAX) > 0 ? : _POSIX_HOST_NAME_MAX)
+#elif defined MAXHOSTNAMELEN
+#define HOST_NAME_MAX (MAXHOSTNAMELEN-1)
+#elif defined _POSIX_HOST_NAME_MAX && _POSIX_HOST_NAME_MAX != (-1)
 #define HOST_NAME_MAX _POSIX_HOST_NAME_MAX
 #else
-#define HOST_NAME_MAX MAXHOSTNAMELEN
+#define HOST_NAME_MAX 16
 #endif
-#endif
+#endif	/* !HOST_NAME_MAX */
 #endif
 
 static void print_usage(const char *name) {
@@ -157,6 +166,7 @@ int hostname_main(int argc, char **argv) {
 				return 1;
 			}
 		} else {
+			// Just print the current host name
 			char hostname[HOST_NAME_MAX+1];
 #if defined _WIN32 && !defined _WIN32_WCE
 			WSADATA d;
