@@ -85,11 +85,12 @@ int main(int argc, char *argv[])
 	int i;
 	int flags = 0;
 
+/*
 	if(argc < 2) {
 		usage();
 		return -1;
 	}
-
+*/
 	/* check flags */
 	while(1) {
 		int c = getopt(argc, argv, "frR");
@@ -105,7 +106,8 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if(optind < 1 || optind >= argc) {
+	//printf("optind = %d\n", optind);
+	if(optind < 1 || (optind >= argc && !(flags & OPT_FORCE))) {
 		usage();
 		return -1;
 	}

@@ -26,7 +26,16 @@
 #include <stdio.h>
 #include <time.h>
 #include <math.h>
-#ifndef NAN
+
+#ifdef __sun
+#undef NAN
+#define NAN (__builtin_nanf(""))
+#if isnan == __builtin_isnan
+#include <ieeefp.h>
+#undef isnan
+#define isnan isnand
+#endif
+#elif !defined NAN
 #define NAN (__builtin_nanf(""))
 #endif
 

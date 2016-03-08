@@ -16,7 +16,7 @@
 
 int swapoff_main(int argc, char **argv) {
 	if (argc != 2) {
-		fprintf(stderr, "Usage: %s <filename>\n", argv[0]);
+		fprintf(stderr, "Usage: %s <path>\n", argv[0]);
 		return -EINVAL;
 	}
 

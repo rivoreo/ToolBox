@@ -39,46 +39,48 @@
 #endif
 #else
 #include <conio.h>
-#endif
+#endif		/* _WIN32_WCE */
 #else
 #include <sys/ioctl.h>
 #include <termios.h>
 #endif
 
-#if !defined _WIN32 || defined _WIN32_WCE || defined _WIN32_WNT_NATIVE
+#if !defined _WIN32 || defined _WIN32_WCE || defined _WINDOWSNT_NATIVE
 /* Initialize new terminal i/o settings */
 #ifdef _WIN32_WCE
 unsigned long int old, new;
 
 static void set_terminal(int echo) {
 	unsigned long int rsize;
-	DeviceIoControl((void *)STDOUT_FILENO, IOCTL_CONSOLE_GETMODE, NULL, 0, &old, sizeof old, &rsize, NULL);
+	DeviceIoControl((void *)STDIN_FILENO, IOCTL_CONSOLE_GETMODE, NULL, 0, &old, sizeof old, &rsize, NULL);
 	new = old;
-	new &= echo ? CECONSOLE_MODE_ECHO_INPUT : ~CECONSOLE_MODE_ECHO_INPUT;
+	if(echo) new |= CECONSOLE_MODE_ECHO_INPUT;
+	else new &= ~CECONSOLE_MODE_ECHO_INPUT;
 	new &= ~CECONSOLE_MODE_LINE_INPUT;
-	DeviceIoControl((void *)STDOUT_FILENO, IOCTL_CONSOLE_SETMODE, &new, sizeof new, NULL, 0, &rsize, NULL);
+	DeviceIoControl((void *)STDIN_FILENO, IOCTL_CONSOLE_SETMODE, &new, sizeof new, NULL, 0, &rsize, NULL);
 }
 
 static void reset_terminal() {
 	unsigned long int rsize;
-	DeviceIoControl((void *)STDOUT_FILENO, IOCTL_CONSOLE_SETMODE, &old, sizeof old, NULL, 0, &rsize, NULL);
+	DeviceIoControl((void *)STDIN_FILENO, IOCTL_CONSOLE_SETMODE, &old, sizeof old, NULL, 0, &rsize, NULL);
 }
 #else
 static struct winsize winsz;
 static struct termios old, new;
 
 static void set_terminal(int echo) {
-	tcgetattr(STDOUT_FILENO, &old);			/* grab old terminal i/o settings */
+	tcgetattr(STDIN_FILENO, &old);			/* grab old terminal i/o settings */
 	new = old;					/* make new settings same as old settings */
 	new.c_iflag &= ~ICRNL;				/* Translate carriage return to newline on input (unless IGNCR is set) */
 	new.c_lflag &= ~ICANON;				/* disable buffered i/o */
-	new.c_lflag &= echo ? ECHO : ~ECHO;		/* set echo mode */
-	tcsetattr(STDOUT_FILENO, TCSANOW, &new);	/* use these new terminal i/o settings now */
+	if(echo) new.c_lflag |= ECHO;			/* set echo mode */
+	else new.c_lflag &= ~ECHO;
+	tcsetattr(STDIN_FILENO, TCSANOW, &new);	/* use these new terminal i/o settings now */
 }
 
 /* Restore old terminal i/o settings */
 static void reset_terminal(void) {
-	tcsetattr(STDOUT_FILENO, TCSANOW, &old);
+	tcsetattr(STDIN_FILENO, TCSANOW, &old);
 }
 #endif
 
@@ -104,16 +106,18 @@ static char getche(void) {
 #endif
 #endif
 
+#define SKIP_MULTI_BLACK_LINES (1 << 0)
+
 unsigned int term_row;
 
 static int page_col, page_row;
 static char filename[1024];
 
 static int usage(char *name) {
-	fprintf(stdout, "Usage:\n"
-		"%s [<options>] [<file>]\n\n"
+	fprintf(stdout, "Usage: %s [<options>] [<file>]\n\n"
 		"Options:\n"
-		"	-V	display version information and exit\n\n", name);
+		"	-s	Squeeze multiple blank lines into a single line\n"
+		"	-V	Display version information and exit\n\n", name);
 	return 1;
 }
 
@@ -159,16 +163,23 @@ static int read_more() {
 	return 0;
 }
 
-static int read_file(FILE *fp, int use_pipe) {
+static int read_file(FILE *fp, int use_pipe, int flags) {
 	char line[page_col];
 	int seek;
 	off_t filesize = -1;
+	int black_line = 0;
 	if(!use_pipe) {
 		struct stat filestat;
 		stat(filename, &filestat);
 		filesize = filestat.st_size;
 	}
 	while(fgets(line, page_col, fp) != NULL) {
+		if((flags & SKIP_MULTI_BLACK_LINES)) {
+			if(*line == '\n') {
+				if(black_line) continue;
+				else black_line = 1;
+			} else black_line = 0;
+		}
 		if(page_row != 1) {
 			fprintf(stdout,"%s",line);
 			//fflush(stdout);
@@ -252,7 +263,7 @@ int more_main(int argc, char *argv[]) {
 	int opt;
 
 	if(use_tty) {
-#ifdef _WIN32_WNT_NATIVE
+#ifdef _WINDOWSNT_NATIVE
 		// From Windows 2000
 		page_row = 31;
 		page_col = 78;
@@ -304,10 +315,15 @@ int more_main(int argc, char *argv[]) {
 		return 1;
 	}
 
+	int flags = 0;
 	/* getopt */
-	while((opt = getopt(argc, argv, "V")) != -1) {
+	while((opt = getopt(argc, argv, "sV")) != -1) {
 		switch(opt) {
+			case 's':
+				flags |= SKIP_MULTI_BLACK_LINES;
+				break;
 			case 'V':
+				//fprintf(stdout,"%s, From ToolBox by libdll.so\nToolBox version: " VERSION "\n", argv[0]);
 				fprintf(stdout,"%s, From ToolBox by libdll.so\n", argv[0]);
 				return 0;
 			default:
@@ -329,7 +345,7 @@ int more_main(int argc, char *argv[]) {
 	FILE *fp;
 
 	if(argc != 1) {
-		strcpy(filename, argv[1]);
+		strcpy(filename, argv[optind]);
 		fp = fopen(filename, "r");
 		if(!fp) {
 			perror("Error open file");
@@ -339,7 +355,7 @@ int more_main(int argc, char *argv[]) {
 		usage(argv[0]);
 		return 1;
 	} else if(use_pipe) {
-#if defined _WIN32 && !defined _WIN32_WNT_NATIVE
+#if defined _WIN32 && !defined _WINDOWSNT_NATIVE
 		fprintf(stderr, "%s: Reading from stdin is not supported yet\n", argv[0]);
 		return 1;
 #else
@@ -349,7 +365,7 @@ int more_main(int argc, char *argv[]) {
 			return 1;
 		}
 //#if defined _WIN32 && !defined _WIN32_WCE
-		fp = stdin;
+		//fp = stdin;
 //#else
 		fp = fdopen(fd, "r");
 		if(!fp) {
@@ -373,7 +389,7 @@ int more_main(int argc, char *argv[]) {
 		return 1;
 	}
 
-	if(read_file(fp, use_pipe) < 0) {
+	if(read_file(fp, use_pipe, flags) < 0) {
 		perror(argv[0]);
 		r = 1;
 	}

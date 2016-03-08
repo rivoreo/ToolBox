@@ -1,40 +1,37 @@
-#ifndef _WIN32_WNT_NATIVE
+#ifndef _WINDOWSNT_NATIVE
 TOOL(cat)
 #ifndef _NO_SELINUX
 TOOL(chcon)
 #endif
 #endif
 TOOL(chmod)
-#ifndef _WIN32_WNT_NATIVE
+#ifndef _WINDOWSNT_NATIVE
 TOOL(chown)
 TOOL(chroot)
 TOOL(clear)
 #endif
 TOOL(cmp)
 TOOL(date)
-#ifndef _WIN32_WNT_NATIVE
+#ifndef _WINDOWSNT_NATIVE
 TOOL(dd)
 #endif
 TOOL(df)
-//#ifdef __linux__
-#if !defined __APPLE__ && !defined _WIN32_WNT_NATIVE && !defined __INTERIX
+#if !defined _WINDOWSNT_NATIVE && !defined __INTERIX
 TOOL(dmesg)
 #endif
-#ifndef _WIN32_WNT_NATIVE
+#ifndef _WINDOWSNT_NATIVE
 TOOL(du)
 #endif
 TOOL(exists)
-#ifndef _WIN32_WNT_NATIVE
+#ifdef __linux__
 #ifndef _NO_SELINUX
 TOOL(getenforce)
 #endif
-#endif
-#ifdef __linux__
 TOOL(getevent)
 #endif
 TOOL(getopt)
 TOOL(hd)
-#ifndef _WIN32_WNT_NATIVE
+#ifndef _WINDOWSNT_NATIVE
 TOOL(hostname)
 TOOL(id)
 #ifndef __INTERIX
@@ -46,7 +43,7 @@ TOOL(insmod)
 #endif
 #endif
 TOOL(ioctl)
-#ifndef _WIN32_WNT_NATIVE
+#ifndef _WINDOWSNT_NATIVE
 #ifndef __INTERIX
 TOOL(isptrace1allowed)
 #endif
@@ -57,28 +54,28 @@ TOOL(kill1)
 #endif
 TOOL(ln)
 TOOL(ls)
-#ifndef _WIN32_WNT_NATIVE
+#ifndef _WINDOWSNT_NATIVE
 #ifdef __linux__
 TOOL(lsmod)
 #endif
 TOOL(lsof)
 #endif
 TOOL(md5)
-#ifndef _WIN32_WNT_NATIVE
+#ifndef _WINDOWSNT_NATIVE
 TOOL(more)
 #endif
 TOOL(mkdir)
-#ifndef _WIN32_WNT_NATIVE
+#ifndef _WINDOWSNT_NATIVE
 TOOL(mknod)
 #endif
 TOOL(mkswap)
 TOOL(modexe)
 TOOL(modexeb)
-#ifndef _WIN32_WNT_NATIVE
+#ifndef _WINDOWSNT_NATIVE
 TOOL(mtdread)
 #endif
 TOOL(mv)
-#ifndef _WIN32_WNT_NATIVE
+#ifndef _WINDOWSNT_NATIVE
 #ifndef __INTERIX
 TOOL(netstat)
 #endif
@@ -90,20 +87,20 @@ TOOL(notify)
 #if !defined __APPLE__ || !defined _SHARED 
 TOOL(printenv)
 #endif
-#ifndef _WIN32_WNT_NATIVE
+#ifndef _WINDOWSNT_NATIVE
 TOOL(ps)
 #ifndef __INTERIX
 TOOL(r)
 #endif
 #endif
 TOOL(readlink)
-#ifndef _WIN32_WNT_NATIVE
+#ifndef _WINDOWSNT_NATIVE
 TOOL(readtty)
 #endif
 #ifndef __INTERIX
 TOOL(reboot)
 #endif
-#ifndef _WIN32_WNT_NATIVE
+#ifndef _WINDOWSNT_NATIVE
 TOOL(renice)
 #ifndef _NO_SELINUX
 TOOL(restorecon)
@@ -119,14 +116,16 @@ TOOL(route)
 TOOL(runcon)
 #endif
 #endif
-#ifndef _WIN32_WNT_NATIVE
+#ifndef _WINDOWSNT_NATIVE
 TOOL(schedtop)
 #endif
 #ifdef __linux__
 TOOL(sendevent)
-#ifndef _WIN32_WNT_NATIVE
+#endif
+#ifndef _WINDOWSNT_NATIVE
 TOOL(service)
 #endif
+#ifdef __linux__
 TOOL(setconsole)
 #ifndef _NO_SELINUX
 TOOL(setenforce)
@@ -137,22 +136,22 @@ TOOL(setsebool)
 #endif
 #endif
 TOOL(sleep)
-#ifdef __linux__
+#if defined __linux__ || defined __FreeBSD__
 TOOL(swapoff)
 TOOL(swapon)
 #endif
-#ifndef _WIN32_WNT_NATIVE
+#ifndef _WINDOWSNT_NATIVE
 #ifndef __INTERIX
 TOOL(sync)
 #endif
 TOOL(tee)
 #endif
-#if !defined _WIN32_WNT_NATIVE && !defined __APPLE__
+#if !defined _WINDOWSNT_NATIVE && !defined __APPLE__
 TOOL(top)
 #endif
 TOOL(touch)
 TOOL(uptime)
-#if !defined __APPLE__ && !defined _WIN32_WNT_NATIVE && !defined __FreeBSD__ && !defined __INTERIX
+#if !defined __APPLE__ && !defined _WINDOWSNT_NATIVE && !defined __FreeBSD__ && !defined __INTERIX
 TOOL(vmstat)
 #endif
 TOOL(which)

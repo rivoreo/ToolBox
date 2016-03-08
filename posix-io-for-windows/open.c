@@ -38,7 +38,7 @@ static int vopen(const char *path, int oflag, va_list ap) {
 		errno = ENAMETOOLONG;
 		return -1;
 	}
-	if(mbstowcs(wpath, path, path_len) < 0) {
+	if(mbstowcs(wpath, path, path_len) == (size_t)-1) {
 		//errno = ENOENT;
 		return -1;
 	}
