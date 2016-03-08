@@ -10,7 +10,7 @@
 #if defined __GNU__ && defined __MACH__
 #include <stdio.h>
 extern int cat_main(int, char **);
-#elif __linux__
+#elif defined __linux__
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>

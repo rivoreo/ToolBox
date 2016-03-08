@@ -363,7 +363,7 @@ int more_main(int argc, char *argv[]) {
 //#endif
 //#ifndef _WIN32
 		if(open("/dev/tty", O_RDONLY) != STDIN_FILENO) {
-			fprintf(stderr, "%s: Cannot open terminal as stdin\n", argv[0]);
+			fprintf(stderr, "%s: Cannot open terminal for stdin\n", argv[0]);
 			return 1;
 		}
 //#endif

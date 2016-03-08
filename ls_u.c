@@ -21,6 +21,10 @@
 #include <unistd.h>
 #include <time.h>
 #include <math.h>
+#ifdef __sun
+#include <nan.h>
+#define isnan NaN
+#endif
 
 #if !defined __linux__ && !defined _NO_SELINUX
 #define _NO_SELINUX
