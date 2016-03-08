@@ -22,10 +22,6 @@
 #include <unistd.h>
 #include <time.h>
 #include <math.h>
-#ifdef __sun
-#include <nan.h>
-#define isnan NaN
-#endif
 
 #if !defined __linux__ && !defined _NO_SELINUX
 #define _NO_SELINUX
@@ -113,17 +109,15 @@ extern int _snprintf(char *, size_t, const char *, ...);
 #endif
 
 #ifdef __sun
-//#if NAN == __builtin_nan
-//#undef NAN
-//#define NAN (nan(NULL))
-//#endif
 #undef NAN
 #define NAN (__builtin_nanf(""))
-#if isnan == __builtin_isnan
-#include <ieeefp.h>
+//#if isnan == __builtin_isnan
+//#include <ieeefp.h>
 #undef isnan
-#define isnan isnand
-#endif
+//#define isnan isnand
+//#endif
+#include <nan.h>
+#define isnan NaN
 #endif
 
 /* Test COLOR */
