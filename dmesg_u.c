@@ -15,7 +15,7 @@
 #include <fcntl.h>
 #endif
 extern int cat_main(int, char **);
-#elif __linux__
+#elif defined __linux__
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
