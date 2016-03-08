@@ -45,7 +45,7 @@ int service_main(int argc, char **argv) {
 
 	size_t len = strlen(argv[1]) + 1;
 	wchar_t service[len];
-	if(mbstowcs(service, argv[1], len) < 0) {
+	if(mbstowcs(service, argv[1], len) == (size_t)-1) {
 		fprintf(stderr, "%s: Invalid service name\n", argv[0]);
 		return 1;
 	}

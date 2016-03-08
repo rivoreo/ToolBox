@@ -7,6 +7,7 @@
 	This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 */
 
+#define _FILE_OFFSET_BITS 64
 #define _ALL_SOURCE
 #define __USE_ISOC99
 #include <stdio.h>
@@ -862,7 +863,9 @@ static int listfile_long(const char *path, int flags) {
 #endif
 	}
 
-	strftime(date, 32, "%Y-%m-%d %H:%M", localtime(&s.st_mtime));
+	if(!strftime(date, 32, "%Y-%m-%d %H:%M", localtime(&s.st_mtime))) {
+		strcpy(date, "\?\?\?\?-\?\?-\?\? \?\?:\?\?");
+	}
 	date[31] = 0;
 
 	// 12345678901234567890123456789012345678901234567890123456789012345678901234567890
@@ -986,7 +989,7 @@ static int listfile_maclabel(const char *path, int flags) {
 	if(flags & LIST_INODE) show_inode(&s);
 
 	const char *suffix = ((flags & LIST_PATH_SLASH) && S_ISDIR(s.st_mode)) ? "/" : "";
-	if(!suffix && (flags & LIST_FILE_TYPE)) switch(s.st_mode & S_IFMT) {
+	if(!*suffix && (flags & LIST_FILE_TYPE)) switch(s.st_mode & S_IFMT) {
 		case S_IFIFO:
 			suffix = "|";
 			break;

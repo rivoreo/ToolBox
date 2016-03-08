@@ -8,8 +8,12 @@
 */
 
 #include <string.h>
-#if defined __GNU__ && defined __MACH__
+#if (defined __GNU__ && defined __MACH__) || (defined __sun && defined __SVR4)
 #include <stdio.h>
+#if defined __GNU__ && defined __MACH__
+#include <unistd.h>
+#include <fcntl.h>
+#endif
 extern int cat_main(int, char **);
 #elif __linux__
 #include <stdlib.h>
@@ -43,7 +47,6 @@ extern int cat_main(int, char **);
 #include <sys/types.h>
 #include <sys/sysctl.h>
 #include <sys/msgbuf.h>
-#include <string.h>
 #endif
 #include <unistd.h>
 #include <stdlib.h>
@@ -53,7 +56,7 @@ extern int cat_main(int, char **);
 
 static void print_usage(const char *name) {
 	fprintf(stderr, "Usage: %s"
-#ifndef _USE_APPLE_PROC_KMSGBUF
+#if !defined _USE_APPLE_PROC_KMSGBUF && !(defined __sun && defined __SVR4)
 		" [--read-clear|-c]"
 #endif
 		"\n", name);
@@ -112,7 +115,6 @@ int dmesg_main(int argc, char **argv) {
 		return 1;
 	}
 #else
-
 	size_t n;
 	if(sysctlbyname("kern.msgbuf", NULL, &n, NULL, 0) < 0) {
 		perror("sysctlbyname");

@@ -107,7 +107,7 @@ Files
 	sleep_u.c,
 	top_u.c,
 	uptime*
-are under the BSD license:
+are under the modified BSD license:
 	Redistribution and use in source and binary forms, with or without
 	modification, are permitted provided that the following conditions are
 	met:

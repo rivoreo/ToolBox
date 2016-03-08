@@ -129,7 +129,7 @@ int hostname_main(int argc, char **argv) {
 		{ "help", 0, NULL, 'h' }
 	};
 	const char *filename = NULL;
-	int short_name = 1;
+	int short_name = 0;
 	while(1) {
 		int c = getopt_long(argc, argv, "F:fsh", long_options, NULL);
 		if(c == -1) break;

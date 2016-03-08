@@ -201,10 +201,7 @@ ifdef FREEBSD
 NO_UTIMENSAT = 1
 NEED_LIBGETOPT = 1
 else
-ALL_TOOLS += \
-	vmstat_u.o
-EXTRA_TOOLS += \
-	vmstat
+# Empty, !Windows && !Darwin && !FreeBSD
 endif
 ALL_TOOLS += \
 	printenv_u.o \
@@ -231,7 +228,8 @@ ALL_TOOLS += \
 	route_u.o \
 	sendevent_u.o \
 	setconsole_u.o \
-	setkey_u.o
+	setkey_u.o \
+	vmstat_u.o
 EXTRA_TOOLS +=  \
 	getevent \
 	insmod \
@@ -242,7 +240,8 @@ EXTRA_TOOLS +=  \
 	route \
 	sendevent \
 	setconsole \
-	setkey
+	setkey \
+	vmstat
 endif		# !SUNOS
 endif		# !FREEBSD
 ALL_TOOLS += \
@@ -315,13 +314,14 @@ ifdef INTERIX
 NO_UTIMENSAT = 1
 CFLAGS += -D_ALL_SOURCE -D_NO_UTIMES
 NEED_LIBGETOPT = 1
+MATH_LIB = -lm
 TIME_LIB =
 else
 ifdef SUNOS
 NO_UTIMENSAT = 1
 CFLAGS += -D__EXTENSIONS__ -D_NO_STATFS -D__C99FEATURES__ -std=gnu99
-LIBS += -lnsl -lm
-SOCKET_LIB = -lsocket
+MATH_LIB = -lm
+SOCKET_LIB = -lnsl -lsocket
 #ifndef NO_OPENSSL
 # Add lib path /lib for OpenSolaris
 #CRYPT_LIB = -L/lib -lcrypto
@@ -438,7 +438,7 @@ $(LIB_NAME):
 endif
 
 $(OUTFILE):	$(ALL_TOOLS) toolbox.o
-	$(CC) $(LDFLAGS) $(UNITY_LDFLAGS) $^ -o $@ $(LIBS) $(SOCKET_LIB) $(SELINUX_LIBS) $(TIME_LIB) $(CRYPT_LIB) -lpthread
+	$(CC) $(LDFLAGS) $(UNITY_LDFLAGS) $^ -o $@ $(LIBS) $(MATH_LIB) $(SOCKET_LIB) $(SELINUX_LIBS) $(TIME_LIB) $(CRYPT_LIB) -lpthread
 
 #separate-mingw:
 
@@ -586,7 +586,7 @@ unlink.exe:	unlink.c
 	$(CC) $(CFLAGS) $(LDFLAGS) unlink.c -o unlink.exe $(LIBS)
 
 uptime$(SUFFIX):	uptime.c
-	$(CC) $(CFLAGS) $(LDFLAGS) uptime.c -o $@ $(LIBS) $(TIME_LIB)
+	$(CC) $(CFLAGS) $(LDFLAGS) uptime.c -o $@ $(LIBS) $(TIME_LIB) $(MATH_LIB)
 
 which.exe:	which.c
 	$(CC) $(CFLAGS) $(LDFLAGS) which.c -o $@ $(LIBS)

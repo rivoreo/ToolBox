@@ -288,7 +288,7 @@ int more_main(int argc, char *argv[]) {
 		page_row = csbi.srWindow.Right - csbi.srWindow.Left + 1;
 		page_col = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
 #endif
-		fprintf(stderr, "%d, %d\n", page_col, page_row);
+		//fprintf(stderr, "%d, %d\n", page_col, page_row);
 #else
 		/*
 		 * Get terminal size 
