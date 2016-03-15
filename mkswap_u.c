@@ -1,5 +1,5 @@
 /*	mkswap - toolbox
-	Copyright 2015 libdll.so
+	Copyright 2015-2016 Rivoreo
 
 	This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
 
@@ -127,15 +127,15 @@ int mkswap_main(int argc, char **argv) {
 	fd = open(argv[optind], O_WRONLY);
 	if(fd == -1) {
 		e = errno;
-		fprintf(stderr, "Cannot open %s, %s\n", argv[optind], strerror(e));
+		fprintf(stderr, "%s: Cannot open %s, %s\n", argv[0], argv[optind], strerror(e));
 		return -e;
 	}
 
 	/* Determine the length of the swap file */
 	swap_size = lseek(fd, 0, SEEK_END);
 	if(swap_size < MIN_PAGES * pagesize) {
-		fprintf(stderr, "Swap file needs to be at least %dkB\n",
-			(MIN_PAGES * pagesize) >> 10);
+		fprintf(stderr, "%s: Swap file needs to be at least %d KiB\n",
+			argv[0], (MIN_PAGES * pagesize) >> 10);
 		e = -ENOSPC;
 		goto err;
 	}

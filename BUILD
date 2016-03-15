@@ -26,7 +26,7 @@ Windows NT:
 	nativelibc (>=1.0) (a full set of the Windows NT Native Tools is required)
 
 Depended library:
-	libcrypto (>=0.9.7) (included in libssl)
+	libcrypto (>=0.9.7) (included in OpenSSL)
 
 Optional library:
 	libselinux (if building with selinux support for GNU/Linux)

@@ -1,5 +1,5 @@
 /*	swapon - toolbox
-	Copyright 2015 libdll.so
+	Copyright 2015-2016 Rivoreo
 
 	This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
 
@@ -26,10 +26,10 @@
 #define swapon(P,F) swapon(P)
 #endif
 
-void usage(const char *name) {
+static void print_usage(const char *name) {
 	fprintf(stderr, "Usage: %s "
 #if defined __linux__ || defined __gnu_hurd__
-		"[-p prio] "
+		"[-p <prio>] "
 #endif
 		"<path>\n", name);
 #if defined __linux__ || defined __gnu_hurd__
@@ -38,7 +38,7 @@ void usage(const char *name) {
 }
 
 #if defined __linux__ || defined __gnu_hurd__
-int parse_prio(const char *prio_str) {
+static int parse_prio(const char *prio_str) {
 	unsigned long int p = strtoul(prio_str, NULL, 10);
 	return (p > SWAP_FLAG_PRIO_MASK)? -1 : (int)p;
 }
@@ -63,7 +63,7 @@ int swapon_main(int argc, char **argv) {
 #if defined __linux__ || defined __gnu_hurd__
 			case 'p':
 				if(!optarg) {
-					usage(argv[0]);
+					print_usage(argv[0]);
 					return -EINVAL;
 				}
 				prio = parse_prio(optarg);
@@ -72,7 +72,7 @@ int swapon_main(int argc, char **argv) {
 				break;
 #endif
 			case 'h':
-				usage(argv[0]);
+				print_usage(argv[0]);
 				return 0;
 			case '?':
 				fprintf(stderr, "Unknown option: '-%c'\n", optopt);
@@ -81,7 +81,7 @@ int swapon_main(int argc, char **argv) {
 	}
 
 	if(optind != argc - 1) {
-		usage(argv[0]);
+		print_usage(argv[0]);
 		return -EINVAL;
 	}
 

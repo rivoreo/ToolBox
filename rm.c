@@ -1,6 +1,6 @@
 /*	rm - toolbox
 	Copyright 2007-2015 PC GO Ld.
-	Copyright 2015 libdll.so
+	Copyright 2015-2016 Rivoreo
 
 	This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
 
@@ -141,13 +141,13 @@ int main(int argc, char *argv[])
 							return 1;
 						case 'Y':
 						case 'y':
-#if defined _WIN32 && !defined _WIN32_WNT_NATIVE
+#if defined _WIN32 && !defined _WINDOWSNT_NATIVE
 							chmod(argv[i], 666);
 #endif
 							break;
 					}
 				}
-#if defined _WIN32 && !defined _WIN32_WNT_NATIVE
+#if defined _WIN32 && !defined _WINDOWSNT_NATIVE
 				else chmod(argv[i], 666);
 #endif
 			}
@@ -164,7 +164,7 @@ int main(int argc, char *argv[])
 //#ifdef _WIN32_WCE
 //			fprintf(stderr, "rm failed for %s\n", argv[i]);
 //#else
-			fprintf(stderr, "rm failed for %s, %s\n", argv[i], strerror(errno));
+			fprintf(stderr, "Cannot remove %s, %s\n", argv[i], strerror(errno));
 //#endif
 			//if(errno != ENOENT || !(flags & OPT_FORCE)) return -1;
 			return -1;

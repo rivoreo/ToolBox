@@ -101,7 +101,7 @@ int rm_main(int argc, char *argv[])
         }
 
         if(ret < 0 && (errno != ENOENT || !(flags & OPT_FORCE))) {
-            fprintf(stderr, "rm failed for %s, %s\n", argv[i], strerror(errno));
+            fprintf(stderr, "Cannot remove %s, %s\n", argv[i], strerror(errno));
             return -1;
         }
     }
