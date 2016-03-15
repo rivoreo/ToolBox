@@ -513,6 +513,9 @@ hd.exe:	hd.c
 hostname$(SUFFIX):	hostname.c
 	$(CC) $(CFLAGS) $(LDFLAGS) hostname.c -o $@ $(LIBS) $(SOCKET_LIB)
 
+ifconfig:	ifconfig.c
+	$(CC) $(CFLAGS) $(LDFLAGS) ifconfig.c -o $@ $(LIBS) $(SOCKET_LIB)
+
 ioctl.exe:	ioctl.c
 	$(CC) $(CFLAGS) $(LDFLAGS) ioctl.c -o $@ $(LIBS)
 
@@ -545,6 +548,9 @@ more.exe:	more.c
 
 mv.exe:	mv.c
 	$(CC) $(CFLAGS) $(LDFLAGS) mv.c -o mv.exe $(LIBS)
+
+netstat:	netstat.c
+	$(CC) $(CFLAGS) $(LDFLAGS) printenv.c -o $@ $(LIBS) $(SOCKET_LIB)
 
 printenv.exe:	printenv.c
 	$(CC) $(CFLAGS) $(LDFLAGS) printenv.c -o printenv.exe $(LIBS)

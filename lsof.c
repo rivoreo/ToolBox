@@ -1,6 +1,7 @@
 /*
  * 工具箱中的某工具
  * 版权所有 2007-2015 PC GO Ld.
+ * 版权所有 2015-2016 Rivoreo
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -29,6 +30,8 @@
 #include <pwd.h>
 #include <sys/stat.h>
 
+#include <assert.h>
+
 static void print_header() {
 	printf("%-16s %5s %10s %4s %9s %12s %10s %8s %s\n",
 	"COMMAND", "PID", "USER", "FD", "TYPE", "DEVICE", "SIZE/OFF", "NODE", "NAME");
@@ -38,8 +41,15 @@ static void print_type(const char *type, pid_info_t *info) {
 	static ssize_t link_dest_size;
 	static char link_dest[PATH_MAX];
 
-	strncat(info->path, type, sizeof info->path);
-	info->path[sizeof info->path - 1] = 0;
+	//strncat(info->path, type, sizeof info->path);
+	//info->path[sizeof info->path - 1] = 0;
+	size_t type_len = strlen(type);
+	if(info->parent_length + type_len > sizeof info->path) {
+		assert(info->parent_length > sizeof info->path);
+		type_len = sizeof info->path - info->parent_length;
+	}
+	memcpy(info->path + info->parent_length, type, type_len);
+	info->path[info->parent_length + type_len] = 0;
 	if((link_dest_size = readlink(info->path, link_dest, sizeof(link_dest) - 1)) < 0) {
 		if(errno == ENOENT) goto out;
 		snprintf(link_dest, sizeof(link_dest), "%s (readlink: %s)", info->path, strerror(errno));
@@ -51,7 +61,7 @@ static void print_type(const char *type, pid_info_t *info) {
 	if(strcmp(link_dest, "/") == 0) goto out;
 
 	printf("%-16s %5d %10s %4s %9s %12s %9s %9s %s\n",
-		info->command, info->pid, info->user, type,
+		info->command, (int)info->pid, info->user, type,
 		"???", "???", "???", "???", link_dest);
 
 out:
@@ -80,7 +90,7 @@ static void print_maps(pid_info_t *info) {
 		if(inode == 0 || strcmp(device, "00:00") == 0) continue;
 
 		printf("%-16s %5d %10s %4s %9s %12s %9zd %9ld %s\n",
-			info->command, info->pid, info->user, "mem",
+			info->command, (int)info->pid, info->user, "mem",
 			"???", device, offset, inode, file);
 	}
 
@@ -103,7 +113,7 @@ static void print_fds(pid_info_t *info) {
 		char msg[BUF_MAX];
 		snprintf(msg, sizeof(msg), "%s (opendir: %s)", info->path, strerror(errno));
 		printf("%-16s %5d %10s %4s %9s %12s %9s %9s %s\n",
-			info->command, info->pid, info->user, "FDS",
+			info->command, (int)info->pid, info->user, "FDS",
 			"", "", "", "", msg);
 		goto out;
 	}
@@ -127,7 +137,7 @@ void lsof_dumpinfo(pid_t pid) {
 	struct passwd *pw;
 
 	info.pid = pid;
-	snprintf(info.path, sizeof(info.path), "/proc/%d/", pid);
+	snprintf(info.path, sizeof(info.path), "/proc/%d/", (int)pid);
 	info.parent_length = strlen(info.path);
 
 	// Get the UID by calling stat on the proc/pid directory.
@@ -142,6 +152,7 @@ void lsof_dumpinfo(pid_t pid) {
 		strcpy(info.user, "???");
 	}
 
+#ifdef __linux__
 	// Read the command line information; each argument is terminated with NULL.
 	strncat(info.path, "cmdline", sizeof info.path);
 	fd = open(info.path, O_RDONLY);
@@ -160,7 +171,26 @@ void lsof_dumpinfo(pid_t pid) {
 	}
 
 	command[numRead] = 0;
-
+#else
+	strncat(info.path, "psinfo", sizeof info.path);
+	fd = open(info.path, O_RDONLY);
+	if(fd == -1) {
+		fprintf(stderr, "Couldn't read %s\n", info.path);
+		return;
+	}
+	//if(lseek(fd, 0x68, SEEK_SET) == (off_t)-1) {
+	if(lseek(fd, 0x58, SEEK_SET) == (off_t)-1) {
+		fprintf(stderr, "Couldn't find command in %s, %s\n", info.path, strerror(errno));
+		return;
+	}
+	char command[PATH_MAX];
+	int numRead = read(fd, command, sizeof(command) - 1);
+	close(fd);
+	if(numRead < 0) {
+		fprintf(stderr, "Error reading command: %s: %s\n", info.path, strerror(errno));
+		return;
+	}
+#endif
 	// We only want the basename
 	strncpy(info.command, basename(command), COMMAND_DISPLAY_MAX - 1);
 	info.command[COMMAND_DISPLAY_MAX - 1] = 0;

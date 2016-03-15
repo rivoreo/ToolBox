@@ -59,7 +59,10 @@ static int _sethostname(const char *name, size_t len) {
 #include <sys/param.h>
 #ifdef __SVR4
 #include <netdb.h>
+#ifdef __sun
+extern int sethostname(char *, int);
 #endif
+#endif		/* __SVR4 */
 #ifndef HOST_NAME_MAX
 //#if defined _SC_HOST_NAME_MAX && defined _POSIX_HOST_NAME_MAX && _POSIX_HOST_NAME_MAX != (-1)
 #if 0
@@ -157,7 +160,7 @@ int hostname_main(int argc, char **argv) {
 	}
 
 	/* Get user input hostname */
-	const char *hostname = argv[optind];
+	char *hostname = argv[optind];
 	if(!hostname) {
 		if(filename) {
 			hostname = get_name_from_file(filename);
