@@ -28,7 +28,9 @@ CC_VERSION = $(shell gcc --version | grep -E "gcc.+[0-9]\.[0-9]\.[0-9]" | grep -
 ifeq ($(CC_VERSION),.9)
 NEED_LIBPCRE = 1
 endif
-ifneq ($(OS_NAME),Linux)
+ifeq ($(OS_NAME),Linux)
+LINUX = 1
+else
 NO_SELINUX = 1
 endif
 ifeq ($(OS_NAME),Darwin)
@@ -218,10 +220,12 @@ else
 ifndef INTERIX
 ifndef FREEBSD
 ifndef SUNOS
+# !Windows && !Darwin && !GNU && !Interix && !FreeBSD && !Solaris
 ALL_TOOLS += \
 	getevent_u.o \
 	insmod_u.o \
 	lsmod_u.o \
+	netstat_u.o \
 	notify_u.o \
 	rmmod_u.o \
 	rotatefb_u.o \
@@ -234,6 +238,7 @@ EXTRA_TOOLS +=  \
 	getevent \
 	insmod \
 	lsmod \
+	netstat \
 	notify \
 	rmmod \
 	rotatefb \
@@ -342,7 +347,6 @@ endif		# SUNOS
 ALL_TOOLS += \
 	dmesg_u.o \
 	ifconfig_u.o \
-	netstat_u.o \
 	r_u.o \
 	reboot_u.o \
 	sync_u.o
@@ -352,7 +356,6 @@ ifndef MINGW
 EXTRA_TOOLS += \
 	dmesg \
 	ifconfig \
-	netstat \
 	r \
 	sync
 endif
@@ -550,7 +553,7 @@ mv.exe:	mv.c
 	$(CC) $(CFLAGS) $(LDFLAGS) mv.c -o mv.exe $(LIBS)
 
 netstat:	netstat.c
-	$(CC) $(CFLAGS) $(LDFLAGS) printenv.c -o $@ $(LIBS) $(SOCKET_LIB)
+	$(CC) $(CFLAGS) $(LDFLAGS) netstat.c -o $@ $(LIBS) $(SOCKET_LIB)
 
 printenv.exe:	printenv.c
 	$(CC) $(CFLAGS) $(LDFLAGS) printenv.c -o printenv.exe $(LIBS)

@@ -123,7 +123,7 @@ int top_main(int argc, char *argv[]) {
 
 	num_used_procs = num_free_procs = 0;
 
-	max_procs = 0;
+	max_procs = -1;
 	delay = 3;
 	iterations = -1;
 	proc_cmp = &proc_cpu_cmp;
@@ -227,12 +227,12 @@ int top_main(int argc, char *argv[]) {
 			return EXIT_FAILURE;
 		}
 		//fprintf(stdout, "Screen width: %i  Screen height: %i\n", sz.ws_col, sz.ws_row);
-		max_procs = sz.ws_row - 4;
+		//max_procs = sz.ws_row - 4;
 		signal(SIGINT, SIGINT_handler);
 
 		tcgetattr(STDIN_FILENO, &orig_termios);
 		struct termios new_termios = orig_termios;
-		new_termios.c_lflag &= ~ICANON;
+		new_termios.c_lflag &= ~(ICANON | ECHO);
 		tcsetattr(STDIN_FILENO, TCSANOW, &new_termios);
 
 		fdset = malloc(sizeof(fd_set));
@@ -476,6 +476,7 @@ static void print_procs(void) {
 	//struct group *group;
 	char *user_str, user_buf[20], buf[4096];
 	//char *group_str, group_buf[20];
+	int current_max_processes = max_procs;
 
 	if(use_tty) {
 		/* ANSI/VT100 Terminal Support */
@@ -503,7 +504,7 @@ static void print_procs(void) {
 			return;
 		}
 		/* To change the max proc row, when terminal size change */
-		max_procs = sz.ws_row - 4;
+		if(max_procs == -1) current_max_processes = sz.ws_row - 4;
 		//fprintf(stdout, "Screen width: %i  Screen height: %i\n", sz.ws_col, sz.ws_row);
 	}
 
@@ -563,7 +564,7 @@ static void print_procs(void) {
 	for(i = 0; i < num_new_procs; i++) {
 		proc = new_procs[i];
 
-		if(!proc || (max_procs && (i >= max_procs))) break;
+		if(!proc || (current_max_processes && (i >= current_max_processes))) break;
 		user = getpwuid(proc->uid);
 		//group = getgrgid(proc->gid);
 		if(user && user->pw_name) {

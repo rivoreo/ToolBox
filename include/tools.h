@@ -76,7 +76,7 @@ TOOL(mtdread)
 #endif
 TOOL(mv)
 #ifndef _WINDOWSNT_NATIVE
-#ifndef __INTERIX
+#ifdef __linux__
 TOOL(netstat)
 #endif
 TOOL(nohup)
