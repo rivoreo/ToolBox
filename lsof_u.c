@@ -25,6 +25,8 @@
 #include <pwd.h>
 #include <sys/stat.h>
 
+#include <assert.h>
+
 static void print_header() {
     printf("%-10s %5s %10s %4s %9s %17s %9s %10s %s\n",
             "COMMAND",
@@ -39,27 +41,32 @@ static void print_header() {
 }
 
 static void print_type(const char *type, pid_info_t *info) {
-    static ssize_t link_dest_size;
-    static char link_dest[PATH_MAX];
+	static ssize_t link_dest_size;
+	static char link_dest[PATH_MAX];
 
-    strncat(info->path, type, sizeof info->path);
-    info->path[sizeof info->path - 1] = 0;
-    if((link_dest_size = readlink(info->path, link_dest, sizeof(link_dest)-1)) < 0) {
-        if (errno == ENOENT) goto out;
-        snprintf(link_dest, sizeof(link_dest), "%s (readlink: %s)", info->path, strerror(errno));
-    } else {
-        link_dest[link_dest_size] = 0;
-    }
+	size_t type_len = strlen(type);
+	if(info->parent_length + type_len > sizeof info->path) {
+		assert(info->parent_length > sizeof info->path);
+		type_len = sizeof info->path - info->parent_length;
+	}
+	memcpy(info->path + info->parent_length, type, type_len);
+	info->path[info->parent_length + type_len] = 0;
+	if((link_dest_size = readlink(info->path, link_dest, sizeof(link_dest)-1)) < 0) {
+		if (errno == ENOENT) goto out;
+		snprintf(link_dest, sizeof(link_dest), "%s (readlink: %s)", info->path, strerror(errno));
+	} else {
+		link_dest[link_dest_size] = 0;
+	}
 
-    // Things that are just the root filesystem are uninteresting (we already know)
-    if(strcmp(link_dest, "/") == 0) goto out;
+	// Things that are just the root filesystem are uninteresting (we already know)
+	if(strcmp(link_dest, "/") == 0) goto out;
 
-    printf("%-10s %5d %10s %4s %9s %17s %9s %10s %s\n",
-            info->command, info->pid, info->user, type,
-            "???", "???", "???", "???", link_dest);
+	printf("%-10s %5d %10s %4s %9s %17s %9s %10s %s\n",
+		info->command, (int)info->pid, info->user, type,
+		"???", "???", "???", "???", link_dest);
 
 out:
-    info->path[info->parent_length] = 0;
+	info->path[info->parent_length] = 0;
 }
 
 // Prints out all file that have been memory mapped
@@ -78,7 +85,7 @@ static void print_maps(pid_info_t *info) {
         // We don't care about non-file maps
         if(inode == 0 || strcmp(device, "00:00") == 0) continue;
         printf("%-10s %5d %10s %4s %9s %17s %9zd %10ld %s\n",
-                info->command, info->pid, info->user, "mem",
+                info->command, (int)info->pid, info->user, "mem",
                 "???", device, offset, inode, file);
     }
     fclose(maps);
@@ -100,7 +107,7 @@ static void print_fds(pid_info_t *info) {
         char msg[BUF_MAX];
         snprintf(msg, sizeof(msg), "%s (opendir: %s)", info->path, strerror(errno));
         printf("%-10s %5d %10s %4s %9s %17s %9s %10s %s\n",
-                info->command, info->pid, info->user, "FDS",
+                info->command, (int)info->pid, info->user, "FDS",
                 "", "", "", "", msg);
         goto out;
     }
@@ -125,7 +132,7 @@ void lsof_dumpinfo(pid_t pid)
     struct passwd *pw;
 
     info.pid = pid;
-    snprintf(info.path, sizeof(info.path), "/proc/%d/", pid);
+    snprintf(info.path, sizeof(info.path), "/proc/%d/", (int)pid);
     info.parent_length = strlen(info.path);
 
     // Get the UID by calling stat on the proc/pid directory.

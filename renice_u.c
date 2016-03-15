@@ -35,7 +35,7 @@ void print_prio(pid_t pid) {
 	int sched;
 	struct sched_param sp;
 
-	printf("pid %d's priority: %d\n", pid, getpriority(PRIO_PROCESS, pid));
+	printf("pid %d's priority: %d\n", (int)pid, getpriority(PRIO_PROCESS, pid));
 
 	printf("scheduling class: ");
 	sched = sched_getscheduler(pid);
