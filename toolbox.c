@@ -11,8 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define PROGRAM_NAME "Rivoreo ToolBox"
-#define VERSION "1.3"
+#include "version.h"
 
 static void help(void);
 int main(int, char **);

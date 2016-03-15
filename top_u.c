@@ -1,4 +1,7 @@
 /*
+ * Copyright 2008, The Android Open Source Project
+ * Copyright 2015-2016 Rivoreo
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -80,7 +83,7 @@ static int num_old_procs, num_new_procs;
 static struct proc_info *free_procs;
 static int num_used_procs, num_free_procs;
 
-static int max_procs, delay, iterations, threads;
+static int max_procs, iterations, threads;
 
 static struct cpu_info old_cpu, new_cpu;
 
@@ -88,7 +91,7 @@ static struct cpu_info old_cpu, new_cpu;
 /* windows size struct */
 static struct winsize sz;
 static int use_tty;
-//static struct termios orig_termios;
+static struct termios orig_termios;
 #endif
 
 static struct proc_info *alloc_proc(void);
@@ -114,6 +117,9 @@ static void SIGINT_handler(int);
 int top_main(int argc, char *argv[]) {
 	int i;
 	int end_of_options;
+	fd_set *fdset = NULL;
+	int delay;
+	struct timeval delay_tv;
 
 	num_used_procs = num_free_procs = 0;
 
@@ -201,22 +207,8 @@ int top_main(int argc, char *argv[]) {
 		}
 	}
 
-	if(use_tty == -1) use_tty = isatty(STDOUT_FILENO);
-	if(use_tty) {
-		/* Test windows size */
-		//sz=(struct winsize*)malloc(sizeof(struct winsize));
-		//memset(sz,0x00,sizeof(struct winsize));
-		if(ioctl(0, TIOCGWINSZ, &sz) == -1) {
-			perror("Could not get Terminal window size");
-			return EXIT_FAILURE;
-		}
-		//fprintf(stdout, "Screen width: %i  Screen height: %i\n", sz.ws_col, sz.ws_row);
-		max_procs = sz.ws_row - 4;
-		signal(SIGINT, SIGINT_handler);
-	}
-
 	if(threads && proc_cmp == &proc_thr_cmp) {
-		fprintf(stderr, "Sorting by threads per thread makes no sense!\n");
+		fprintf(stderr, "%s: Sorting by threads per thread makes no sense!\n", argv[0]);
 		return EXIT_FAILURE;
 	}
 
@@ -225,17 +217,61 @@ int top_main(int argc, char *argv[]) {
 	num_new_procs = num_old_procs = 0;
 	new_procs = old_procs = NULL;
 
+	if(use_tty == -1) use_tty = isatty(STDOUT_FILENO);
+	if(use_tty) {
+		/* Test windows size */
+		//sz=(struct winsize*)malloc(sizeof(struct winsize));
+		//memset(sz,0x00,sizeof(struct winsize));
+		if(ioctl(0, TIOCGWINSZ, &sz) == -1) {
+			perror("Could not get terminal window size");
+			return EXIT_FAILURE;
+		}
+		//fprintf(stdout, "Screen width: %i  Screen height: %i\n", sz.ws_col, sz.ws_row);
+		max_procs = sz.ws_row - 4;
+		signal(SIGINT, SIGINT_handler);
+
+		tcgetattr(STDIN_FILENO, &orig_termios);
+		struct termios new_termios = orig_termios;
+		new_termios.c_lflag &= ~ICANON;
+		tcsetattr(STDIN_FILENO, TCSANOW, &new_termios);
+
+		fdset = malloc(sizeof(fd_set));
+	}
+
 	read_procs();
 	while(iterations == -1 || iterations-- > 0) {
+		if(use_tty && fdset) {
+			FD_ZERO(fdset);
+			FD_SET(STDIN_FILENO, fdset);
+		}
+		delay_tv.tv_sec = delay;
+		delay_tv.tv_usec = 0;
 		old_procs = new_procs;
 		num_old_procs = num_new_procs;
 		memcpy(&old_cpu, &new_cpu, sizeof(old_cpu));
-		sleep(delay);
+		//sleep(delay);
+		switch(select(STDIN_FILENO + 1, fdset, NULL, NULL, &delay_tv)) {
+			case -1:
+				perror("select");
+				return 1;
+			case 0:
+				break;
+			default:
+				if(use_tty && getchar() == 'q') {
+					iterations = 0;
+					//continue;
+				}
+				break;
+		}
 		read_procs();
 		print_procs();
 		free_old_procs();
 	}
 
+	if(use_tty) {
+		printf("\x1b[?47l\x1b[?25h");
+		tcsetattr(STDIN_FILENO, TCSANOW, &orig_termios);
+	}
 	return 0;
 }
 

@@ -1,5 +1,5 @@
 /*	more - toolbox
-	Copyright 2015 libdll.so
+	Copyright 2015-2016 Rivoreo
 
 	This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
 
@@ -75,7 +75,7 @@ static void set_terminal(int echo) {
 	new.c_lflag &= ~ICANON;				/* disable buffered i/o */
 	if(echo) new.c_lflag |= ECHO;			/* set echo mode */
 	else new.c_lflag &= ~ECHO;
-	tcsetattr(STDIN_FILENO, TCSANOW, &new);	/* use these new terminal i/o settings now */
+	tcsetattr(STDIN_FILENO, TCSANOW, &new);		/* use these new terminal i/o settings now */
 }
 
 /* Restore old terminal i/o settings */
@@ -256,6 +256,7 @@ static int read_file(FILE *fp, int use_pipe, int flags) {
 	return 0;
 }
 
+#include "version.h"
 
 int more_main(int argc, char *argv[]) {
 	int use_tty = isatty(STDOUT_FILENO);
@@ -323,8 +324,7 @@ int more_main(int argc, char *argv[]) {
 				flags |= SKIP_MULTI_BLACK_LINES;
 				break;
 			case 'V':
-				//fprintf(stdout,"%s, From ToolBox by libdll.so\nToolBox version: " VERSION "\n", argv[0]);
-				fprintf(stdout,"%s, From ToolBox by libdll.so\n", argv[0]);
+				fprintf(stdout,"%s, From ToolBox by Rivoreo\nToolBox version: " VERSION "\n", argv[0]);
 				return 0;
 			default:
 				usage(argv[0]);

@@ -171,6 +171,10 @@ void lsof_dumpinfo(pid_t pid) {
 	}
 
 	command[numRead] = 0;
+
+	// We only want the basename
+	strncpy(info.command, basename(command), COMMAND_DISPLAY_MAX - 1);
+	info.command[COMMAND_DISPLAY_MAX - 1] = 0;
 #else
 	strncat(info.path, "psinfo", sizeof info.path);
 	fd = open(info.path, O_RDONLY);
@@ -190,10 +194,8 @@ void lsof_dumpinfo(pid_t pid) {
 		fprintf(stderr, "Error reading command: %s: %s\n", info.path, strerror(errno));
 		return;
 	}
+	strncpy(info.command, command, COMMAND_DISPLAY_MAX - 1);
 #endif
-	// We only want the basename
-	strncpy(info.command, basename(command), COMMAND_DISPLAY_MAX - 1);
-	info.command[COMMAND_DISPLAY_MAX - 1] = 0;
 
 	// Read each of these symlinks
 	print_type("cwd", &info);
