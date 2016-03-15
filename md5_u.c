@@ -1,6 +1,6 @@
 /*	md5 - toolbox
 	Copyright 2007-2015 PC GO Ld.
-	Copyright 2015 libdll.so
+	Copyright 2015-2016 Rivoreo
 
 	This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
 
@@ -27,10 +27,10 @@
 #define MD5_DIGEST_LENGTH 16
 #endif
 
-int c = 0;
+static int quiet = 0;
 
 static int usage() {
-	fprintf(stderr,"md5"
+	fprintf(stderr,"Usage: md5"
 #if defined _WIN32 && !defined _WIN32_WNT_NATIVE
 			".exe"
 #endif
@@ -51,7 +51,7 @@ static int do_md5(const char *path) {
 		no_close = 1;
 	} else fd = open(path, O_RDONLY);
 	if(fd == -1) {
-		fprintf(stderr,"could not open %s, %s\n", path, strerror(errno));
+		fprintf(stderr,"Could not open %s, %s\n", path, strerror(errno));
 		return -1;
 	}
 
@@ -64,20 +64,20 @@ static int do_md5(const char *path) {
 		if(rlen < 0) {
 			int e = errno;
 			if(!no_close) close(fd);
-			fprintf(stderr,"could not read %s, %s\n", path, strerror(e));
+			fprintf(stderr,"Could not read %s, %s\n", path, strerror(e));
 			return -1;
 		}
 		MD5_Update(&md5_ctx, buf, rlen);
 	}
 	if(!no_close && close(fd) < 0) {
-		fprintf(stderr,"could not close %s, %s\n", path, strerror(errno));
+		fprintf(stderr,"Could not close %s, %s\n", path, strerror(errno));
 		return -1;
 	}
 
 	MD5_Final(md5, &md5_ctx);
 
 	for(i = 0; i < (int)sizeof(md5); i++) printf("%02x", md5[i]);
-	if(c) putchar('\n'); else printf("  %s\n", path);
+	if(quiet) putchar('\n'); else printf("  %s\n", path);
 
 	return 0;
 }
@@ -85,14 +85,15 @@ static int do_md5(const char *path) {
 int md5_main(int argc, char *argv[]) {
 	int i, ret = 0;
 
-	if(argc < 2) return usage();
-
-	if(strcmp(argv[1], "-c") == 0) {
-		if(argc < 3) return usage();
-		c = 1;
+	for(i=0; i<argc; i++) if(strcmp(argv[i], "-q") == 0 || strcmp(argv[i], "--quiet") == 0) {
+		int j;
+		quiet = 1;
+		for(j=i; j>0; j--) argv[j] = argv[j - 1];
 		argc--;
 		argv++;
 	}
+
+	if(argc < 2) return usage();
 
 	/* loop over the file args */
 	for (i = 1; i < argc; i++) {
