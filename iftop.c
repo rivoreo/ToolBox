@@ -26,6 +26,9 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <net/if.h>
+#ifdef __sun
+#include <sys/sockio.h>
+#endif
 
 #define PROC_NET_DEV "/proc/net/dev"
 

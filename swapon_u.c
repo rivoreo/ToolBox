@@ -10,7 +10,10 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <getopt.h>
-#if defined __linux__ || defined __gnu_hurd__
+#if defined __linux__ || defined __gnu_hurd__ || defined __SVR4
+#ifdef __SVR4
+#include <sys/stat.h>
+#endif
 #include <sys/swap.h>
 #endif
 #include <string.h>
@@ -23,6 +26,12 @@
 #define SWAP_FLAG_PRIO_SHIFT    0
 #define SWAP_FLAG_DISCARD       0x10000
 #else
+#ifdef __SVR4
+static int swapon(char *path) {
+	struct swapres res = { .sr_name = path };
+	return swapctl(SC_ADD, &res);
+}
+#endif
 #define swapon(P,F) swapon(P)
 #endif
 

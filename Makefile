@@ -78,8 +78,10 @@ OUTFILE = $(LIB_NAME)
 NO_STATIC = 1
 else
 ifndef DARWIN
+ifndef SUNOS
 ifndef NO_STATIC
 UNITY_LDFLAGS = --static
+endif
 endif
 endif		# !NO_STATIC
 endif		# SHARED_OBJECT

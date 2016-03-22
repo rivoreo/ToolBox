@@ -36,6 +36,8 @@ TOOL(hostname)
 TOOL(id)
 #ifndef __INTERIX
 TOOL(ifconfig)
+#endif
+#if defined __linux__ || defined __gnu_hurd__
 TOOL(iftop)
 #endif
 #ifdef __linux__
@@ -44,11 +46,11 @@ TOOL(insmod)
 #endif
 TOOL(ioctl)
 #ifndef _WINDOWSNT_NATIVE
-#ifndef __INTERIX
+#if !defined __INTERIX && !(defined __sun && defined __SVR4)
 TOOL(isptrace1allowed)
 #endif
 TOOL(kill)
-#ifndef __INTERIX
+#if !defined __INTERIX && !(defined __sun && defined __SVR4)
 TOOL(kill1)
 #endif
 #endif
@@ -136,7 +138,7 @@ TOOL(setsebool)
 #endif
 #endif
 TOOL(sleep)
-#if defined __linux__ || defined __FreeBSD__
+#if defined __linux__ || defined __FreeBSD__ || defined __SVR4
 TOOL(swapoff)
 TOOL(swapon)
 #endif
@@ -151,7 +153,7 @@ TOOL(top)
 #endif
 TOOL(touch)
 TOOL(uptime)
-#if !defined __APPLE__ && !defined _WINDOWSNT_NATIVE && !defined __FreeBSD__ && !defined __INTERIX
+#if defined __linux__ || defined __gnu_hurd__
 TOOL(vmstat)
 #endif
 TOOL(which)

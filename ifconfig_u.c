@@ -16,6 +16,9 @@
 #else
 #include <net/if.h>
 #include <sys/param.h>
+#ifdef __sun
+#include <sys/sockio.h>
+#endif
 #endif
 #include <arpa/inet.h>
 

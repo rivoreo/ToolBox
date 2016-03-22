@@ -8,7 +8,17 @@
 */
 
 #include <sys/types.h>
+#if defined __sun && defined __SVR4
+#include <unistd.h>
+#ifndef PT_ATTACH
+#define PT_ATTACH 9
+#endif
+#ifndef PT_DETACH
+#define PT_DETACH 7
+#endif
+#else
 #include <sys/ptrace.h>
+#endif
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
