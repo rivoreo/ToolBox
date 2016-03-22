@@ -335,20 +335,20 @@ SOCKET_LIB = -lnsl -lsocket
 #endif
 else
 ifndef MINGW
+# !Windows && !Solaris && !Interix
 ALL_TOOLS += \
 	iftop_u.o \
-	isptrace1allowed_u.o \
-	kill1_u.o
+	isptrace1allowed_u.o
 EXTRA_TOOLS += \
 	iftop \
-	isptrace1allowed \
-	kill1
+	isptrace1allowed
 endif
 endif		# SUNOS
 
 ALL_TOOLS += \
 	dmesg_u.o \
 	ifconfig_u.o \
+	kill1_u.o \
 	r_u.o \
 	reboot_u.o \
 	sync_u.o
@@ -358,6 +358,7 @@ ifndef MINGW
 EXTRA_TOOLS += \
 	dmesg \
 	ifconfig \
+	kill1 \
 	r \
 	sync
 endif

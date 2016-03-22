@@ -9,13 +9,13 @@
 
 #include <sys/types.h>
 #if defined __sun && defined __SVR4
+#ifndef _STRUCTURED_PROC
+//#define _STRUCTURED_PROC 0
+#define _STRUCTURED_PROC 1
+#endif
+#include <sys/procfs.h>
 #include <unistd.h>
-#ifndef PT_ATTACH
-#define PT_ATTACH 9
-#endif
-#ifndef PT_DETACH
-#define PT_DETACH 7
-#endif
+#include <fcntl.h>
 #else
 #include <sys/ptrace.h>
 #endif
@@ -53,13 +53,17 @@ static void print_usage() {
 	fprintf(stderr, "Usage: kill1 [<options>]\n\n"
 			"options:\n"
 			"	-s <signal>	Specify the <signal> to send\n"
+#if !defined __sun || !defined __SVR4
 			"	-n		Keep going when ptrace failed\n"
+#endif
 			"	-l		List all available signals\n"
 			"	-v		Verbose\n\n");
 }
 
 int kill1_main(int argc, char **argv) {
+#if !defined __sun || !defined __SVR4
 	int no_stop_flag = 0;
+#endif
 	int verbose = 0;
 	char *signal1 = "TERM";
 first_loop:
@@ -77,9 +81,11 @@ first_loop:
 				case 'l':
 					print_signals();
 					return 0;
+#if !defined __sun || !defined __SVR4
 				case 'n':
 					no_stop_flag = 1;
 					continue;
+#endif
 				case 's':
 					if(arg[1]) {
 						fprintf(stderr, "Option '-s' not the end of a set of combined options\n");
@@ -110,6 +116,34 @@ first_loop:
 	}
 
 	int r = 0;
+#if defined __sun || defined __SVR4
+	if(verbose) fprintf(stderr, "Opening /proc/1/ctl ...		");
+	int fd = open("/proc/1/ctl", O_WRONLY);
+	if(fd == -1) {
+		perror("/proc/1/ctl");
+		return 1;
+	}
+	if(verbose) fprintf(stderr, "OK\nSending signal %s (%d) ...	", signal1, signal2);
+#if _STRUCTURED_PROC
+	long int msg[2] = { PCKILL, signal2 };
+	if(write(fd, msg, sizeof msg) < 0) {
+		perror("write");
+		r = 1;
+	}
+#else
+	if(ioctl(fd, PIOCKILL, &signal2) < 0) {
+		perror("ioctl");
+		r = 1;
+	}
+#endif
+	if(r == 0 && verbose) fprintf(stderr, "OK\n");
+	if(verbose) fprintf(stderr, "Closing /proc/1/ctl ...		");
+	if(close(fd) < 0) {
+		perror("close");
+		return 1;
+	}
+	if(verbose) fprintf(stderr, "OK\n");
+#else
 	if(verbose) fprintf(stderr, "Attaching to process 1...	");
 	if(ptrace(PT_ATTACH, 1, NULL, 0) < 0) {
 		//perror("ptrace");
@@ -150,5 +184,6 @@ send_signal:
 	}
 	if(verbose && !(r & (1 << 2))) fprintf(stderr, "OK\n");
 
+#endif
 	return r;
 }

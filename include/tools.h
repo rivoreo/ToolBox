@@ -50,7 +50,7 @@ TOOL(ioctl)
 TOOL(isptrace1allowed)
 #endif
 TOOL(kill)
-#if !defined __INTERIX && !(defined __sun && defined __SVR4)
+#ifndef __INTERIX
 TOOL(kill1)
 #endif
 #endif
