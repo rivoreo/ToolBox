@@ -1,5 +1,5 @@
 /*	service - toolbox
-	Copyright 2015 libdll.so
+	Copyright 2015-2016 Rivoreo
 
 	This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
 
@@ -43,7 +43,7 @@ static size_t name_len;
 static char *env[sizeof env_names / sizeof(char *) + 1];
 
 static void print_usage(const char *name) {
-	fprintf(stderr, "Usage: %s <service> [<action>] [<options>]\n", name);
+	fprintf(stderr, "Usage: %s { <service> [<action>] [<options>] | --status-all }\n", name);
 }
 
 static int get_status(const char *pathname) {
@@ -55,7 +55,7 @@ static int get_status(const char *pathname) {
 		if(WIFSIGNALED(status)) return '?';
 		//fprintf(stderr, "%d\n", WEXITSTATUS(status));
 		int e = WEXITSTATUS(status);
-		if(e == 1) return '?';
+		if(e < 0 || e > 1) return '?';
 		return e == 0 ? '+' : '-';
 	} else {
 		close(STDOUT_FILENO);
@@ -92,7 +92,7 @@ first_loop:
 
 		if(stat(service_script, &s) < 0) {
 			fprintf(stderr, "stat %s failed: %s", service_script, strerror(errno));
-			return -1;
+			return 1;
 		}
 		if(!S_ISDIR(s.st_mode) && (s.st_mode & 0111)) {
 			//if(access(tmp, X_OK) == 0)
@@ -109,8 +109,19 @@ static void init_env() {
 	/* How many options the env_names have. */
 	for(i = 0; i < sizeof env_names / sizeof(char *); i++) {
 		char *e = getenv(env_names[i]);
-		/* Copy HEAD to env[i] */
-		if(e) *p++ = e;
+		if(e) {
+			size_t name_len = strlen(env_names[i]);
+			size_t value_len = strlen(e);
+			*p = malloc(name_len + 1 + value_len + 1);
+			if(!*p) {
+				perror(NULL);
+				exit(2);
+			}
+			memcpy(*p, env_names[i], name_len);
+			(*p)[name_len] = '=';
+			memcpy(*p + name_len + 1, e, value_len + 1);
+			p++;
+		}
 	}
 	*p = NULL;
 }
@@ -128,26 +139,25 @@ int service_main(int argc, char **argv) {
 		switch(c) {
 			case 'h':
 				print_usage(argv[0]);
-				return -1;
+				return 0;
 			case 0:
 				//printf("%s\n", long_options[option_index].name);
 				if(option_index == 1) {
 					init_env();
-					status_all();
-					return 1;
+					return status_all();
 				}
 				break;
 			case '?':
 				return -1;
 			default:
 				print_usage(argv[0]);
-				return 0;
+				return -1;
 		}
 	}
 	/* Check if no option, Avoid Segmentation fault */
 	if(optind == argc) {
 		print_usage(argv[0]);
-		return 0;
+		return -1;
 	}
 	name_len = strlen(argv[1]);
 	if(sizeof INIT_D_PATH + name_len > sizeof service_script) {
