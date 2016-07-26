@@ -30,13 +30,14 @@
 #ifdef __sun
 #undef NAN
 #define NAN (__builtin_nanf(""))
-//#if isnan == __builtin_isnan
-//#include <ieeefp.h>
 #undef isnan
-//#define isnan isnand
-//#endif
+#if 1
+#include <ieeefp.h>
+#define isnan isnand
+#else
 #include <nan.h>
 #define isnan NaN
+#endif
 #elif !defined NAN
 #define NAN (__builtin_nanf(""))
 #endif

@@ -116,7 +116,7 @@ first_loop:
 	}
 
 	int r = 0;
-#if defined __sun || defined __SVR4
+#if defined __sun && defined __SVR4
 	if(verbose) fprintf(stderr, "Opening /proc/1/ctl ...		");
 	int fd = open("/proc/1/ctl", O_WRONLY);
 	if(fd == -1) {

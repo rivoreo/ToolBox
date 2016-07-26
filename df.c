@@ -53,7 +53,7 @@ static void printsize(long long int n) {
 
 static void sdf(const struct statfs *st, const char *s, int always) {
 	if(st->f_blocks == 0 && !always) return;
-#if defined __GNU__ || defined __linux__ || (defined _WIN32 && !defined _WIN32_WNT_NATIVE) || (!defined __NetBSD__ && !defined __INTERIX && defined _NO_STATFS) || defined __sun
+#if defined __GNU__ || defined __linux__ || (defined _WIN32 && !defined _WINDOWSNT_NATIVE) || (!defined __NetBSD__ && !defined __INTERIX && defined _NO_STATFS) || defined __sun
 	printf("%-20s  ", s);
 #else
 	printf("%-20s  ", st->f_mntfromname);
@@ -74,7 +74,6 @@ static void df(const char *s, int always) {
 		perror(s);
 		ok = EXIT_FAILURE;
 	} else {
-//#ifdef __sun
 //#endif
 		sdf(&st, s, always);
 	}
@@ -82,7 +81,7 @@ static void df(const char *s, int always) {
 
 static void print_header() {
 	puts(
-#if defined __GNU__ || defined __linux__ || (defined _WIN32 && !defined _WIN32_WNT_NATIVE) || (defined __APPLE__ && defined _NO_STATFS) || defined __sun
+#if defined __GNU__ || defined __linux__ || (defined _WIN32 && !defined _WINDOWSNT_NATIVE) || (!defined __NetBSD__ && !defined __INTERIX && defined _NO_STATFS) || defined __sun
 	//"Mounted on"
 	"File system"
 #else

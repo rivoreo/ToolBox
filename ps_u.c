@@ -70,7 +70,9 @@ static int ps_line(int pid, int tid, const char *namefilter) {
 		snprintf(macline, sizeof(macline), "/proc/%d/task/%d/attr/current", pid, tid);
 	} else {
 #endif
-#ifndef __FreeBSD__
+#ifdef __FreeBSD__
+		sprintf(statline, "/proc/%d/status", pid);
+#else
 		sprintf(statline, "/proc/%d/stat", pid);
 #endif
 		sprintf(command, "/proc/%d/cmdline", pid);
@@ -89,7 +91,6 @@ static int ps_line(int pid, int tid, const char *namefilter) {
 #ifdef __linux__
 	}
 #endif
-#ifndef __FreeBSD__
 	fd = open(statline, O_RDONLY);
 	if(fd == -1) return -1;
 	r = read(fd, statline, 1023);
@@ -98,7 +99,10 @@ static int ps_line(int pid, int tid, const char *namefilter) {
 	statline[r] = 0;
 
 	ptr = statline;
-#ifdef __INTERIX
+#ifdef __FreeBSD__
+	name = ptr;
+	nexttok(&ptr)[-1] = 0;
+#elif defined __INTERIX
 	name = getvalue(&ptr);
 	nextline(&ptr)[-1] = 0;
 #else
@@ -209,7 +213,6 @@ static int ps_line(int pid, int tid, const char *namefilter) {
 		ppid = pid;
 		pid = tid;
 	}
-#endif
 #endif
 #endif
 

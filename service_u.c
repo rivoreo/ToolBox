@@ -27,6 +27,7 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include <sys/wait.h>
+#include <fcntl.h>
 
 #define INIT_D_PATH "/etc/init.d/"
 
@@ -60,6 +61,7 @@ static int get_status(const char *pathname) {
 	} else {
 		close(STDOUT_FILENO);
 		close(STDERR_FILENO);
+		if(open("/dev/null", O_WRONLY) == STDOUT_FILENO) dup2(STDOUT_FILENO, STDERR_FILENO);
 		execle(pathname, pathname, "status", NULL, env);
 		exit(1);
 	}

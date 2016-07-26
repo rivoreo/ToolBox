@@ -48,10 +48,11 @@ int main(int argc, char *argv[]){
 	wchar_t file2[len2];
 	mbstowcs(file1, argv[1], len1);
 	mbstowcs(file2, argv[2], len2);
-	if(CreateHardLinkW(file2, file1, NULL)) return 0; else{
+	if(!CreateHardLinkW(file2, file1, NULL)) {
 		fprintf(stderr, "link failed, %s\n", strerror(errno));
 		return 2;
 	}
+	return 0;
 #endif
 #else
 	if(argc < 3 || strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0){

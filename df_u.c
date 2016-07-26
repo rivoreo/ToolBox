@@ -75,7 +75,7 @@ static void df(const char *s, int always) {
 }
 
 static void print_header() {
-	puts("Filesystem                Size     Used     Free   Blksize");
+	puts("Filesystem                Size      Used      Free   Blksize");
 }
 
 int df_main(int argc, char *argv[]) {
