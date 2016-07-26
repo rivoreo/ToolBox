@@ -154,29 +154,109 @@ static int print_status(int s, struct ifreq *ifr) {
 	return 0;
 }
 
+static int print_status_all(int fd) {
+	//char buffer[sizeof(struct ifreq)];
+	struct ifconf ifc;
+	int n;
+#ifdef SIOCGIFNUM
+	if(ioctl(fd, SIOCGIFNUM, &n) < 0) {
+		perror("SIOCGIFNUM");
+		return 1;
+	}
+	ifc.ifc_len = sizeof(struct ifreq) * n;
+#else
+	ifc.ifc_len = 0;
+	ifc.ifc_buf = NULL;
+	if(ioctl(fd, SIOCGIFCONF, &ifc) < 0) {
+		perror("SIOCGIFCONF");
+		return 1;
+		//die("SIOCGIFCOUNT");
+	}
+	n = ifc.ifc_len / sizeof(struct ifreq);
+#endif
+	ifc.ifc_buf = malloc(ifc.ifc_len);
+	if(!ifc.ifc_len) {
+		perror("malloc");
+		return 1;
+	}
+
+	//fprintf(stderr, "n = %d, ifc_len = %d, ifc_buf = %p\n", n, ifc.ifc_len, ifc.ifc_buf);
+
+	if(ioctl(fd, SIOCGIFCONF, &ifc) < 0) {
+		perror("SIOCGIFCONF");
+		return 1;
+	}
+
+	int i;
+	for(i=0; i<n; i++) {
+		if(print_status(fd, ifc.ifc_req + i) < 0) {
+			perror(ifc.ifc_req[i].ifr_name);
+		}
+	}
+	return 0;
+}
+
+static void print_usage(const char *name) {
+	fprintf(stderr, "ifconfig - toolbox " VERSION "\n"
+		"Copyright 2007-2015 PC GO Ld.\n"
+		"Copyright 2015-2016 Rivoreo\n\n"
+		"Usage:\n"
+		"	%s -a\n"
+		"	%s <interface> [<address>[/<prefix-len>]] [<options>]\n",
+		name, name);
+}
+
 int ifconfig_main(int argc, char *argv[]) {
 	struct ifreq ifr;
 	int s;
 
+	int all = 0;
+	char **v = argv + 1;
+
+	while(*v) {
+		if(**v == '-') {
+			char *o = *v + 1;
+			switch(*o) {
+				case 'a':
+					all = 1;
+					break;
+				case 'h':
+					print_usage(argv[0]);
+					return 0;
+				default:
+					fprintf(stderr, "%s: Unknown option '-%c'\n", argv[0], *o);
+					return -1;
+			}
+			argv[1] = argv[0];
+			argc--;
+			argv++;
+		} else break;
+		v++;
+	}
+
+	if((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+		die("cannot open control socket\n");
+	}
+
+	if(all) {
+		//print_status_all(s);
+		//return 0;
+		return print_status_all(s);
+	}
+
+	if(argc < 2) {
+		close(s);
+		print_usage(argv[0]);
+		return -1;
+	}
+
 	argc--;
 	argv++;
-
-	if(argc == 0) {
-		puts("ifconfig - toolbox " VERSION "\n"
-			"Copyright 2007-2015 PC GO Ld.\n"
-			"Copyright 2015-2016 Rivoreo\n\n"
-			"Usage: ifconfig <interface> [<options>]");
-		return 0;
-	}
 
 	memset(&ifr, 0, sizeof(struct ifreq));
 	strncpy(ifr.ifr_name, argv[0], IFNAMSIZ);
 	ifr.ifr_name[IFNAMSIZ-1] = 0;
 	argc--, argv++;
-
-	if((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-		die("cannot open control socket\n");
-	}
 
 	if (argc == 0) {
 		if(print_status(s, &ifr) < 0) {
@@ -196,14 +276,13 @@ int ifconfig_main(int argc, char *argv[]) {
 				die("expecting a value for parameter \"mtu\"");
 			}
 			setmtu(s, &ifr, argv[0]);
-		} else if(strcmp(argv[0], "-pointopoint") == 0) {
-			setflags(s, &ifr, IFF_POINTOPOINT, 1);
-		} else if(strcmp(argv[0], "pointopoint") == 0) {
-			argc--, argv++;
-			if(!argc) {
-				errno = EINVAL;
-				die("expecting an IP address for parameter \"pointtopoint\"");
+		} else if(strcmp(argv[0], "destination") == 0 || strcmp(argv[0], "pointopoint") == 0) {
+			if(argc < 2) {
+				//errno = EINVAL;
+				fprintf(stderr, "error: expecting an IP address for parameter \"%s\"\n", argv[0]);
+				return 1;
 			}
+			argc--, argv++;
 			setdstaddr(s, &ifr, argv[0]);
 			setflags(s, &ifr, IFF_POINTOPOINT, 0);
 		} else if(strcmp(argv[0], "down") == 0) {

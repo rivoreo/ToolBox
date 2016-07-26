@@ -133,6 +133,9 @@ TOOL(setconsole)
 TOOL(setenforce)
 #endif
 TOOL(setkey)
+#endif
+TOOL(setpgrp)
+#ifdef __linux__
 #ifndef _NO_SELINUX
 TOOL(setsebool)
 #endif

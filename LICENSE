@@ -69,6 +69,7 @@ Files
 	setconsole_u.c,
 	setenforce_u.c,
 	setkey_u.c,
+	setpgrp_u.c,
 	setsebool*,
 	swapoff_u.c,
 	swapon_u.c,

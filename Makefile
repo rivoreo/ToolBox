@@ -125,6 +125,7 @@ ALL_TOOLS := \
 	rmdir_u.o \
 	schedtop_u.o \
 	service_u.o \
+	setpgrp_u.o \
 	sleep_u.o \
 	tee_u.o \
 	touch_u.o \
@@ -189,7 +190,8 @@ EXTRA_TOOLS := \
 	readtty \
 	renice \
 	schedtop \
-	service
+	service \
+	setpgrp
 
 ifdef DARWIN
 NO_SELINUX = 1
@@ -427,6 +429,7 @@ TRAN_SRC = \
 	setconsole.c \
 	setenforce.c \
 	setkey.c \
+	setpgrp.c \
 	sleep.c \
 	swapoff.c \
 	swapon.c \
