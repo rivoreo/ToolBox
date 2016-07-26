@@ -126,7 +126,6 @@ TOOL(sendevent)
 #endif
 #ifndef _WINDOWSNT_NATIVE
 TOOL(service)
-#endif
 #ifdef __linux__
 TOOL(setconsole)
 #ifndef _NO_SELINUX
@@ -140,6 +139,7 @@ TOOL(setpgrp)
 TOOL(setsebool)
 #endif
 #endif
+#endif	/* !_WINDOWSNT_NATIVE */
 TOOL(sleep)
 #if defined __linux__ || defined __FreeBSD__ || defined __SVR4
 TOOL(swapoff)

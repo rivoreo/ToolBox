@@ -31,6 +31,7 @@
 #endif
 #endif
 #include <arpa/inet.h>
+#include <netdb.h>
 
 static void die(const char *s) {
 	fprintf(stderr,"error: %s (%s)\n", s, strerror(errno));
@@ -57,7 +58,23 @@ static void setflags(int s, struct ifreq *ifr, int set, int clr) {
 static inline void init_sockaddr_in(struct sockaddr_in *sin, const char *addr) {
 	sin->sin_family = AF_INET;
 	sin->sin_port = 0;
-	sin->sin_addr.s_addr = inet_addr(addr);
+	if(isdigit(*addr)) {
+		sin->sin_addr.s_addr = inet_addr(addr);
+	} else {
+		struct addrinfo hints = {
+			.ai_family = PF_INET,
+			.ai_socktype = 0,
+			.ai_protocol = 0
+		};
+		struct addrinfo *info;
+		int e = getaddrinfo(addr, NULL, &hints, &info);
+		if(e) {
+			fprintf(stderr, "error: cannot resolve host '%s': %s\n", addr, gai_strerror(e));
+			exit(1);
+		}
+		sin->sin_addr = ((struct sockaddr_in *)info->ai_addr)->sin_addr;
+		freeaddrinfo(info);
+	}
 }
 
 static unsigned int getmtu(int s, struct ifreq *ifr) {
@@ -88,6 +105,11 @@ static void setmtu(int s, struct ifreq *ifr, const char *mtu) {
 	ifr->ifr_mtu = m;
 	if(ioctl(s, SIOCSIFMTU, ifr) < 0) die("SIOCSIFMTU");
 #endif
+}
+
+static void setbroadaddr(int s, struct ifreq *ifr, const char *addr) {
+	init_sockaddr_in((struct sockaddr_in *)&ifr->ifr_broadaddr, addr);
+	if(ioctl(s, SIOCSIFBRDADDR, ifr) < 0) die("SIOCSIFBRDADDR");
 }
 
 static void setdstaddr(int s, struct ifreq *ifr, const char *addr) {
@@ -165,6 +187,7 @@ static int print_status_all(int fd) {
 	}
 	ifc.ifc_len = sizeof(struct ifreq) * n;
 #else
+	// FIXME: This desn't work on BSD
 	ifc.ifc_len = 0;
 	ifc.ifc_buf = NULL;
 	if(ioctl(fd, SIOCGIFCONF, &ifc) < 0) {
@@ -202,7 +225,7 @@ static void print_usage(const char *name) {
 		"Copyright 2015-2016 Rivoreo\n\n"
 		"Usage:\n"
 		"	%s -a\n"
-		"	%s <interface> [<address>[/<prefix-len>]] [<options>]\n",
+		"	%s <interface> [<address>[/<prefix-len>]] [<options>]\n\n",
 		name, name);
 }
 
@@ -276,6 +299,14 @@ int ifconfig_main(int argc, char *argv[]) {
 				die("expecting a value for parameter \"mtu\"");
 			}
 			setmtu(s, &ifr, argv[0]);
+		} else if(strcmp(argv[0], "broadcast") == 0) {
+			if(argc < 2) {
+				fprintf(stderr, "error: expecting an IP address for parameter \"%s\"\n", argv[0]);
+				return 1;
+			}
+			argc--, argv++;
+			setbroadaddr(s, &ifr, argv[0]);
+			setflags(s, &ifr, IFF_BROADCAST, 0);
 		} else if(strcmp(argv[0], "destination") == 0 || strcmp(argv[0], "pointopoint") == 0) {
 			if(argc < 2) {
 				//errno = EINVAL;
@@ -296,7 +327,7 @@ int ifconfig_main(int argc, char *argv[]) {
 			}
 			setnetmask(s, &ifr, argv[0]);
 #endif
-		} else if(isdigit(argv[0][0])) {
+		} else {
 			setaddr(s, &ifr, argv[0]);
 			setflags(s, &ifr, IFF_UP, 0);
 		}
