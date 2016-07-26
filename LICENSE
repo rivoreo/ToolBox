@@ -24,7 +24,7 @@ Files
 	hd_u.c,
 	hostname_u.c,
 	id_u.c,
-	ifconfig*,
+	ifconfig_u.c,
 	include/*,
 	insmod_u.c,
 	ioctl_u.c,

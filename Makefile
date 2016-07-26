@@ -391,6 +391,7 @@ TRAN_SRC = \
 	hd.c \
 	hostname.c \
 	id.c \
+	ifconfig.c \
 	insmod.c \
 	ioctl.c \
 	isptrace1allowed.c \
