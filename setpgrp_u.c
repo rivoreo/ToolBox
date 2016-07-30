@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <sys/param.h>
 
-#ifdef BSD
+#if defined BSD || defined __INTERIX
 #define setpgrp() setpgid(0,0)
 #endif
 

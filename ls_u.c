@@ -701,7 +701,7 @@ static int show_total_size(const char *dirname, DIR *d, int flags) {
 	struct dirent *de;
 	char tmp[1024];
 	struct stat s;
-	int sum = 0;
+	unsigned int sum = 0;
 
 	/* run through the directory and sum up the file block sizes */
 	while((de = readdir(d))) {
@@ -728,7 +728,7 @@ static int show_total_size(const char *dirname, DIR *d, int flags) {
 		double n = human_readable_d(sum, &unit);
 		if(isnan(n)) return -1;
 		printf("total %.1f%ci\n", n, unit);
-	} else printf("total %d\n", sum);
+	} else printf("total %u\n", sum);
 	rewinddir(d);
 	return 0;
 }
@@ -757,16 +757,16 @@ static int listfile_other(const char *path, const char *filename, const struct s
 	/* blocks are 512 bytes, we want output to be KB */
 	if((flags & LIST_SIZE) != 0) {
 #if defined _WIN32 && !defined _WINDOWSNT_NATIVE
-		long int size = st->st_size / 1024;		// XXX
+		unsigned long int size = st->st_size / 1024;		// XXX
 #else
-		long int size = st->st_blocks / 2;
+		unsigned long int size = st->st_blocks / 2;
 #endif
 		if(size && (flags & LIST_HUMAN_READABLE)) {
 			int unit = 'K';
 			double n = human_readable_d(size, &unit);
 			if(isnan(n)) printf("? ");
 			else printf("%.1f%ci ", n, unit);
-		} else printf("%ld ", size);
+		} else printf("%lu ", size);
 	}
 
 	char filetype = mode2kind(st->st_mode);
@@ -850,7 +850,11 @@ static int listfile_long(const char *path, int flags) {
 
 	if(flags & LIST_HUMAN_READABLE) {
 		int unit = 0;
+#ifdef __INTERIX
+		double n = human_readable_d((unsigned int)s.st_size, &unit);
+#else
 		double n = human_readable_d(s.st_size, &unit);
+#endif
 		if(isnan(n)) *size = 0;
 		else {
 			if(unit) sprintf(size, "%.1f%ci", n, unit);
@@ -859,6 +863,8 @@ static int listfile_long(const char *path, int flags) {
 	} else {
 #if defined _WIN32 && !defined _WINDOWSNT_NATIVE
 		sprintf(size, "%8ld", s.st_size);
+#elif defined __INTERIX
+		sprintf(size, "%8lld", (long long int)(unsigned int)s.st_size);
 #else
 		sprintf(size, "%8lld", (long long int)s.st_size);
 #endif
@@ -1026,7 +1032,11 @@ static int listfile_maclabel(const char *path, int flags) {
 
 	if((flags & LIST_SIZE) && (flags & LIST_HUMAN_READABLE)) {
 		int unit = 0;
+#ifdef __INTERIX
+		double n = human_readable_d((unsigned int)s.st_size, &unit);
+#else
 		double n = human_readable_d(s.st_size, &unit);
+#endif
 		if(isnan(n)) *size = 0;
 		else {
 			if(unit) sprintf(size, "%.1f%ci", n, unit);

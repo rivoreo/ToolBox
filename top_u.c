@@ -29,6 +29,7 @@
 #include <unistd.h>
 #include <termios.h>
 #include <signal.h>
+#include <sys/select.h>
 
 struct cpu_info {
 	unsigned long int utime, ntime, stime, itime;

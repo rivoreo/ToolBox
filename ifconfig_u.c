@@ -118,19 +118,60 @@ static void setdstaddr(int s, struct ifreq *ifr, const char *addr) {
 }
 
 #if !defined BSD
-static void setnetmask(int s, struct ifreq *ifr, const char *addr) {
+static void setnetmask(int s, struct ifreq *ifr, const struct sockaddr_in *addr) {
 #if defined __sun && defined __SVR4
-	init_sockaddr_in((struct sockaddr_in *)&ifr->ifr_addr, addr);
+	memcpy(&ifr->ifr_addr, addr, sizeof(struct sockaddr));
 #else
-	init_sockaddr_in((struct sockaddr_in *)&ifr->ifr_netmask, addr);
+	memcpy(&ifr->ifr_netmask, addr, sizeof(struct sockaddr));
 #endif
 	if(ioctl(s, SIOCSIFNETMASK, ifr) < 0) die("SIOCSIFNETMASK");
+}
+
+static void setnetmask_s(int s, struct ifreq *ifr, const char *addr) {
+	struct sockaddr_in sa;
+	init_sockaddr_in(&sa, addr);
+	setnetmask(s, ifr, &sa);
+}
+
+static void setprefixlen(int s, struct ifreq *ifr, int prefixlen) {
+	//fprintf(stderr, "function: setprefixlen(%d, %p, %d)\n", s, ifr, prefixlen);
+	struct sockaddr_in netmask = {
+		.sin_family = AF_INET,
+		.sin_addr.s_addr = 0xffffffff << (32 - prefixlen)
+	};
+	setnetmask(s, ifr, &netmask);
 }
 #endif
 
 static void setaddr(int s, struct ifreq *ifr, const char *addr) {
-	init_sockaddr_in((struct sockaddr_in *)&ifr->ifr_addr, addr);
+	int prefixlen = -1;
+	char *addr_dup = strdup(addr);
+	if(!addr_dup) die("strdup");
+	char *slash = strrchr(addr_dup, '/');
+	if(slash) {
+		char *endptr;
+		if(strchr(addr_dup, '/') != slash) {
+			fprintf(stderr, "error: invalid address '%s'\n", addr);
+			exit(1);
+		}
+		prefixlen = strtoul(slash + 1, &endptr, 10);
+		if(*endptr) {
+			fprintf(stderr, "error: invalid prefix length '%s'\n", slash + 1);
+			exit(1);
+		}
+#ifdef BSD
+		fprintf(stderr, "warning: setting prefix length is currently not supported\n");
+//#else
+//		setprefixlen(s, ifr, prefixlen);
+#endif
+		*slash = 0;
+	}
+	init_sockaddr_in((struct sockaddr_in *)&ifr->ifr_addr, addr_dup);
+	free(addr_dup);
 	if(ioctl(s, SIOCSIFADDR, ifr) < 0) die("SIOCSIFADDR");
+#ifndef BSD
+	if(prefixlen >= 0) setprefixlen(s, ifr, prefixlen);
+#endif
 }
 
 static int print_status(int s, struct ifreq *ifr) {
@@ -138,31 +179,35 @@ static int print_status(int s, struct ifreq *ifr) {
 	char astring[20];
 	char mstring[20];
 	const char *updown, *brdcst, *loopbk, *ppp, *running, *multi;
+	int have_address = 0;
 
 	//fprintf(stderr, "function: print_status(%d, %p)\n", s, ifr);
 
-	if (ioctl(s, SIOCGIFADDR, ifr) < 0) return -1;
-	addr = ((struct sockaddr_in *)&ifr->ifr_addr)->sin_addr.s_addr;
+	if(ioctl(s, SIOCGIFADDR, ifr) == 0) {
+		have_address = 1;
+		addr = ((struct sockaddr_in *)&ifr->ifr_addr)->sin_addr.s_addr;
+		if (ioctl(s, SIOCGIFNETMASK, ifr) < 0) return -1;
+		mask = ((struct sockaddr_in *)&ifr->ifr_addr)->sin_addr.s_addr;
 
-	if (ioctl(s, SIOCGIFNETMASK, ifr) < 0) return -1;
-	mask = ((struct sockaddr_in *)&ifr->ifr_addr)->sin_addr.s_addr;
+		sprintf(astring, "%d.%d.%d.%d",
+			addr & 0xff,
+			((addr >> 8) & 0xff),
+			((addr >> 16) & 0xff),
+			((addr >> 24) & 0xff));
+		sprintf(mstring, "%d.%d.%d.%d",
+			mask & 0xff,
+			((mask >> 8) & 0xff),
+			((mask >> 16) & 0xff),
+			((mask >> 24) & 0xff));
+	}
 
 	if (ioctl(s, SIOCGIFFLAGS, ifr) < 0) return -1;
 	flags = ifr->ifr_flags;
 
 	mtu = getmtu(s, ifr);
 
-	sprintf(astring, "%d.%d.%d.%d",
-		addr & 0xff,
-		((addr >> 8) & 0xff),
-		((addr >> 16) & 0xff),
-		((addr >> 24) & 0xff));
-	sprintf(mstring, "%d.%d.%d.%d",
-		mask & 0xff,
-		((mask >> 8) & 0xff),
-		((mask >> 16) & 0xff),
-		((mask >> 24) & 0xff));
-	printf("%s: ip %s mask %s flags [", ifr->ifr_name, astring, mstring);
+	printf("%s: ", ifr->ifr_name);
+	if(have_address) printf("ip %s mask %s ", astring, mstring);
 
 	updown =  (flags & IFF_UP)           ? "up" : "down";
 	brdcst =  (flags & IFF_BROADCAST)    ? " broadcast" : "";
@@ -170,8 +215,8 @@ static int print_status(int s, struct ifreq *ifr) {
 	ppp =     (flags & IFF_POINTOPOINT)  ? " point-to-point" : "";
 	running = (flags & IFF_RUNNING)      ? " running" : "";
 	multi =   (flags & IFF_MULTICAST)    ? " multicast" : "";
-	printf("%s%s%s%s%s%s]", updown, brdcst, loopbk, ppp, running, multi);
-	if(mtu) printf(" mtu %u\n", mtu);
+	printf("flags [%s%s%s%s%s%s]", updown, brdcst, loopbk, ppp, running, multi);
+	if(mtu) printf(" mtu %u\n", mtu); else putchar('\n');
 
 	return 0;
 }
@@ -219,14 +264,19 @@ static int print_status_all(int fd) {
 	return 0;
 }
 
-static void print_usage(const char *name) {
+static void print_usage(const char *name, int show_options) {
 	fprintf(stderr, "ifconfig - toolbox " VERSION "\n"
 		"Copyright 2007-2015 PC GO Ld.\n"
 		"Copyright 2015-2016 Rivoreo\n\n"
 		"Usage:\n"
 		"	%s -a\n"
-		"	%s <interface> [<address>[/<prefix-len>]] [<options>]\n\n",
-		name, name);
+		"	%s <interface> [<address>[/<prefix-len>]]%s\n\n",
+		name, name,
+		show_options ? "\n"
+			"		[netmask <netmask>]\n"
+			"		[ { broadcast <broad-addr> | {destination|pointopoint} <dst-ipaddr> } ]\n"
+			"		[mtu <mtu>]\n"
+			"		[up|down]" : " [<options>]");
 }
 
 int ifconfig_main(int argc, char *argv[]) {
@@ -244,7 +294,7 @@ int ifconfig_main(int argc, char *argv[]) {
 					all = 1;
 					break;
 				case 'h':
-					print_usage(argv[0]);
+					print_usage(argv[0], 1);
 					return 0;
 				default:
 					fprintf(stderr, "%s: Unknown option '-%c'\n", argv[0], *o);
@@ -269,7 +319,8 @@ int ifconfig_main(int argc, char *argv[]) {
 
 	if(argc < 2) {
 		close(s);
-		print_usage(argv[0]);
+		print_usage(argv[0], 0);
+		fprintf(stderr, "%s: use '-h' for options\n", argv[0]);
 		return -1;
 	}
 
@@ -325,7 +376,7 @@ int ifconfig_main(int argc, char *argv[]) {
 				errno = EINVAL;
 				die("expecting an IP address for parameter \"netmask\"");
 			}
-			setnetmask(s, &ifr, argv[0]);
+			setnetmask_s(s, &ifr, argv[0]);
 #endif
 		} else {
 			setaddr(s, &ifr, argv[0]);
