@@ -105,6 +105,11 @@ static int etheraddr_to_sockaddr(struct sockaddr *sa, const char *ether) {
 }
 
 static void sethwaddr(int s, struct ifreq *ifr, const char *hwaddr) {
+	if(ioctl(s, SIOCGIFHWADDR, ifr)) die("SIOCGIFHWADDR");
+	if(ifr->ifr_hwaddr.sa_family != ARPHRD_ETHER) {
+		fprintf(stderr, "error: setting hardware address for %s: only ethernet interfaces are supported\n", ifr->ifr_name);
+		exit(1);
+	}
 	if(etheraddr_to_sockaddr(&ifr->ifr_hwaddr, hwaddr) < 0) {
 		fprintf(stderr, "error: invalid ethernet address '%s'\n", hwaddr);
 		exit(1);
