@@ -32,6 +32,9 @@
 #endif
 #include <arpa/inet.h>
 #include <netdb.h>
+#ifdef SIOCSIFHWADDR
+#include <net/if_arp.h>
+#endif
 
 static void die(const char *s) {
 	fprintf(stderr,"error: %s (%s)\n", s, strerror(errno));
@@ -76,6 +79,39 @@ static inline void init_sockaddr_in(struct sockaddr_in *sin, const char *addr) {
 		freeaddrinfo(info);
 	}
 }
+
+#ifdef SIOCSIFHWADDR
+static unsigned char atoxb(const char *s) {
+	unsigned char r = *s - (isalpha(*s) ? (islower(*s) ? 87 : 55) : '0');
+	if(*++s) r = (*s - (isalpha(*s) ? (islower(*s) ? 87 : 55) : '0')) + r * 16;
+	return r;
+}
+
+static int etheraddr_to_sockaddr(struct sockaddr *sa, const char *ether) {
+	sa->sa_family = ARPHRD_ETHER;
+	unsigned char *p = (unsigned char *)sa->sa_data;
+	int i;
+	for(i=0; i<6; i++) {
+		if(*ether == ':' || *ether == '-') ether++;
+		if(!isxdigit(*ether) || !isxdigit(ether[1])) {
+			return -1;
+		}
+		p[i] = atoxb(ether);
+		ether += 2;
+	}
+	//return *ether ? -1 : 0;
+	if(*ether && *ether != ':' && *ether != '-') return -1;
+	return 0;
+}
+
+static void sethwaddr(int s, struct ifreq *ifr, const char *hwaddr) {
+	if(etheraddr_to_sockaddr(&ifr->ifr_hwaddr, hwaddr) < 0) {
+		fprintf(stderr, "error: invalid ethernet address '%s'\n", hwaddr);
+		exit(1);
+	}
+	if(ioctl(s, SIOCSIFHWADDR, ifr)) die("SIOCSIFHWADDR");
+}
+#endif
 
 static unsigned int getmtu(int s, struct ifreq *ifr) {
 #ifdef __SVR4
@@ -292,6 +328,9 @@ static void print_usage(const char *name, int show_options) {
 			"		[{destination|pointopoint} <dest-addr>]\n"
 			"		[metric <metric>]\n"
 			"		[mtu <mtu>]\n"
+#ifdef SIOCSIFHWADDR
+			"		[{ether|hw} <hw-addr>]\n"
+#endif
 			"		[up|down]" : " [<options>]");
 }
 
@@ -359,6 +398,15 @@ int ifconfig_main(int argc, char *argv[]) {
 	while(argc > 0) {
 		if(strcmp(argv[0], "up") == 0) {
 			setflags(s, &ifr, IFF_UP, 0);
+#ifdef SIOCSIFHWADDR
+		} else if(strcmp(argv[0], "ether") == 0 || strcmp(argv[0], "hw") == 0) {
+			if(argc < 2) {
+				fprintf(stderr, "error: expecting an hardware address for parameter \"%s\"\n", argv[0]);
+				return 1;
+			}
+			argc--, argv++;
+			sethwaddr(s, &ifr, argv[0]);
+#endif
 		} else if(strcmp(argv[0], "mtu") == 0) {
 			argc--, argv++;
 			if (!argc) {
