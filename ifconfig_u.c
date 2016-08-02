@@ -147,7 +147,7 @@ static void setprefixlen(int s, struct ifreq *ifr, int prefixlen) {
 	//fprintf(stderr, "function: setprefixlen(%d, %p, %d)\n", s, ifr, prefixlen);
 	struct sockaddr_in netmask = {
 		.sin_family = AF_INET,
-		.sin_addr.s_addr = 0xffffffff << (32 - prefixlen)
+		.sin_addr.s_addr = 0xffffffff >> (32 - prefixlen)
 	};
 	setnetmask(s, ifr, &netmask);
 }
@@ -188,7 +188,7 @@ static int print_status(int s, struct ifreq *ifr) {
 	unsigned int addr, mask, flags, mtu, metric;
 	char astring[20];
 	char mstring[20];
-	const char *updown, *brdcst, *loopbk, *ppp, *running, *multi;
+	const char *updown, *brdcst, *loopbk, *ppp, *running, *multi, *noarp;
 	int have_address = 0;
 
 	//fprintf(stderr, "function: print_status(%d, %p)\n", s, ifr);
@@ -226,7 +226,8 @@ static int print_status(int s, struct ifreq *ifr) {
 	ppp =     (flags & IFF_POINTOPOINT)  ? " point-to-point" : "";
 	running = (flags & IFF_RUNNING)      ? " running" : "";
 	multi =   (flags & IFF_MULTICAST)    ? " multicast" : "";
-	printf("flags [%s%s%s%s%s%s]", updown, brdcst, loopbk, ppp, running, multi);
+	noarp =   (flags & IFF_NOARP)        ? " noarp" : "";
+	printf("flags [%s%s%s%s%s%s%s]", updown, brdcst, loopbk, ppp, running, multi, noarp);
 	if(metric) printf(" metric %u", metric);
 	if(mtu) printf(" mtu %u", mtu);
 	putchar('\n');
