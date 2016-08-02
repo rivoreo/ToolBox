@@ -577,6 +577,9 @@ rm.exe:	rm.c
 rmdir.exe:	rmdir.c
 	$(CC) $(CFLAGS) $(LDFLAGS) rmdir.c -o rmdir.exe $(LIBS)
 
+route:	route.c
+	$(CC) $(CFLAGS) $(LDFLAGS) route.c -o $@ $(LIBS) $(SOCKET_LIB)
+
 runcon:	runcon.c
 	$(CC) $(CFLAGS) $(LDFLAGS) runcon.c -o runcon $(LIBS) $(SELINUX_LIBS)
 
