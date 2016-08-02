@@ -107,6 +107,16 @@ static void setmtu(int s, struct ifreq *ifr, const char *mtu) {
 #endif
 }
 
+static int getmetric(int s, struct ifreq *ifr) {
+	return ioctl(s, SIOCGIFMETRIC, ifr) < 0 ? 0 : ifr->ifr_metric;
+}
+
+static void setmetric(int s, struct ifreq *ifr, const char *metric) {
+	int m = atoi(metric);
+	ifr->ifr_metric = m;
+	if(ioctl(s, SIOCSIFMETRIC, ifr) < 0) die("SIOCSIFMETRIC");
+}
+
 static void setbroadaddr(int s, struct ifreq *ifr, const char *addr) {
 	init_sockaddr_in((struct sockaddr_in *)&ifr->ifr_broadaddr, addr);
 	if(ioctl(s, SIOCSIFBRDADDR, ifr) < 0) die("SIOCSIFBRDADDR");
@@ -175,7 +185,7 @@ static void setaddr(int s, struct ifreq *ifr, const char *addr) {
 }
 
 static int print_status(int s, struct ifreq *ifr) {
-	unsigned int addr, mask, flags, mtu;
+	unsigned int addr, mask, flags, mtu, metric;
 	char astring[20];
 	char mstring[20];
 	const char *updown, *brdcst, *loopbk, *ppp, *running, *multi;
@@ -204,6 +214,7 @@ static int print_status(int s, struct ifreq *ifr) {
 	if (ioctl(s, SIOCGIFFLAGS, ifr) < 0) return -1;
 	flags = ifr->ifr_flags;
 
+	metric = getmetric(s, ifr);
 	mtu = getmtu(s, ifr);
 
 	printf("%s: ", ifr->ifr_name);
@@ -216,7 +227,9 @@ static int print_status(int s, struct ifreq *ifr) {
 	running = (flags & IFF_RUNNING)      ? " running" : "";
 	multi =   (flags & IFF_MULTICAST)    ? " multicast" : "";
 	printf("flags [%s%s%s%s%s%s]", updown, brdcst, loopbk, ppp, running, multi);
-	if(mtu) printf(" mtu %u\n", mtu); else putchar('\n');
+	if(metric) printf(" metric %u", metric);
+	if(mtu) printf(" mtu %u", mtu);
+	putchar('\n');
 
 	return 0;
 }
@@ -227,7 +240,7 @@ static int print_status_all(int fd) {
 	int n;
 #ifdef SIOCGIFNUM
 	if(ioctl(fd, SIOCGIFNUM, &n) < 0) {
-		perror("SIOCGIFNUM");
+		perror("error: SIOCGIFNUM");
 		return 1;
 	}
 	ifc.ifc_len = sizeof(struct ifreq) * n;
@@ -236,7 +249,7 @@ static int print_status_all(int fd) {
 	ifc.ifc_len = 0;
 	ifc.ifc_buf = NULL;
 	if(ioctl(fd, SIOCGIFCONF, &ifc) < 0) {
-		perror("SIOCGIFCONF");
+		perror("error: SIOCGIFCONF");
 		return 1;
 		//die("SIOCGIFCOUNT");
 	}
@@ -251,7 +264,7 @@ static int print_status_all(int fd) {
 	//fprintf(stderr, "n = %d, ifc_len = %d, ifc_buf = %p\n", n, ifc.ifc_len, ifc.ifc_buf);
 
 	if(ioctl(fd, SIOCGIFCONF, &ifc) < 0) {
-		perror("SIOCGIFCONF");
+		perror("error: SIOCGIFCONF");
 		return 1;
 	}
 
@@ -274,7 +287,9 @@ static void print_usage(const char *name, int show_options) {
 		name, name,
 		show_options ? "\n"
 			"		[netmask <netmask>]\n"
-			"		[ { broadcast <broad-addr> | {destination|pointopoint} <dst-ipaddr> } ]\n"
+			"		[broadcast <broad-addr>]\n"
+			"		[{destination|pointopoint} <dest-addr>]\n"
+			"		[metric <metric>]\n"
 			"		[mtu <mtu>]\n"
 			"		[up|down]" : " [<options>]");
 }
@@ -350,6 +365,13 @@ int ifconfig_main(int argc, char *argv[]) {
 				die("expecting a value for parameter \"mtu\"");
 			}
 			setmtu(s, &ifr, argv[0]);
+		} else if(strcmp(argv[0], "metric") == 0) {
+			argc--, argv++;
+			if (!argc) {
+				errno = EINVAL;
+				die("expecting a value for parameter \"metric\"");
+			}
+			setmetric(s, &ifr, argv[0]);
 		} else if(strcmp(argv[0], "broadcast") == 0) {
 			if(argc < 2) {
 				fprintf(stderr, "error: expecting an IP address for parameter \"%s\"\n", argv[0]);
@@ -369,13 +391,16 @@ int ifconfig_main(int argc, char *argv[]) {
 			setflags(s, &ifr, IFF_POINTOPOINT, 0);
 		} else if(strcmp(argv[0], "down") == 0) {
 			setflags(s, &ifr, 0, IFF_UP);
-#if !defined BSD
 		} else if(strcmp(argv[0], "netmask") == 0) {
 			argc--, argv++;
 			if (!argc) { 
 				errno = EINVAL;
 				die("expecting an IP address for parameter \"netmask\"");
 			}
+#ifdef BSD
+			fprintf(stderr, "error: setting netmask is currently not supported\n");
+			return 1;
+#else
 			setnetmask_s(s, &ifr, argv[0]);
 #endif
 		} else {

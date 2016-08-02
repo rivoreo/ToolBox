@@ -23,7 +23,7 @@
 #include <arpa/inet.h>
 #if defined __linux__
 #include <linux/route.h>
-#elif defined __MACH__	/* For the GNU/Hurd and Mac OS X, but they are both failed */
+#else
 #ifdef __GNU__		/* The GNU/Hurd system seems not implements some ioctls, porting failed */
 #include <hurd/ioctl.h>
 #ifndef SIOCADDRT
@@ -46,13 +46,16 @@ int route_main(int argc, char *argv[])
 {
     struct rtentry rt = {
         .rt_dst     = {.sa_family = AF_INET},
+#ifndef __SVR4
         .rt_genmask = {.sa_family = AF_INET},
+#endif
         .rt_gateway = {.sa_family = AF_INET},
     };
 
     errno = EINVAL;
     if (argc > 2 && strcmp(argv[1], "add") == 0) {
         if (strcmp(argv[2], "default") == 0) {
+#ifndef __linux__
             /* route add default dev wlan0 */
             if (argc > 4 && !strcmp(argv[3], "dev")) {
                 rt.rt_flags = RTF_UP;
@@ -70,6 +73,7 @@ int route_main(int argc, char *argv[])
                 }
                 goto apply;
             }
+#endif
         }
 
         /* route add -net 192.168.1.2 netmask 255.255.255.0 gw 192.168.1.1 */

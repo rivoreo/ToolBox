@@ -74,18 +74,10 @@ int mtdread_main(int argc, char **argv)
             spare_size = atoi(optarg);
             break;
         case 'S':
-#ifdef __INTERIX
-            start = strtol(optarg, NULL, 0);
-#else
             start = strtoll(optarg, NULL, 0);
-#endif
             break;
         case 'L':
-#ifdef __INTERIX
-            len = strtol(optarg, NULL, 0);
-#else
             len = strtoll(optarg, NULL, 0);
-#endif
             break;
         case 'R':
             rawmode = 1;

@@ -30,6 +30,11 @@
 #endif
 #define __MTD_ABI_H__
 
+#ifdef __INTERIX
+extern long long int strtoq(const char *, char **, int);
+#define strtoll strtoq
+#endif
+
 #include <stdint.h>
 #ifdef __linux__
 #include <linux/types.h>
@@ -42,7 +47,7 @@
 typedef quad_t loff_t;
 #elif !defined __GNU__
 //typedef off64_t loff_t;
-typedef uint64_t loff_t;
+typedef int64_t loff_t;
 #endif
 typedef loff_t __kernel_loff_t;
 #endif
