@@ -80,6 +80,34 @@ static inline void init_sockaddr_in(struct sockaddr_in *sin, const char *addr) {
 	}
 }
 
+#ifdef SIOCSIFNAME
+static void setname(int s, struct ifreq *ifr, const char *name) {
+#ifdef __FreeBSD__
+	ifr->ifr_data = strdup(name);
+	if(!ifr->ifr_data) {
+		perror("error: setname: strdup");
+		exit(1);
+	}
+#else
+#if !defined __linux__ && defined ifr_oname
+#define ifr_newname ifr_oname
+#endif
+	size_t len = strlen(name) + 1;
+	if(len > sizeof ifr->ifr_newname) {
+		fprintf(stderr, "error: rename: name too long\n");
+		exit(1);
+	}
+	memcpy(ifr->ifr_newname, name, len);
+#endif
+	if(ioctl(s, SIOCSIFNAME, ifr)) die("SIOCSIFNAME");
+#ifdef __FreeBSD__
+	free(ifr->ifr_data);
+#elif !defined __linux__ && defined ifr_oname
+#undef ifr_newname
+#endif
+}
+#endif
+
 #ifdef SIOCSIFHWADDR
 static unsigned char atoxb(const char *s) {
 	unsigned char r = *s - (isalpha(*s) ? (islower(*s) ? 87 : 55) : '0');
@@ -337,6 +365,9 @@ static void print_usage(const char *name, int show_options) {
 #ifdef SIOCSIFHWADDR
 			"		[{ether|hw} <hw-addr>]\n"
 #endif
+#ifdef SIOCSIFNAME
+			"		[rename <newname>]\n"
+#endif
 			"		[up|down]" : " [<options>]");
 }
 
@@ -404,6 +435,15 @@ int ifconfig_main(int argc, char *argv[]) {
 	while(argc > 0) {
 		if(strcmp(argv[0], "up") == 0) {
 			setflags(s, &ifr, IFF_UP, 0);
+#ifdef SIOCSIFNAME
+		} else if(strcmp(argv[0], "rename") == 0) {
+			if(argc < 2) {
+				fprintf(stderr, "error: expecting a name for parameter \"%s\"\n", argv[0]);
+				return 1;
+			}
+			argc--, argv++;
+			setname(s, &ifr, argv[0]);
+#endif
 #ifdef SIOCSIFHWADDR
 		} else if(strcmp(argv[0], "ether") == 0 || strcmp(argv[0], "hw") == 0) {
 			if(argc < 2) {
