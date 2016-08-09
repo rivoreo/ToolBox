@@ -28,6 +28,9 @@
 #elif defined __SVR4
 #include <sys/sockio.h>
 #endif
+#ifdef __linux__
+#include <linux/rtnetlink.h>
+#endif
 
 static void print_usage(const char *name) {
 	fprintf(stderr, "Usage:\n"
@@ -189,6 +192,7 @@ int route_main(int argc, char *argv[]) {
 	}
 
 	if(strcmp(argv[1], "add") == 0 || strncmp(argv[1], "del", 3) == 0) {
+		__label__ missing_target;
 		int route_type_set = 0;
 		if(strcmp(argv[1], "add") == 0) {
 			request = SIOCADDRT;
@@ -297,8 +301,55 @@ missing_target:
 		}
 		return 0;
 	} else if(strcmp(argv[1], "get") == 0) {
+		if(argc < 3) {
+			fprintf(stderr, "%s: Missing target\n", argv[0]);
+			return 1;
+		}
+#ifdef __linux__
+		int fd = socket(AF_NETLINK, SOCK_DGRAM, NETLINK_ROUTE);
+		if(fd == -1) {
+			fprintf(stderr, "%s: socket: netlink: %s\n", argv[0], strerror(errno));
+			return 1;
+		}
+		struct {
+			struct nlmsghdr hdr;
+			//struct rtattr attr[4];
+			struct rtmsg data;
+		} nlmsg;
+		memset(&nlmsg, 0, sizeof nlmsg);
+		nlmsg.hdr.nlmsg_len = sizeof nlmsg;
+		nlmsg.hdr.nlmsg_type = RTM_GETROUTE;
+		nlmsg.hdr.nlmsg_flags = NLM_F_REQUEST;
+		nlmsg.data.rtm_family = AF_INET;
+		//nlmsg.data.rtm_dst_len = 0;
+		nlmsg.data.rtm_type = RTN_UNSPEC;
+		nlmsg.data.rtm_protocol = RTPROT_KERNEL;
+		nlmsg.data.rtm_scope = RT_SCOPE_UNIVERSE;
+		nlmsg.data.rtm_table = RT_TABLE_UNSPEC;
+		//msg.attr[0].rta_len = sizeof(struct rtattr);
+		//msg.attr[0].rta_type = RTA_DST;
+		struct iovec iov = {
+			.iov_base = &nlmsg,
+			.iov_len = nlmsg.hdr.nlmsg_len
+		};
+		struct sockaddr_nl addr = {
+			.nl_family = AF_NETLINK
+		};
+		struct msghdr msg = {
+			.msg_name = &addr,
+			.msg_namelen = sizeof addr,
+			.msg_iov = &iov,
+			.msg_iovlen = 1
+		};
+		if(sendmsg(fd, &msg, 0) < 0) {
+			perror("sendmsg");
+			return 1;
+		}
 		// TODO
+#else
 		fprintf(stderr, "%s: %s: %s\n", argv[0], argv[1], strerror(ENOSYS));
+#endif
+		return 1;
 	} else if(strcmp(argv[1], "show") == 0 || strcmp(argv[1], "print") == 0) {
 		// TODO
 		fprintf(stderr, "%s: %s: %s\n", argv[0], argv[1], strerror(ENOSYS));
