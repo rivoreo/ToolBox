@@ -1,12 +1,13 @@
 /*	touch - toolbox
 	Copyright 2007-2015 PC GO Ld.
-	Copyright 2015 libdll.so
+	Copyright 2015-2016 Rivoreo
 
 	This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
 
 	This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 */
 
+#define _ATFILE_SOURCE
 #include <sys/stat.h>
 #include "timefunc.h"
 #include <stdio.h>
@@ -47,7 +48,7 @@ static void usage(void) {
 #endif
 		" [-am"
 #ifndef _NO_UTIMENSAT
-		"l"
+		"hl"
 #endif
 		"] [-t <time_t>] <file>\n");
 }
@@ -92,7 +93,10 @@ int touch_main(int argc, char *argv[]) {
 #endif
 						break;
 #ifndef _NO_UTIMENSAT
-					case 'l': flags |= AT_SYMLINK_NOFOLLOW; break;
+					case 'h':
+					case 'l':
+						flags |= AT_SYMLINK_NOFOLLOW;
+						break;
 #endif
 					case 'd': debug = 1; break;
 					case '-':

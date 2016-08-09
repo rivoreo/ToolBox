@@ -149,6 +149,7 @@ static void setmtu(int s, struct ifreq *ifr, const char *mtu) {
 }
 
 static int getmetric(int s, struct ifreq *ifr) {
+	// Both metric=0 or ioctl errors cases metric not get displayed
 	return ioctl(s, SIOCGIFMETRIC, ifr) < 0 ? 0 : ifr->ifr_metric;
 }
 
@@ -188,7 +189,7 @@ static void setprefixlen(int s, struct ifreq *ifr, int prefixlen) {
 	//fprintf(stderr, "function: setprefixlen(%d, %p, %d)\n", s, ifr, prefixlen);
 	struct sockaddr_in netmask = {
 		.sin_family = AF_INET,
-		.sin_addr.s_addr = 0xffffffff >> (32 - prefixlen)
+		.sin_addr.s_addr = htonl(0xffffffff << (32 - prefixlen))
 	};
 	setnetmask(s, ifr, &netmask);
 }

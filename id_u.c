@@ -52,11 +52,11 @@ int id_main(int argc, char **argv) {
 		}
 		if(strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0) {
 			fprintf(stderr, "Usage: %s [<option>]\n\n"
-					"Options:\n"
-					"	-u, --user	Print current user ID\n"
-					"	-g, --group	Print current group ID\n"
-					"	-r, --real	Print current real user ID"
-					" instead of effective ID\n\n", argv[0]);
+				"Options:\n"
+				"	-u, --user	Print current user ID\n"
+				"	-g, --group	Print current group ID\n"
+				"	-r, --real	Print current real user ID"
+				" instead of effective ID\n\n", argv[0]);
 			return 0;
 		}
 	}

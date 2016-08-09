@@ -61,7 +61,7 @@ static inline int set_address(const char *address, struct sockaddr *sa) {
 }
 
 static inline void set_prefix_length(int length, struct sockaddr *sa) {
-	((struct sockaddr_in *)sa)->sin_addr.s_addr = 0xffffffff >> (32 - length);
+	((struct sockaddr_in *)sa)->sin_addr.s_addr = htonl(0xffffffff << (32 - length));
 }
 
 static int set_netmask(struct rtentry *rt, char *netmask) {
@@ -90,7 +90,7 @@ static int set_device(struct rtentry *rt, char *dev) {
 static int set_metric(struct rtentry *rt, char *metric) {
 	//fprintf(stderr, "function: set_metric(%p, %p<%s>)\n", rt, metric, metric);
 	rt->rt_metric = atoi(metric);
-	return -1;
+	return 0;
 }
 
 static int apply_route(const struct rtentry *rt, int request) {
@@ -151,7 +151,6 @@ int route_main(int argc, char *argv[]) {
 		.rt_genmask = { .sa_family = AF_INET },
 #endif
 		.rt_gateway = { .sa_family = AF_INET },
-		.rt_flags = RTF_HOST
 	};
 	int request = -1;
 	int no_resolve = 0;
@@ -190,6 +189,7 @@ int route_main(int argc, char *argv[]) {
 	}
 
 	if(strcmp(argv[1], "add") == 0 || strncmp(argv[1], "del", 3) == 0) {
+		int route_type_set = 0;
 		if(strcmp(argv[1], "add") == 0) {
 			request = SIOCADDRT;
 		} else if(!argv[1][3] || (argv[1][3] == 'e' && (!argv[1][4] || (argv[1][4] == 't' && (!argv[1][5] || (argv[1][5] == 'e' && !argv[1][6])))))) {
@@ -205,11 +205,13 @@ missing_target:
 			return 1;
 		}
 		if(argv[2][0] == '-') {
-			fprintf(stderr, "argc = %d, argv[2]: \"%s\"\n", argc, argv[2]);
+			//fprintf(stderr, "argc = %d, argv[2]: \"%s\"\n", argc, argv[2]);
 			if(strcmp(argv[2], "-host") == 0) {
 				rt.rt_flags |= RTF_HOST;
+				route_type_set = 1;
 			} else if(strcmp(argv[2], "-net") == 0) {
 				rt.rt_flags &= ~RTF_HOST;
+				route_type_set = 1;
 			} else {
 				fprintf(stderr, "%s: Invalid destination type '%s'\n", argv[0], argv[2]);
 				return 1;
@@ -238,6 +240,7 @@ missing_target:
 				fprintf(stderr, "%s: %s: %s\n", argv[0], argv[2], strerror(errno));
 				return 1;
 			}
+			if(!route_type_set) rt.rt_flags |= RTF_HOST;
 		}
 		if((argc == 4 || argc == 5) && find_and_set_route_option(argv[3], NULL, NULL) == -2) {
 			if(set_gateway(&rt, argv[3]) < 0) {
@@ -247,6 +250,13 @@ missing_target:
 			if(argc == 5 && set_netmask(&rt, argv[4]) < 0) {
 				fprintf(stderr, "%s: set_netmask: %s: %s\n", argv[0], argv[3], strerror(errno));
 				return 1;
+			}
+			if(!route_type_set) {
+				if(((struct sockaddr_in *)&rt.rt_genmask)->sin_addr.s_addr == 0xffffffff) {
+					rt.rt_flags |= RTF_HOST;
+				} else {
+					rt.rt_flags &= ~RTF_HOST;
+				}
 			}
 			if(apply_route(&rt, request) < 0) {
 				perror(argv[0]);
