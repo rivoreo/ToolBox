@@ -1,7 +1,7 @@
 # 工具箱的 Makefile
 
-OS_NAME = $(shell uname -s)
-OUTFILE = toolbox
+OS_NAME := $(shell uname -s)
+OUTFILE := toolbox
 
 ifeq ($(OS_NAME),Darwin)
 MAC_HELP = \
@@ -13,13 +13,13 @@ MAC_HELP = \
 endif
 
 ifeq ($($(shell echo -e)),-e)
-ECHO = echo
+ECHO := echo
 else
-ECHO = echo -e
+ECHO := echo -e
 endif
 
 ifndef TOUCH
-TOUCH = $(shell [ -x /usr/bin/touch ] && echo /usr/bin/touch || echo /bin/touch)
+TOUCH := $(shell [ -x /usr/bin/touch ] && echo /usr/bin/touch || echo /bin/touch)
 endif
 
 ifeq ($(CC),cc)
@@ -50,6 +50,12 @@ SUNOS = 1
 endif
 endif
 
+ifneq ($(shell $(shell $(CC) --print-prog-name=ld) --version 2> /dev/null | grep -q "^GNU ld" && echo OK),OK)
+ifdef SHARED_OBJECT
+SHARED_OBJECT = noexec
+endif
+endif
+
 CFLAGS += -Iinclude -O1 -Wall
 
 ifdef DARWIN
@@ -70,8 +76,8 @@ ifeq ($(SHARED_OBJECT),noexec)
 LDFLAGS += --shared
 else
 # Both shared library and executable
-# Option --pie replaces --shared, and passing a -E to the linker to export all symbols
-LDFLAGS += --pie -Wl,-E
+# Only works with GNU linker
+LDFLAGS += -Wl,--pic-executable,-E
 endif
 endif		# DARWIN
 OUTFILE = $(LIB_NAME)
