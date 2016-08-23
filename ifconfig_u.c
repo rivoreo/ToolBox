@@ -366,7 +366,7 @@ static void print_usage(const char *name, int show_options) {
 			"		[{ether|hw} <hw-addr>]\n"
 #endif
 #ifdef SIOCSIFNAME
-			"		[rename <newname>]\n"
+			"		[name <newname>]\n"
 #endif
 			"		[up|down]" : " [<options>]");
 }
@@ -436,7 +436,7 @@ int ifconfig_main(int argc, char *argv[]) {
 		if(strcmp(argv[0], "up") == 0) {
 			setflags(s, &ifr, IFF_UP, 0);
 #ifdef SIOCSIFNAME
-		} else if(strcmp(argv[0], "rename") == 0) {
+		} else if(strcmp(argv[0], "name") == 0 || strcmp(argv[0], "rename") == 0) {
 			if(argc < 2) {
 				fprintf(stderr, "error: expecting a name for parameter \"%s\"\n", argv[0]);
 				return 1;

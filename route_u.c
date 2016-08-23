@@ -40,8 +40,9 @@ static void print_usage(const char *name) {
 #endif
 			" [metric <metric>]\n"
 		"	%s {add|del} [-host|-net] <target>[/<prefixlen>] <gateway> [<netmask>]\n"
+		"	%s {add|del} [-host|-net] <target>[/<prefixlen>] reject\n"
 		"	%s [-n] get <target>[/<prefixlen>]\n"
-		"	%s [-n] {show|print}\n\n", name, name, name, name);
+		"	%s [-n] {show|print}\n\n", name, name, name, name, name);
 }
 
 static inline int set_address(const char *address, struct sockaddr *sa) {
@@ -245,6 +246,18 @@ missing_target:
 				return 1;
 			}
 			if(!route_type_set) rt.rt_flags |= RTF_HOST;
+		}
+		if(argc > 3 && strcmp(argv[3], "reject") == 0) {
+			if(argc > 4) {
+				fprintf(stderr, "%s: Cannot use other options with a reject route\n", argv[0]);
+				return 1;
+			}
+			rt.rt_flags |= RTF_REJECT;
+			if(apply_route(&rt, request) < 0) {
+				perror(argv[0]);
+				return 1;
+			}
+			return 0;
 		}
 		if((argc == 4 || argc == 5) && find_and_set_route_option(argv[3], NULL, NULL) == -2) {
 			if(set_gateway(&rt, argv[3]) < 0) {
