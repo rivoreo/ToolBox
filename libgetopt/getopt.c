@@ -6,7 +6,7 @@
 	This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 */
 
-/* Basd on "mingwrt-3.15.2-mingw32/mingwex/getopt.c" (1.8, keithmarshall) */
+/* Based on "mingwrt-3.15.2-mingw32/mingwex/getopt.c" (1.8, keithmarshall) */
 
 #include <stdio.h>
 #include <string.h>

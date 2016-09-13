@@ -155,6 +155,9 @@ TOOL(tee)
 TOOL(top)
 #endif
 TOOL(touch)
+#if !defined _WINDOWSNT_NATIVE
+TOOL(uname)
+#endif
 TOOL(uptime)
 #if defined __linux__ || defined __gnu_hurd__
 TOOL(vmstat)

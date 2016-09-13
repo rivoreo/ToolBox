@@ -135,6 +135,7 @@ ALL_TOOLS := \
 	sleep_u.o \
 	tee_u.o \
 	touch_u.o \
+	uname_u.o \
 	uptime_u.o \
 	which_u.o
 
@@ -197,7 +198,8 @@ EXTRA_TOOLS := \
 	renice \
 	schedtop \
 	service \
-	setpgrp
+	setpgrp \
+	uname
 
 ifdef DARWIN
 NO_SELINUX = 1
@@ -441,6 +443,7 @@ TRAN_SRC = \
 	swapon.c \
 	sync.c \
 	touch.c \
+	uname.c \
 	which.c
 
 

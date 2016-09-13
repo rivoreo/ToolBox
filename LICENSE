@@ -79,6 +79,7 @@ Files
 	timefunc.h,
 	toolbox.c,
 	touch_u.c,
+	uname_u.c,
 	unlink.c,
 	vmstat*,
 	wcelib/*,
