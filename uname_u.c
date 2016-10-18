@@ -22,7 +22,7 @@
 #ifdef _UTS_BUFSIZE
 #define SYS_NMLN _UTS_BUFSIZE
 #else
-#define SYS_NMLN 64
+#define SYS_NMLN 65
 #endif
 #endif
 
@@ -105,7 +105,7 @@ int uname_main(int argc, char **argv) {
 		{
 #endif
 			if(all) *buffer = 0;
-			else strcpy(buffer, "UNKNOWN");
+			else strcpy(buffer, "Unknown");
 		}
 		if(*buffer) {
 			if(space) putchar(' ');
@@ -124,7 +124,7 @@ int uname_main(int argc, char **argv) {
 		{
 #endif
 			if(all) *buffer = 0;
-			else strcpy(buffer, "UNKNOWN");
+			else strcpy(buffer, "Unknown");
 		}
 		if(*buffer) {
 			if(space) putchar(' ');
@@ -187,7 +187,7 @@ int uname_main(int argc, char **argv) {
 #else
 		if(!all) {
 			if(space) putchar(' ');
-			fputs("UNKNOWN", stdout);
+			fputs("Unknown", stdout);
 		}
 #endif
 	}
