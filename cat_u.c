@@ -34,7 +34,7 @@
 
 #include <sys/param.h>
 #include <sys/stat.h>
-
+#include <sys/time.h>
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -54,15 +54,16 @@
 #endif
 
 #ifdef _WIN32
-#define FLAGS "benstv"
+#define FLAGS "benstvT"
 #else
-#define FLAGS "beflnstv"
+#define FLAGS "beflnstvT"
 #endif
 
 static int bflag, eflag, nflag, sflag, tflag, vflag;
 #ifndef _WIN32
 static int fflag, lflag;
 #endif
+static int Tflag;
 static int rval;
 static const char *filename;
 
@@ -161,6 +162,8 @@ static void raw_cat(int rfd) {
 #endif
 	ssize_t nr, nw, off;
 	int wfd;
+	struct timeval tv;
+	double oldtime = 0, newtime;
 
 	wfd = fileno(stdout);
 #if !defined _WIN32 || defined _WIN32_WNT_NATIVE
@@ -177,7 +180,27 @@ static void raw_cat(int rfd) {
 #if !defined _WIN32 || defined _WIN32_WNT_NATIVE
 	}
 #endif
-	while((nr = read(rfd, buf, bsize)) > 0) {
+	if(Tflag) {
+		if(gettimeofday(&tv, NULL) < 0) {
+			fprintf(stderr, "gettimeofday failed: %s, disabling timing output\n", strerror(errno));
+			Tflag = 0;
+		} else {
+			oldtime = tv.tv_sec + (double)tv.tv_usec / 1000000;
+		}
+	}
+	//while((nr = read(rfd, buf, bsize)) > 0) {
+	while(1) {
+		if(Tflag && gettimeofday(&tv, NULL) < 0) {
+			fprintf(stderr, "gettimeofday failed: %s, disabling timing output\n", strerror(errno));
+			Tflag = 0;
+		}
+		nr = read(rfd, buf, bsize);
+		if(nr <= 0) break;
+		if(Tflag) {
+			newtime = tv.tv_sec + (double)tv.tv_usec / 1000000;
+			fprintf(stderr, "%f %zd\n", newtime - oldtime, nr);
+			oldtime = newtime;
+		}
 		for(off = 0; nr > 0; nr -= nw, off += nw) {
 			if((nw = write(wfd, buf + off, (size_t)nr)) < 0) {
 				perror("write");
@@ -266,6 +289,9 @@ int cat_main(int argc, char *argv[]) {
 			break;
 		case 'v':
 			vflag = 1;
+			break;
+		case 'T':
+			Tflag = 1;		/* Print timing information to stderr */
 			break;
 		default:
 		case 'h':
