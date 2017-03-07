@@ -336,6 +336,8 @@ int more_main(int argc, char *argv[]) {
 		return -1;
 	}
 
+	setvbuf(stdout, NULL, _IOLBF, 0);
+
 	int r = 0;
 	int fd = -1;
 	/* 

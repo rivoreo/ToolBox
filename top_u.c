@@ -43,9 +43,9 @@ struct cpu_info {
 #define PRINT_BUF() \
 	do { \
 		if(use_tty) { \
-			printf("%-*.*s\n", sz.ws_col, sz.ws_col, buf); \
+			fprintf(stdout, "%-*.*s", sz.ws_col, sz.ws_col, buf); \
 		} else { \
-			puts(buf); \
+			fputs(buf, stdout); \
 		} \
 	} while(0)
 
@@ -114,6 +114,12 @@ static int numcmp(long long, long long);
 static void usage(const char *);
 static void SIGINT_handler(int);
 
+static void restore_terminal() {
+	if(!use_tty) return;
+	//printf("\x1b[?47l\x1b[?25h");
+	printf("\x1b[?25h");
+	tcsetattr(STDIN_FILENO, TCSANOW, &orig_termios);
+}
 
 int top_main(int argc, char *argv[]) {
 	int i;
@@ -197,7 +203,7 @@ int top_main(int argc, char *argv[]) {
 							end_of_options = 1;
 							break;
 						}
-						// Full
+						// Fall
 					default:
 						fprintf(stderr, "Invalid argument \"%s\".\n", argv[i]);
 						usage(argv[0]);
@@ -268,11 +274,7 @@ int top_main(int argc, char *argv[]) {
 		print_procs();
 		free_old_procs();
 	}
-
-	if(use_tty) {
-		printf("\x1b[?47l\x1b[?25h");
-		tcsetattr(STDIN_FILENO, TCSANOW, &orig_termios);
-	}
+	restore_terminal();
 	return 0;
 }
 
@@ -485,8 +487,8 @@ static void print_procs(void) {
 		/* Clear the screen */
 		//printf("\x1b[1J");
 		
-		/* save screen */
-		printf("\x1b[?47h");
+		/* Save screen */
+		//printf("\x1b[?47h");
 
 		/* Home-positioning to 0 and 0 coordinates */
 		printf("\x1b[1;1H");
@@ -494,7 +496,7 @@ static void print_procs(void) {
 		/* Save current cursor position */
 		printf("\x1b[7");
 
-		/* switch cursor invisible */
+		/* Switch cursor invisible */
 		printf("\x1b[?25l");
 
 		/* Clear whole line (cursor position unchanged) */
@@ -504,9 +506,10 @@ static void print_procs(void) {
 			perror("Could not get Terminal window size");
 			return;
 		}
-		/* To change the max proc row, when terminal size change */
-		if(max_procs == -1) current_max_processes = sz.ws_row - 4;
-		//fprintf(stdout, "Screen width: %i  Screen height: %i\n", sz.ws_col, sz.ws_row);
+		if(max_procs == -1 || max_procs > sz.ws_row - 3) {
+			/* To change the max proc row, when terminal size change */
+			current_max_processes = sz.ws_row - 3;
+		}
 	}
 
 	for (i = 0; i < num_new_procs; i++) {
@@ -539,6 +542,7 @@ static void print_procs(void) {
 			((new_cpu.irqtime + new_cpu.sirqtime)
 			 - (old_cpu.irqtime + old_cpu.sirqtime)) * 100 / total_delta_time);
 	PRINT_BUF();
+	putchar('\n');
 	snprintf(buf, sizeof(buf), "User %ld + Nice %ld + Sys %ld + Idle %ld + IOW %ld + IRQ %ld + SIRQ %ld = %ld",
 			new_cpu.utime - old_cpu.utime,
 			new_cpu.ntime - old_cpu.ntime,
@@ -549,6 +553,7 @@ static void print_procs(void) {
 			new_cpu.sirqtime - old_cpu.sirqtime,
 			total_delta_time);
 	PRINT_BUF();
+	putchar('\n');
 #endif
 
 	if(!threads) {
@@ -556,16 +561,15 @@ static void print_procs(void) {
 	} else {
 		snprintf(buf, sizeof(buf), "%5s %5s %2s %4s %1s %9s %9s %-8s %-15s %s", "PID", "TID", "PR", "CPU%", "S", "VSS", "RSS", "USER", "Thread", "Proc");
 	}
-	if(use_tty) {
-		printf("\x1b[30;47m%-*.*s\x1b[39;49m\n", sz.ws_col, sz.ws_col, buf);
-	} else {
-		puts(buf);
-	}
+	if(use_tty) printf("\x1b[30;47m");
+	PRINT_BUF();
+	if(use_tty) printf("\x1b[39;49m");
+	// No new line for this line
 
 	for(i = 0; i < num_new_procs; i++) {
 		proc = new_procs[i];
 
-		if(!proc || (current_max_processes && (i >= current_max_processes))) break;
+		if(!proc || (current_max_processes != -1 && (i >= current_max_processes))) break;
 		user = getpwuid(proc->uid);
 		//group = getgrgid(proc->gid);
 		if(user && user->pw_name) {
@@ -581,6 +585,7 @@ static void print_procs(void) {
 		   snprintf(group_buf, 20, "%d", proc->gid);
 		   group_str = group_buf;
 		   }*/
+		putchar('\n');
 		if(!threads) {
 			snprintf(buf, sizeof(buf), "%5d %2d %3ld%% %c %5d %7luKi %7luKi %-8.8s %s", (int)proc->pid, proc->prs, proc->delta_time * 100 / total_delta_time, proc->state, proc->num_threads,
 				proc->vss / 1024, proc->rss * getpagesize() / 1024, user_str, *proc->name ? proc->name : proc->tname);
@@ -594,6 +599,9 @@ static void print_procs(void) {
 	if(use_tty) {
 		/* Restore current cursor position */
 		printf("\x1b[8");
+	} else {
+		putchar('\n');
+		fflush(stdout);
 	}
 }
 
@@ -683,9 +691,6 @@ static void usage(const char *name) {
 }
 
 static void SIGINT_handler(int signal) {
-	/* Restore screen */
-	printf("\x1b[?47l");
-	/* Switch cursor visible */
-	printf("\x1b[?25h");
+	restore_terminal();
 	exit(0);
 }

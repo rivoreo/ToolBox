@@ -1,6 +1,6 @@
 /*	toolbox
 	Copyright 2007-2015 PC GO Ld.
-	Copyright 2015-2016 Rivoreo
+	Copyright 2015-2017 Rivoreo
 
 	This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
 
@@ -68,7 +68,7 @@ static int toolbox_main(int argc, char **argv) {
 			puts(PROGRAM_NAME);
 			puts("Version " VERSION);
 			puts("Copyright 2007-2015 PC GO Ld.");
-			puts("Copyright 2015-2016 Rivoreo");
+			puts("Copyright 2015-2017 Rivoreo");
 			puts("This is free software; you are free to change and redistribute it;\n"
 				"see the source for copying conditions.");
 			puts("There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A\n"

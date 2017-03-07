@@ -1,5 +1,5 @@
 /*	hostname - toolbox
-	Copyright 2015 libdll.so
+	Copyright 2015-2017 Rivoreo
 
 	This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
 
@@ -175,7 +175,7 @@ int hostname_main(int argc, char **argv) {
 			WSADATA d;
 			WSAStartup(MAKEWORD(2, 2), &d);
 #endif
-			if(!gethostname(hostname, sizeof hostname) < 0) {
+			if(gethostname(hostname, sizeof hostname) < 0) {
 				perror("gethostname");
 				return 1;
 			}

@@ -57,7 +57,6 @@ Files
 	readtty_u.c,
 	reboot_u.c,
 	restorecon_u.c,
-	rm.c,
 	rm_u.c,
 	rmdir*,
 	rmmod_u.c,

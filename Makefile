@@ -427,6 +427,7 @@ TRAN_SRC = \
 	reboot.c \
 	renice.c \
 	restorecon.c \
+	rm.c \
 	rmmod.c \
 	rotatefb.c \
 	route.c \
