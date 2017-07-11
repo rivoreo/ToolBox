@@ -104,6 +104,7 @@ Files
 	iftop*,
 	lsof*,
 	netstat*,
+	printf_u.c,
 	renice_u.c,
 	sleep_u.c,
 	top_u.c,

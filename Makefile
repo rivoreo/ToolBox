@@ -123,6 +123,7 @@ ALL_TOOLS := \
 	mtdread_u.o \
 	mv_u.o \
 	nohup_u.o \
+	printf_u.o \
 	ps_u.o \
 	readlink_u.o \
 	readtty_u.o \
@@ -318,6 +319,7 @@ BASE_TOOLS := \
 	more$(SUFFIX) \
 	mv$(SUFFIX) \
 	printenv$(SUFFIX) \
+	printf$(SUFFIX) \
 	rm$(SUFFIX) \
 	rmdir$(SUFFIX) \
 	sleep$(SUFFIX) \
@@ -419,6 +421,7 @@ TRAN_SRC = \
 	netstat.c \
 	nohup.c \
 	notify.c \
+	printf.c \
 	ps.c \
 	tee.c \
 	top.c \
@@ -574,6 +577,9 @@ netstat:	netstat.c
 
 printenv.exe:	printenv.c
 	$(CC) $(CFLAGS) $(LDFLAGS) printenv.c -o printenv.exe $(LIBS)
+
+printf.exe:	printf.c
+	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@ $(LIBS)
 
 reboot.exe:	reboot.c
 	$(CC) -D_USE_KIOCTL $(CFLAGS) $(LDFLAGS) reboot.c -o $@ $(LIBS)

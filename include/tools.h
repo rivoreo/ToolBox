@@ -89,6 +89,7 @@ TOOL(notify)
 #if !defined __APPLE__ || !defined _SHARED 
 TOOL(printenv)
 #endif
+TOOL(printf)
 #ifndef _WINDOWSNT_NATIVE
 TOOL(ps)
 #ifndef __INTERIX
