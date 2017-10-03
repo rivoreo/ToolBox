@@ -135,6 +135,7 @@ ALL_TOOLS := \
 	setpgrp_u.o \
 	sleep_u.o \
 	tee_u.o \
+	timetag_u.o \
 	touch_u.o \
 	uname_u.o \
 	uptime_u.o \
@@ -324,6 +325,7 @@ BASE_TOOLS := \
 	rmdir$(SUFFIX) \
 	sleep$(SUFFIX) \
 	tee$(SUFFIX) \
+	timetag$(SUFFIX) \
 	touch$(SUFFIX) \
 	unlink$(SUFFIX) \
 	uptime$(SUFFIX) \
@@ -446,6 +448,7 @@ TRAN_SRC = \
 	swapoff.c \
 	swapon.c \
 	sync.c \
+	timetag.c \
 	touch.c \
 	uname.c \
 	which.c
@@ -613,6 +616,9 @@ sleep.exe:	sleep.c
 
 tee.exe:	tee.c
 	$(CC) $(CFLAGS) $(LDFLAGS) tee.c -o $@ $(LIBS)
+
+timetag.exe:	timetag.c
+	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@ $(LIBS)
 
 touch.exe:	touch.c
 	$(CC) $(CFLAGS) $(LDFLAGS) touch.c -o touch.exe $(LIBS)

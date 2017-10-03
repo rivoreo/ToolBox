@@ -152,6 +152,7 @@ TOOL(sync)
 #endif
 TOOL(tee)
 #endif
+TOOL(timetag)
 #if !defined _WINDOWSNT_NATIVE && !defined __APPLE__
 TOOL(top)
 #endif
