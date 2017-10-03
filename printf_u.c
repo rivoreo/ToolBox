@@ -47,7 +47,9 @@
 #include <unistd.h>
 #include <stdio.h>
 
-#ifndef BSD
+#ifdef BSD
+#include <err.h>
+#else
 #define warnx(F,...) fprintf(stderr,(F"\n"),##__VA_ARGS__)
 #endif
 
