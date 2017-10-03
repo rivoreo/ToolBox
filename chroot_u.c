@@ -1,5 +1,5 @@
 /*	chroot - toolbox
-	Copyright 2015 libdll.so
+	Copyright 2015-2017 Rivoreo
 
 	This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
 
@@ -14,7 +14,6 @@
 #include <pwd.h>
 #include <stdio.h>
 #include <errno.h>
-#include <ctype.h>
 
 #define DEFAULT_SHELL "/bin/sh"
 
@@ -23,14 +22,24 @@ static void print_usage(const char *name) {
 		"\nOptions:\n"
 		"	-u, --user	Set user to use\n"
 		"	-g, --group	Set group to use\n"
-		"	-G, --groups	Set a group list as <g1>[,<g2>[,...]]\n\n", name);
+		"	-G, --groups	Set a group list as <g1>[,<g2>[,...]]\n"
+		"	--no-chdir	Don't do a chdir(2) after chroot(2)\n\n", name);
 }
 
-static gid_t atogid(const char *group) {
-	if(isdigit(*group)) return atoi(group);
+static uid_t strtouid(const char *user) {
+	char *endptr;
+	uid_t uid = strtoul(user, &endptr, 10);
+	if(!*endptr) return uid;
+	struct passwd *u = getpwnam(user);
+	return u ? u->pw_uid : (uid_t)-1;
+}
+
+static gid_t strtogid(const char *group) {
+	char *endptr;
+	gid_t gid = strtoul(group, &endptr, 10);
+	if(!*endptr) return gid;
 	struct group *gr = getgrnam(group);
-	if(!gr) return (gid_t)-1;
-	return gr->gr_gid;
+	return gr ? gr->gr_gid : (gid_t)-1;
 }
 
 static int set_other_groups(const char *group_list) {
@@ -43,9 +52,9 @@ static int set_other_groups(const char *group_list) {
 	gid_t gid_list[32];
 	int i = 0, j = 0;
 	while(i < 32 && j < 32) {
-		if(!p[i] || p[i] == ':') {
+		if(!p[i] || p[i] == ',') {
 			buffer[i] = 0;
-			gid_t gid = atogid(buffer);
+			gid_t gid = strtogid(buffer);
 			if(gid == (gid_t)-1) {
 				fprintf(stderr, "%s: No such group\n", buffer);
 				return -1;
@@ -73,33 +82,44 @@ static int set_other_groups(const char *group_list) {
 }
 
 int chroot_main(int argc, char **argv) {
-	static struct option long_options[5] = {
-		{ "user", 1, NULL, 'u' },
-		{ "group", 1, NULL, 'g' },
-		{ "groups", 1, NULL, 'G' },
-		{ "help", 0, NULL, 'h' }
+	static struct option long_options[] = {
+		[0] = { "user", 1, NULL, 'u' },
+		[1] = { "group", 1, NULL, 'g' },
+		[2] = { "groups", 1, NULL, 'G' },
+		[3] = { "no-chdir", 0, NULL, 0 },
+		[4] = { "help", 0, NULL, 'h' },
+		{ NULL, 0, NULL, 0 }
 	};
 	uid_t uid = 0;
 	gid_t gid = 0;
 	const char *group_list = NULL;
+	int no_chdir = 0;
 	while(1) {
 		// Don't over scan
-		int c = getopt_long(argc, argv, "+u:g:G:h", long_options, NULL);
+		int option_index = 0;
+		int c = getopt_long(argc, argv, "+u:g:G:h", long_options, &option_index);
 		if(c == -1) break;
 		switch(c) {
+			case 0:
+				switch(option_index) {
+					case 3:
+						no_chdir = 1;
+						break;
+					default:
+						fprintf(stderr, "%s: option_index %d shouldn't appear here!\n",
+							argv[0], option_index);
+						return -1;
+				}
+				break;
 			case 'u':
-				if(isdigit(*optarg)) uid = atoi(optarg);
-				else {
-					struct passwd *pw = getpwnam(optarg);
-					if(!pw) {
-						fprintf(stderr, "%s: %s: No such user\n", argv[0], optarg);
-						return 1;
-					}
-					uid = pw->pw_uid;
+				uid = strtouid(optarg);
+				if(uid == (uid_t)-1) {
+					fprintf(stderr, "%s: %s: No such user\n", argv[0], optarg);
+					return 1;
 				}
 				break;
 			case 'g':
-				gid = atogid(optarg);
+				gid = strtogid(optarg);
 				if(gid == (gid_t)-1) {
 					fprintf(stderr, "%s: %s: No such group\n", argv[0], optarg);
 					return 1;
@@ -129,7 +149,7 @@ int chroot_main(int argc, char **argv) {
 		perror("chroot");
 		return 1;
 	}
-	if(chdir("/") < 0) {
+	if(!no_chdir && chdir("/") < 0) {
 		perror("chdir");
 		return 1;
 	}

@@ -36,7 +36,7 @@ static int swapon(char *path) {
 #endif
 
 static void print_usage(const char *name) {
-	fprintf(stderr, "Usage: %s "
+	fprintf(stderr, "Usage: %s [-v]"
 #if defined __linux__ || defined __gnu_hurd__
 		"[-p <prio>] "
 #endif
@@ -58,6 +58,7 @@ int swapon_main(int argc, char **argv) {
 	int flags = 0;
 	int prio;
 #endif
+	int verbose = 0;
 
 	opterr = 0;
 
@@ -66,7 +67,7 @@ int swapon_main(int argc, char **argv) {
 #if defined __linux__ || defined __gnu_hurd__
 			"p:"
 #endif
-			);
+			"v");
 		if(c == -1) break;
 		switch(c) {
 #if defined __linux__ || defined __gnu_hurd__
@@ -80,6 +81,9 @@ int swapon_main(int argc, char **argv) {
 				flags |= (prio << SWAP_FLAG_PRIO_SHIFT) & SWAP_FLAG_PRIO_MASK;
 				break;
 #endif
+			case 'v':
+				verbose = 1;
+				break;
 			case 'h':
 				print_usage(argv[0]);
 				return 0;

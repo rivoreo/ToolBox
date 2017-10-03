@@ -1,6 +1,6 @@
 /*	md5 - toolbox
 	Copyright 2007-2015 PC GO Ld.
-	Copyright 2015-2016 Rivoreo
+	Copyright 2015-2017 Rivoreo
 
 	This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
 
@@ -34,7 +34,7 @@ static int usage() {
 #if defined _WIN32 && !defined _WIN32_WNT_NATIVE
 			".exe"
 #endif
-			" [-c] <file> [...]\n");
+			" [-q] <file> [...]\n");
 	return -1;
 }
 
