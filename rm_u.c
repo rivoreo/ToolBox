@@ -16,6 +16,10 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#ifdef _WIN32
+#define lstat stat
+#endif
+
 #define OPT_RECURSIVE 1
 #define OPT_FORCE 2
 

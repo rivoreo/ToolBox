@@ -20,6 +20,8 @@
 #else
 #define BUFFER_SIZE 2048
 #endif
+extern struct tm *gmtime_r(const time_t *, struct tm *);
+extern struct tm *localtime_r(const time_t *, struct tm *);
 #else
 #define BUFFER_SIZE 4096
 #endif
