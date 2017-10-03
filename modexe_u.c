@@ -96,8 +96,8 @@ int modexe_main(int argc, char **argv) {
 	}
 
 	lseek(fd, 0x3c, SEEK_SET);
-	unsigned char pe_offset;
-	if(read(fd, &pe_offset, 1) < 1) {
+	uint16_t pe_offset;
+	if(read(fd, &pe_offset, sizeof pe_offset) < 1) {
 		perror(argv[1]);
 		return 5;
 	}
