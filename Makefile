@@ -5,11 +5,11 @@ OUTFILE := toolbox
 
 ifeq ($(OS_NAME),Darwin)
 MAC_HELP = \
-	"\nMac OS X compile examples:\n"					\
-	"make [unity|separate]\n"						\
-	"LDFLAGS=\"-arch i386 -arch x86_64\" CFLAGS=\"-arch i386 -arch x86_64\" make [unity|separate]\n"	\
-	"DARWIN=1 CC=\"gcc -arch i386 -arch x86_64\" make [unity|separate]\n"	\
-	"DARWIN=1 CC=\"gcc -arch i386 -mmacosx-version-min=10.4\" make [unity|separate]\n"
+	"\\nMac OS X compile examples:\\n\
+make [unity|separate]\\n\
+LDFLAGS=\"-arch i386 -arch x86_64\" CFLAGS=\"-arch i386 -arch x86_64\" make [unity|separate]\\n\
+DARWIN=1 CC=\"gcc -arch i386 -arch x86_64\" make [unity|separate]\\n\
+DARWIN=1 CC=\"gcc -arch i386 -mmacosx-version-min=10.4\" make [unity|separate]\\n"
 endif
 
 ifeq ($($(shell echo -e)),-e)
@@ -501,7 +501,7 @@ help:
 	@echo " MINGW=1 CC=arm-mingw32ce-gcc make separate		To arm-windowsce"
 	@echo " MINGW=1 CC=i586-mingw32msvc-gcc make separate		To x86-windows"
 	@echo " make -f nt.mk [unity|separate]				To x86-windowsnt"
-	@$(ECHO) $(MAC_HELP)
+	@printf $(MAC_HELP)
 
 cat.exe:	cat.c
 	$(CC) $(CFLAGS) $(LDFLAGS) cat.c -o cat.exe $(LIBS)

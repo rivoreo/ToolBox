@@ -1,6 +1,6 @@
 /*	ifconfig - toolbox
 	Copyright 2007-2015 PC GO Ld.
-	Copyright 2015-2016 Rivoreo
+	Copyright 2015-2017 Rivoreo
 
 	This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
 
@@ -327,7 +327,7 @@ static int print_status_all(int fd) {
 	n = ifc.ifc_len / sizeof(struct ifreq);
 #endif
 	ifc.ifc_buf = malloc(ifc.ifc_len);
-	if(!ifc.ifc_len) {
+	if(!ifc.ifc_buf) {
 		perror("malloc");
 		return 1;
 	}
@@ -351,7 +351,7 @@ static int print_status_all(int fd) {
 static void print_usage(const char *name, int show_options) {
 	fprintf(stderr, "ifconfig - toolbox " VERSION "\n"
 		"Copyright 2007-2015 PC GO Ld.\n"
-		"Copyright 2015-2016 Rivoreo\n\n"
+		"Copyright 2015-2017 Rivoreo\n\n"
 		"Usage:\n"
 		"	%s -a\n"
 		"	%s <interface> [<address>[/<prefix-len>]]%s\n\n",

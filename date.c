@@ -1,6 +1,6 @@
 /*	date - toolbox
 	Copyright 2007-2015 PC GO Ld.
-	Copyright 2015 libdll.so
+	Copyright 2015-2017 Rivoreo
 
 	This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
 
@@ -12,6 +12,7 @@
 #define __BSD_VISIBLE 1		/* For settimeofday */
 //#define _XOPEN_SOURCE		/* For strptime */
 #define _POSIX_C_SOURCE 200112L	/* For gmtime_r and localtime_r */
+#define _DARWIN_C_SOURCE	/* For settimeofday */
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
