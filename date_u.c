@@ -1,6 +1,7 @@
 #define _BSD_SOURCE
 #define __BSD_VISIBLE 1
 #define _POSIX_C_SOURCE 200112L
+#define _DARWIN_C_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
