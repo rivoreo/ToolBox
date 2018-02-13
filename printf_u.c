@@ -37,6 +37,10 @@
 #include <errno.h>
 #ifdef __INTERIX
 #include <stdint.h>
+extern long long int strtoq(const char *, char **, int);
+extern unsigned long long int strtouq(const char *, char **, int);
+#define strtoimax strtoq
+#define strtoumax strtouq
 #else
 #include <inttypes.h>
 #endif

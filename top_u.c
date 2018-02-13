@@ -1,6 +1,6 @@
 /*
  * Copyright 2008, The Android Open Source Project
- * Copyright 2015-2016 Rivoreo
+ * Copyright 2015-2017 Rivoreo
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -485,7 +485,7 @@ static void print_procs(void) {
 		/* ANSI/VT100 Terminal Support */
 
 		/* Clear the screen */
-		//printf("\x1b[1J");
+		printf("\x1b[1J");
 		
 		/* Save screen */
 		//printf("\x1b[?47h");
@@ -494,7 +494,8 @@ static void print_procs(void) {
 		printf("\x1b[1;1H");
 
 		/* Save current cursor position */
-		printf("\x1b[7");
+		// But some terminals doesn't support this...
+		//printf("\x1b[7");
 
 		/* Switch cursor invisible */
 		printf("\x1b[?25l");
@@ -596,12 +597,12 @@ static void print_procs(void) {
 			PRINT_BUF();
 		}
 	}
+	fflush(stdout);
 	if(use_tty) {
 		/* Restore current cursor position */
-		printf("\x1b[8");
+		//printf("\x1b[8");
 	} else {
 		putchar('\n');
-		fflush(stdout);
 	}
 }
 

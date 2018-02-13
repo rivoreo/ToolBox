@@ -1,5 +1,5 @@
 /*	ioctl - toolbox
-	Copyright 2015 libdll.so
+	Copyright 2015-2018 Rivoreo
 
 	This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
 
@@ -13,11 +13,11 @@
 #include <stdint.h>
 #include <fcntl.h>
 #include <string.h>
-#ifndef _WIN32
+#if !defined _WIN32 && !defined _WINDOWSNT_NATIVE
 #include <sys/ioctl.h>
 #else
 #include <windows.h>
-#ifdef _WIN32_WNT_NATIVE
+#ifdef _WINDOWSNT_NATIVE
 #include <nt.h>
 #else
 #include <winioctl.h>
@@ -25,6 +25,10 @@
 #ifndef O_SYNC
 #define O_SYNC 0x101000
 #endif
+#endif
+#if defined __INTERIX && !defined strtoull
+extern unsigned long long int strtouq(const char *, char **, int);
+#define strtoull strtouq
 #endif
 
 int ioctl_main(int argc, char *argv[]) {
@@ -34,7 +38,8 @@ int ioctl_main(int argc, char *argv[]) {
 	int read_only = 0;
 	int length = -1;
 	int arg_size = 4;
-#ifndef _WIN32
+	int is_string = 0;
+#if !defined _WIN32 && !defined _WINDOWSNT_NATIVE
 	int direct_arg = 0;
 #endif
 	uint32_t ioctl_nr;
@@ -45,13 +50,13 @@ int ioctl_main(int argc, char *argv[]) {
 	int no_close = 0;
 
 	while(1) {
-		int c = getopt(argc, argv, "rdl:a:h");
+		int c = getopt(argc, argv, "rdl:a:sh");
 		if(c == EOF) break;
 		switch(c) {
 			case 'r':
 				read_only = 1;
 				break;
-#ifndef _WIN32
+#if !defined _WIN32 && !defined _WINDOWSNT_NATIVE
 			case 'd':
 				direct_arg = 1;
 				break;
@@ -60,25 +65,37 @@ int ioctl_main(int argc, char *argv[]) {
 				length = strtol(optarg, NULL, 0);
 				break;
 			case 'a':
-				arg_size = strtol(optarg, NULL, 0);
+				if(is_string) {
+					fprintf(stderr, "%s: Option '-a' is conflict with '-s'\n", argv[0]);
+					return -1;
+				}
+				arg_size = strtoul(optarg, NULL, 0);
+				if(arg_size < 1 || arg_size > 8) {
+					fprintf(stderr, "%s: Invalid argument to '-a', invalid range\n", argv[0]);
+					return -1;
+				}
+				break;
+			case 's':
+				is_string = 1;
+				arg_size = sizeof(char *);
 				break;
 			case 'h':
-				fprintf(stderr, "Usage: %s [-l <length>] [-a <argsize>] [-r"
-#ifndef _WIN32
+				fprintf(stderr, "Usage: %s [-l <length>] [-a <argsize> | -s] [-r"
+#if !defined _WIN32 && !defined _WINDOWSNT_NATIVE
 					"d"
 #endif
 					"h] <device> <ioctlnr> [<arg>] [...]\n"
-					"	-l <length>   Length of io buffer\n"
+					"	-l <length>   Length of I/O buffer\n"
 					"	-a <argsize>  Size of each argument (1-8)\n"
+					"	-s            Argments are pointers to C string\n"
 					"	-r            Open device in read only mode\n"
-#ifndef _WIN32
+#if !defined _WIN32 && !defined _WINDOWSNT_NATIVE
 					"	-d            Direct argument (no iobuffer)\n"
 #endif
 					"	-h            Print help\n", argv[0]);
 				return -1;
 			case '?':
 				//fprintf(stderr, "%s: invalid option -%c\n", argv[0], optopt);
-				//exit(1);
 				return 1;
 		}
 	}
@@ -98,10 +115,10 @@ int ioctl_main(int argc, char *argv[]) {
 	}
 	optind++;
 
-	ioctl_nr = strtol(argv[optind], NULL, 0);
+	ioctl_nr = strtoul(argv[optind], NULL, 0);
 	optind++;
 
-#ifndef _WIN32
+#if !defined _WIN32 && !defined _WINDOWSNT_NATIVE
 	if(direct_arg) {
 		arg_size = 4;
 		length = 4;
@@ -116,16 +133,32 @@ int ioctl_main(int argc, char *argv[]) {
 		ioctl_argp_save = ioctl_argp = ioctl_args;
 		rem = length;
 		while(optind < argc) {
-			uint64_t tmp =
-#ifdef __INTERIX
-				strtoul(argv[optind], NULL, 0);
-#else
-				strtoull(argv[optind], NULL, 0);
-#endif
+			union {
+				uint8_t a1;
+				uint16_t a2;
+				uint32_t a4;
+				uint64_t a8;
+				char *ap;
+			} tmp;
 			if(rem < arg_size) {
 				fprintf(stderr, "%s: too many arguments\n", argv[0]);
 				//return 1;
 				goto failed;
+			}
+			if(is_string) tmp.ap = argv[optind];
+			else switch(arg_size) {
+				case 1:
+					tmp.a1 = strtoul(argv[optind], NULL, 0);
+					break;
+				case 2:
+					tmp.a2 = strtoul(argv[optind], NULL, 0);
+					break;
+				case 3 ... 4:
+					tmp.a4 = strtoul(argv[optind], NULL, 0);
+					break;
+				case 5 ... 8:
+					tmp.a1 = strtoull(argv[optind], NULL, 0);
+					break;
 			}
 			memcpy(ioctl_argp, &tmp, arg_size);
 			ioctl_argp += arg_size;
@@ -133,17 +166,17 @@ int ioctl_main(int argc, char *argv[]) {
 			optind++;
 		}
 	}
-	printf("sending ioctl 0x%x", ioctl_nr);
+	printf("sending ioctl 0x%x", (unsigned int)ioctl_nr);
 	rem = length;
 	while(rem--) {
 		printf(" 0x%02x", *ioctl_argp_save++);
 	}
 	putchar('\n');
 
-#ifdef _WIN32
+#if defined _WIN32 || defined _WINDOWSNT_NATIVE
 	//int ioctl(int fd, int request, ...) {
 	int ioctl(int fd, int request, void *buffer) {
-#ifdef _WIN32_WNT_NATIVE
+#ifdef _WINDOWSNT_NATIVE
 		IO_STATUS_BLOCK io_status;
 		long int status = NtDeviceIoControlFile((void *)fd, NULL, NULL, NULL, &io_status, request, buffer, length, buffer, length);
 		if(status < 0) {
@@ -164,7 +197,7 @@ int ioctl_main(int argc, char *argv[]) {
 #endif
 	res = ioctl(fd, ioctl_nr, length ? ioctl_args : 0);
 	if(res < 0) {
-		fprintf(stderr, "ioctl 0x%x failed, %s\n", ioctl_nr, strerror(errno));
+		fprintf(stderr, "ioctl 0x%x failed, %s\n", (unsigned int)ioctl_nr, strerror(errno));
 		//return 1;
 		goto failed;
 	}
