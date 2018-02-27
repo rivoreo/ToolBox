@@ -141,6 +141,8 @@ int uname_main(int argc, char **argv) {
  #define OS_NAME "GNU/Hurd"
  #elif defined __FreeBSD_kernel__
  #define OS_NAME "GNU/kFreeBSD"
+ #elif defined __sun || defined __sun_kernel
+ #define OS_NAME "GNU/kOpenSolaris"
  #else
  #define OS_NAME "GNU"
  #endif
