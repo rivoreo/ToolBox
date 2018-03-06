@@ -1,6 +1,6 @@
 /*	ifconfig - toolbox
 	Copyright 2007-2015 PC GO Ld.
-	Copyright 2015-2017 Rivoreo
+	Copyright 2015-2018 Rivoreo
 
 	This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
 
@@ -61,11 +61,14 @@ static void setflags(int s, struct ifreq *ifr, int set, int clr) {
 static inline void init_sockaddr_in(struct sockaddr_in *sin, const char *addr) {
 	sin->sin_family = AF_INET;
 	sin->sin_port = 0;
-	if(isdigit(*addr)) {
-		sin->sin_addr.s_addr = inet_addr(addr);
-	} else {
+	if(strncmp(addr, "0x", 2) == 0) {
+		char *endp;
+		sin->sin_addr.s_addr = htonl(strtoul(addr, &endp, 16));
+		if(!*endp) return;
+	}
+	if(inet_pton(AF_INET, addr, &sin->sin_addr) < 1) {
 		struct addrinfo hints = {
-			.ai_family = PF_INET,
+			.ai_family = AF_INET,
 			.ai_socktype = 0,
 			.ai_protocol = 0
 		};
@@ -94,7 +97,7 @@ static void setname(int s, struct ifreq *ifr, const char *name) {
 #endif
 	size_t len = strlen(name) + 1;
 	if(len > sizeof ifr->ifr_newname) {
-		fprintf(stderr, "error: rename: name too long\n");
+		fprintf(stderr, "error: setname: name too long\n");
 		exit(1);
 	}
 	memcpy(ifr->ifr_newname, name, len);
@@ -351,7 +354,7 @@ static int print_status_all(int fd) {
 static void print_usage(const char *name, int show_options) {
 	fprintf(stderr, "ifconfig - toolbox " VERSION "\n"
 		"Copyright 2007-2015 PC GO Ld.\n"
-		"Copyright 2015-2017 Rivoreo\n\n"
+		"Copyright 2015-2018 Rivoreo\n\n"
 		"Usage:\n"
 		"	%s -a\n"
 		"	%s <interface> [<address>[/<prefix-len>]]%s\n\n",
