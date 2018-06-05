@@ -13,6 +13,7 @@
 #include <limits.h>
 #include <sys/stat.h>
 #include <getopt.h>
+#include "str2mode.h"
 
 static void print_usage() {
 	fprintf(stderr,
@@ -20,28 +21,39 @@ static void print_usage() {
 #if defined _WIN32 && !defined _WIN32_WNT_NATIVE
 		".exe"
 #endif
-		" [<option>] <target> [...]\n");
-	fprintf(stderr,"    --help           display usage and exit\n");
-	fprintf(stderr,"    -p, --parents    create parent directories as needed\n");
-	//return -1;
+		" [<option>] <target> [...]\n"
+		"    -m, --mode <mode>	set mode for newly created directories\n"
+		"    -p, --parents	create parent directories as needed\n"
+		"    -v, --verbose	print name for each created directory\n"
+		"    --help		display usage and exit\n");
 }
 
 int mkdir_main(int argc, char *argv[]) {
 	static struct option long_options[] = {
 		{ "help", 0, NULL, 'h' },
+		{ "mode", 1, NULL, 'm' },
 		{ "parents", 0, NULL, 'p' },
 		{ "verbose", 0, NULL, 'v' },
+		{ NULL, 0, NULL, 0 }
 	};
 	int ret = 0;
+	mode_t mode = (mode_t)-1;
 	int recursive = 0;
 	int verbose = 0;
 	while(1) {
-		int c = getopt_long(argc, argv, "hpv", long_options, NULL);
+		int c = getopt_long(argc, argv, "hm:pv", long_options, NULL);
 		if(c == -1) break;
 		switch(c) {
 			case 'h':
 				print_usage();
 				return 0;
+			case 'm':
+				mode = STR2MODE(optarg);
+				if(mode == (mode_t)-1) {
+					fprintf(stderr, "%s: Bad mode '%s'\n", argv[0], optarg);
+					return -1;
+				}
+				break;
 			case 'p':
 				recursive = 1;
 				break;
@@ -55,6 +67,12 @@ int mkdir_main(int argc, char *argv[]) {
 	if(argc <= optind) {
 		print_usage();
 		return -1;
+	}
+
+	mode_t orig_umask = umask(0);
+	if(mode == (mode_t)-1) {
+		umask(orig_umask & ~(S_IWUSR | S_IXUSR));
+		mode = 0777;
 	}
 
 	char currpath[PATH_MAX], *pathpiece;
@@ -82,7 +100,7 @@ int mkdir_main(int argc, char *argv[]) {
 #if defined _WIN32 && !defined _WIN32_WNT_NATIVE
 					int sr = mkdir(currpath);
 #else
-					int sr = mkdir(currpath, 0777);
+					int sr = mkdir(currpath, mode);
 #endif
 					if(sr < 0) {
 						fprintf(stderr, "mkdir failed for '%s', %s\n", currpath, strerror(errno));
@@ -98,7 +116,7 @@ int mkdir_main(int argc, char *argv[]) {
 #if defined _WIN32 && !defined _WIN32_WNT_NATIVE
 			int sr = mkdir(path);
 #else
-			int sr = mkdir(path, 0777);
+			int sr = mkdir(path, mode);
 #endif
 			if(sr < 0) {
 				fprintf(stderr, "mkdir failed for %s, %s\n", path, strerror(errno));
@@ -108,6 +126,8 @@ int mkdir_main(int argc, char *argv[]) {
 			}
 		}
 	} while(++optind < argc);
+
+	umask(orig_umask);
 
 	return ret;
 }

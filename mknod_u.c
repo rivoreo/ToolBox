@@ -1,5 +1,5 @@
 /*	mknod - toolbox
-	Copyright 2015 libdll.so
+	Copyright 2015-2018 Rivoreo
 
 	This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
 
@@ -8,6 +8,7 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include "str2mode.h"
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
@@ -23,21 +24,6 @@ static void print_usage(const char *name) {
 	fprintf(stderr, "Usage: %s [{-m|--mode} <mode>] <name> <type> [<major> <minor>]\n", name);
 }
 
-static mode_t str2mode(const char *s) {
-	mode_t r = 0;
-	while(*s) {
-		if(*s >= '0' && *s <= '7') {
-			r = (r << 3) | (*s - '0');
-		} else {
-			return (mode_t)-1;
-		}
-		s++;
-	}
-	//r &= ~S_IFMT;
-	if(r & S_IFMT) return (mode_t)-1;
-	return r;
-}
-
 int mknod_main(int argc, char **argv) {
 	int i = 1;
 	mode_t mode = 0777;
@@ -47,7 +33,7 @@ int mknod_main(int argc, char **argv) {
 			fprintf(stderr, "%s: Option '%s' requires an argument\n", argv[0], option);
 			return -1;
 		}
-		mode = str2mode(m);
+		mode = STR2MODE(m);
 		if(mode == (mode_t)-1) {
 			fprintf(stderr, "%s: Bad mode\n", argv[0]);
 			return -1;
