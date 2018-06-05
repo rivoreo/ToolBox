@@ -1,5 +1,5 @@
 /*	setconsole - toolbox
-	Copyright 2015 libdll.so
+	Copyright 2015-2018 Rivoreo
 
 	This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
 
@@ -20,14 +20,12 @@
 static int activate_thread_switch_vc;
 
 static void *activate_thread(void *arg) {
-	int res;
 	int fd = (int)arg;
 	while(activate_thread_switch_vc >= 0) {
-		do {
-			res = ioctl(fd, VT_ACTIVATE, activate_thread_switch_vc);
-		} while(res < 0 && errno == EINTR);
-		if (res < 0) {
+		while(ioctl(fd, VT_ACTIVATE, activate_thread_switch_vc) < 0) {
+			if(errno == EINTR) continue;
 			fprintf(stderr, "ioctl(fd, VT_ACTIVATE, %d) failed, %s\n", activate_thread_switch_vc, strerror(errno));
+			break;
 		}
 		if(activate_thread_switch_vc >= 0) sleep(1);
 	}
@@ -37,7 +35,6 @@ static void *activate_thread(void *arg) {
 
 int setconsole_main(int argc, char *argv[]) {
 	int fd;
-	int res;
 
 	int mode = -1;
 	int new_vc = 0;
@@ -48,7 +45,7 @@ int setconsole_main(int argc, char *argv[]) {
 
 	while(1) {
 		int c = getopt(argc, argv, "d:gtncv:poh");
-		if(c == EOF) break;
+		if(c == -1) break;
 		switch (c) {
 			case 'd':
 				ttydev = optarg;
@@ -56,14 +53,14 @@ int setconsole_main(int argc, char *argv[]) {
 			case 'g':
 				if(mode == KD_TEXT) {
 					fprintf(stderr, "%s: cannot specify both -g and -t\n", argv[0]);
-					return 1;
+					return -1;
 				}
 				mode = KD_GRAPHICS;
 				break;
 			case 't':
 				if(mode == KD_GRAPHICS) {
 					fprintf(stderr, "%s: cannot specify both -g and -t\n", argv[0]);
-					return 1;
+					return -1;
 				}
 				mode = KD_TEXT;
 				break;
@@ -96,7 +93,7 @@ int setconsole_main(int argc, char *argv[]) {
 				return 0;
 			case '?':
 				//fprintf(stderr, "%s: invalid option -%c\n", argv[0], optopt);
-				return 1;
+				return -1;
 		}
 	}
 	if(mode == -1 && new_vc == 0 && close_vc == 0 && switch_vc == -1 && printvc == 0) {
@@ -113,8 +110,7 @@ int setconsole_main(int argc, char *argv[]) {
 	if((printvc && !new_vc) || (printvc & 2)) {
 		struct vt_stat vs;
 
-		res = ioctl(fd, VT_GETSTATE, &vs);
-		if(res < 0) {
+		if(ioctl(fd, VT_GETSTATE, &vs) < 0) {
 			fprintf(stderr, "ioctl(fd, VT_GETSTATE, &vs) failed, %s\n", strerror(errno));
 		}
 		printf("%d\n", vs.v_active);
@@ -122,9 +118,12 @@ int setconsole_main(int argc, char *argv[]) {
 
 	if(new_vc) {
 		int vtnum;
-		res = ioctl(fd, VT_OPENQRY, &vtnum);
-		if(res < 0 || vtnum == -1) {
-			fprintf(stderr, "ioctl(fd, VT_OPENQRY, &vtnum) failed, %s, vtnum %d\n", strerror(errno), vtnum);
+		if(ioctl(fd, VT_OPENQRY, &vtnum) < 0) {
+			fprintf(stderr, "ioctl(fd, VT_OPENQRY, &vtnum) failed, %s\n", strerror(errno), vtnum);
+			return 1;
+		}
+		if(vtnum == -1) {
+			fputs("got vtnum = -1 from VT_OPENQRY\n", stderr);
 		}
 		switch_vc = vtnum;
 	}
@@ -136,31 +135,27 @@ int setconsole_main(int argc, char *argv[]) {
 		pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 		pthread_create(&thread, &attr, activate_thread, (void *)fd);
 
-		do {
-			res = ioctl(fd, VT_WAITACTIVE, switch_vc);
-		} while(res < 0 && errno == EINTR);
-		activate_thread_switch_vc = -1;
-		if (res < 0) {
+		while(ioctl(fd, VT_WAITACTIVE, switch_vc) > 0) {
+			if(errno == EINTR) continue;
 			fprintf(stderr, "ioctl(fd, VT_WAITACTIVE, %d) failed, %s\n", switch_vc, strerror(errno));
+			break;
 		}
+		activate_thread_switch_vc = -1;
 		if(printvc & 1) printf("%d\n", switch_vc);
 		close(fd);
 		fd = open(ttydev, O_RDWR | O_SYNC);
 		if (fd < 0) {
 			fprintf(stderr, "cannot open %s, %s\n", ttydev, strerror(errno));
-			return -1;
+			return 1;
 		}
 	}
-	if(close_vc) {
-		res = ioctl(fd, VT_DISALLOCATE, 0);
-		if(res < 0) {
-			fprintf(stderr, "ioctl(fd, VT_DISALLOCATE, 0) failed, %s\n", strerror(errno));
-		}
+	if(close_vc && ioctl(fd, VT_DISALLOCATE, 0) < 0) {
+		fprintf(stderr, "ioctl(fd, VT_DISALLOCATE, 0) failed, %s\n", strerror(errno));
 	}
 	if(mode != -1) {
 		if(ioctl(fd, KDSETMODE, mode) < 0) {
 			fprintf(stderr, "KDSETMODE %d failed, %s\n", mode, strerror(errno));
-			return -1;
+			return 1;
 		}
 	}
 	return 0;

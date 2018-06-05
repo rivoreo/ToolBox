@@ -65,7 +65,7 @@ int main(int argc, char **argv) {
 
 	while(1) {
 		int c = getopt(argc, argv, "d:f:s:S:L:Rhv");
-		if(c == EOF) break;
+		if(c == -1) break;
 		switch (c) {
 			case 'd':
 				devname = optarg;

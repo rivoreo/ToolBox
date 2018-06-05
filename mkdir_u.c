@@ -1,5 +1,5 @@
 /*	mkdir - toolbox
-	Copyright 2015 libdll.so
+	Copyright 2015-2018 Rivoreo
 
 	This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
 
@@ -12,8 +12,9 @@
 #include <errno.h>
 #include <limits.h>
 #include <sys/stat.h>
+#include <getopt.h>
 
-static void usage() {
+static void print_usage() {
 	fprintf(stderr,
 		"Usage: mkdir"
 #if defined _WIN32 && !defined _WIN32_WNT_NATIVE
@@ -26,32 +27,47 @@ static void usage() {
 }
 
 int mkdir_main(int argc, char *argv[]) {
-	int ret;
+	static struct option long_options[] = {
+		{ "help", 0, NULL, 'h' },
+		{ "parents", 0, NULL, 'p' },
+		{ "verbose", 0, NULL, 'v' },
+	};
+	int ret = 0;
 	int recursive = 0;
-	if(argc > 1 && (strcmp(argv[1], "-p") == 0 || strcmp(argv[1], "--parents") == 0)) {
-		recursive = 1;
-		argc--;
-		argv++;
+	int verbose = 0;
+	while(1) {
+		int c = getopt_long(argc, argv, "hpv", long_options, NULL);
+		if(c == -1) break;
+		switch(c) {
+			case 'h':
+				print_usage();
+				return 0;
+			case 'p':
+				recursive = 1;
+				break;
+			case 'v':
+				verbose = 1;
+				break;
+			case '?':
+				return -1;
+		}
 	}
-
-	if(argc < 2 || strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0) {
-		usage();
+	if(argc <= optind) {
+		print_usage();
 		return -1;
 	}
 
 	char currpath[PATH_MAX], *pathpiece;
 	struct stat st;
-
-	while(argc > 1) {
-		argc--;
-		argv++;
+	do {
+		char *path = argv[optind];
 		if(recursive) {
 			// reset path
 			//strcpy(currpath, "");
 			*currpath = 0;
 			// create the pieces of the path along the way
-			pathpiece = strtok(argv[0], "/");
-			if(argv[0][0] == '/') {
+			pathpiece = strtok(path, "/");
+			if(path[0] == '/') {
 				// prepend / if needed
 				strcat(currpath, "/");
 			}
@@ -64,29 +80,34 @@ int mkdir_main(int argc, char *argv[]) {
 				strcat(currpath, "/");
 				if(stat(currpath, &st) < 0) {
 #if defined _WIN32 && !defined _WIN32_WNT_NATIVE
-					ret = mkdir(currpath);
+					int sr = mkdir(currpath);
 #else
-					ret = mkdir(currpath, 0777);
+					int sr = mkdir(currpath, 0777);
 #endif
-					if(ret < 0) {
-						fprintf(stderr, "mkdir failed for %s, %s\n", currpath, strerror(errno));
-						return ret;
+					if(sr < 0) {
+						fprintf(stderr, "mkdir failed for '%s', %s\n", currpath, strerror(errno));
+						ret = 1;
+						break;
+					} else if(verbose) {
+						fprintf(stdout, "created directory '%s'\n", currpath);
 					}
 				}
 				pathpiece = strtok(NULL, "/");
 			}
 		} else {
 #if defined _WIN32 && !defined _WIN32_WNT_NATIVE
-			ret = mkdir(argv[0]);
+			int sr = mkdir(path);
 #else
-			ret = mkdir(argv[0], 0777);
+			int sr = mkdir(path, 0777);
 #endif
-			if(ret < 0) {
-				fprintf(stderr, "mkdir failed for %s, %s\n", argv[0], strerror(errno));
-				return ret;
+			if(sr < 0) {
+				fprintf(stderr, "mkdir failed for %s, %s\n", path, strerror(errno));
+				ret = 1;
+			} else if(verbose) {
+				fprintf(stdout, "created directory '%s'\n", path);
 			}
 		}
-	}
+	} while(++optind < argc);
 
-	return 0;
+	return ret;
 }

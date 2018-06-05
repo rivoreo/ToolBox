@@ -51,7 +51,7 @@ int ioctl_main(int argc, char *argv[]) {
 
 	while(1) {
 		int c = getopt(argc, argv, "rdl:a:sh");
-		if(c == EOF) break;
+		if(c == -1) break;
 		switch(c) {
 			case 'r':
 				read_only = 1;

@@ -26,7 +26,7 @@ int notify_main(int argc, char *argv[]) {
 
 	while(1) {
 		int c = getopt(argc, argv, "m:c:pv:w:");
-		if(c == EOF) break;
+		if(c == -1) break;
 		switch (c) {
 			case 'm':
 				event_mask = strtol(optarg, NULL, 0);
@@ -44,7 +44,7 @@ int notify_main(int argc, char *argv[]) {
 				width = atoi(optarg);
 				break;
 			case '?':
-				return 1;
+				return -1;
 		}
 	}
 

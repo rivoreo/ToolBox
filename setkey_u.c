@@ -1,5 +1,5 @@
 /*	setkey - toolbox
-	Copyright 2015 libdll.so
+	Copyright 2015-2018 Rivoreo
 
 	This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
 
@@ -47,7 +47,7 @@ int setkey_main(int argc, char *argv[]) {
 		int c, ret;
 
 		c = getopt(argc, argv, "t:k:v:hr");
-		if(c == EOF) break;
+		if(c == -1) break;
 
 		switch (c) {
 			case 't':
@@ -80,7 +80,7 @@ int setkey_main(int argc, char *argv[]) {
 				setkey_usage(argv[0]);
 				return 1;
 			case '?':
-				fprintf(stderr, "%s: invalid option -%c\n", argv[0], optopt);
+				//fprintf(stderr, "%s: invalid option -%c\n", argv[0], optopt);
 				return 1;
 		}
 	}

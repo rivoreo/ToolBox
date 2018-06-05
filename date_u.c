@@ -47,7 +47,7 @@ int date_main(int argc, char *argv[]) {
 
 	while(1) {
 		c = getopt(argc, argv, "us:");
-		if(c == EOF) break;
+		if(c == -1) break;
 		switch(c) {
 			case 'u':
 				useutc = 1;
