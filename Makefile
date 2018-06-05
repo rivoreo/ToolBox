@@ -393,6 +393,7 @@ LDLIBS = $(LIBS)
 TRAN_SRC = \
 	cat.c \
 	chcon.c \
+	chmod.c \
 	chown.c \
 	chroot.c \
 	clear.c \

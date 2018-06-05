@@ -7,7 +7,7 @@ are placed in the Public Domain.
 
 Files
 	chcon_u.c,
-	chmod*,
+	chmod_u.c,
 	chown_u.c,
 	chroot_u.c,
 	clear_u.c,
