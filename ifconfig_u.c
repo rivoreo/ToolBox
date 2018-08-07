@@ -402,7 +402,8 @@ int ifconfig_main(int argc, char *argv[]) {
 		v++;
 	}
 
-	if((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+	s = socket(AF_INET, SOCK_DGRAM, 0);
+	if(s == -1) {
 		die("cannot open control socket\n");
 	}
 

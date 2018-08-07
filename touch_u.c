@@ -80,16 +80,29 @@ int touch_main(int argc, char *argv[]) {
 							usage();
 							return 1;
 						}
-						specified_time.tv_sec = atol(argv[++i]);
-						if(specified_time.tv_sec == 0) {
+						char *a = argv[++i];
+						long int nsec = 0;
+						char *dot = strchr(a, '.');
+						if(dot) {
+							char nsec_buffer[10];
+							size_t len = strlen(dot + 1);
+							if(len > 9) len = 9;
+							memcpy(nsec_buffer, dot + 1, len);
+							memset(nsec_buffer + len, '0', 9 - len);
+							nsec_buffer[9] = 0;
+							nsec = atol(nsec_buffer);
+							*dot = 0;
+						}
+						specified_time.tv_sec = atol(a);
+						if(!dot && specified_time.tv_sec == 0) {
 							fprintf(stderr, "touch: invalid time_t\n");
 							return 1;
 						}
 #ifdef _NO_UTIMENSAT
 						tflag = 1;
-						specified_time.tv_usec = 0;
+						specified_time.tv_usec = nsec / 1000;
 #else
-						specified_time.tv_nsec = 0;
+						specified_time.tv_nsec = nsec;
 #endif
 						break;
 #ifndef _NO_UTIMENSAT
