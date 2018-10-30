@@ -224,12 +224,12 @@ int top_main(int argc, char *argv[]) {
 	num_new_procs = num_old_procs = 0;
 	new_procs = old_procs = NULL;
 
-	if(use_tty == -1) use_tty = isatty(STDOUT_FILENO);
+	if(use_tty == -1) use_tty = isatty(STDIN_FILENO) && isatty(STDOUT_FILENO);
 	if(use_tty) {
 		/* Test windows size */
 		//sz=(struct winsize*)malloc(sizeof(struct winsize));
 		//memset(sz,0x00,sizeof(struct winsize));
-		if(ioctl(0, TIOCGWINSZ, &sz) == -1) {
+		if(ioctl(STDOUT_FILENO, TIOCGWINSZ, &sz) == -1) {
 			perror("Could not get terminal window size");
 			return EXIT_FAILURE;
 		}
@@ -264,9 +264,11 @@ int top_main(int argc, char *argv[]) {
 			case 0:
 				break;
 			default:
-				if(use_tty && getchar() == 'q') {
-					iterations = 0;
-					//continue;
+				if(use_tty) switch(getchar()) {
+					case EOF:
+					case 'q':
+						iterations = 0;
+						break;
 				}
 				break;
 		}
