@@ -502,7 +502,8 @@ help:
 	@echo " MINGW=1 CC=arm-mingw32ce-gcc make separate		To arm-windowsce"
 	@echo " MINGW=1 CC=i586-mingw32msvc-gcc make separate		To x86-windows"
 	@echo " make -f nt.mk [unity|separate]				To x86-windowsnt"
-	@printf $(MAC_HELP)
+	@[ -n "$(MAC_HELP)" ] && printf $(MAC_HELP) || true
+	@echo
 
 cat.exe:	cat.c
 	$(CC) $(CFLAGS) $(LDFLAGS) cat.c -o cat.exe $(LIBS)
