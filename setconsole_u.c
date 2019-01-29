@@ -119,7 +119,7 @@ int setconsole_main(int argc, char *argv[]) {
 	if(new_vc) {
 		int vtnum;
 		if(ioctl(fd, VT_OPENQRY, &vtnum) < 0) {
-			fprintf(stderr, "ioctl(fd, VT_OPENQRY, &vtnum) failed, %s\n", strerror(errno), vtnum);
+			fprintf(stderr, "ioctl(fd, VT_OPENQRY, &vtnum) failed, %s\n", strerror(errno));
 			return 1;
 		}
 		if(vtnum == -1) {
