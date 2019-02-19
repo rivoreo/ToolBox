@@ -15,6 +15,7 @@ OBJS = \
 	close.o \
 	creat.o \
 	dup.o \
+	fdopen.o \
 	fileno.o \
 	fsync.o \
 	isatty.o \
@@ -30,4 +31,4 @@ clean:
 	rm -f *.o
 
 distclean:	clean
-	rm -f *.a
+	rm -f libposixio.a
