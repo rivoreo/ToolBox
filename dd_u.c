@@ -34,12 +34,10 @@
  */
 
 //#include <sys/cdefs.h>
-
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <sys/time.h>
-
 #include <ctype.h>
 #include <err.h>
 #include <errno.h>
@@ -49,7 +47,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-
+#include <limits.h>
 #include "dd.h"
 
 #ifdef __APPLE__
@@ -61,8 +59,6 @@ extern int fdatasync(int);
 #endif
 #elif defined __FreeBSD__ || defined __INTERIX
 #define fdatasync fsync
-#elif defined __sun && !defined UINT_MAX
-#define UINT_MAX 4294967295U
 #endif
 
 //#define NO_CONV
@@ -138,6 +134,8 @@ int dd_main(int argc, char *argv[]) {
 			/* NOTREACHED */
 		}
 	}
+	//argc -= (optind - 1);
+	//argv += (optind - 1);
 #else
 	//int end_of_options = 0;
 	char **v = argv;
@@ -167,26 +165,24 @@ int dd_main(int argc, char *argv[]) {
 	}
 end_of_options_processing:
 #endif		
-	//argc -= (optind - 1);
-	//argv += (optind - 1);
 
 	jcl(argv);
 	setup();
 
 #ifdef SIGINFO
-	(void)signal(SIGINFO, summaryx);
+	signal(SIGINFO, summaryx);
 #else
-	(void)signal(SIGUSR1, summaryx);
+	signal(SIGUSR1, summaryx);
 #endif
-	(void)signal(SIGINT, terminate);
-	(void)sigemptyset(&infoset);
+	signal(SIGINT, terminate);
+	sigemptyset(&infoset);
 #ifdef SIGINFO
-	(void)sigaddset(&infoset, SIGINFO);
+	sigaddset(&infoset, SIGINFO);
 #else
-	(void)sigaddset(&infoset, SIGUSR1);
+	sigaddset(&infoset, SIGUSR1);
 #endif
 
-	(void)atexit(summary);
+	atexit(summary);
 
 	while(files_cnt--) dd_in();
 
@@ -198,7 +194,6 @@ end_of_options_processing:
 static void
 setup(void)
 {
-
 	if (in.name == NULL) {
 		in.name = "stdin";
 		in.fd = STDIN_FILENO;
@@ -447,7 +442,6 @@ static void dd_in(void) {
  * is truncated.
  */
 static void dd_close(void) {
-
 	if(cfunc == def) def_close();
 	else if(cfunc == block) block_close();
 	else if(cfunc == unblock) unblock_close();
@@ -595,10 +589,10 @@ static ssize_t bwrite(int fd, const void *buf, size_t len) {
 	ssize_t rv;
 	int oerrno;
 
-	(void)sigprocmask(SIG_BLOCK, &infoset, &oset);
+	sigprocmask(SIG_BLOCK, &infoset, &oset);
 	rv = write(fd, buf, len);
 	oerrno = errno;
-	(void)sigprocmask(SIG_SETMASK, &oset, NULL);
+	sigprocmask(SIG_SETMASK, &oset, NULL);
 	errno = oerrno;
 	return (rv);
 }
@@ -868,7 +862,6 @@ static void block(void) {
 }
 
 static void block_close(void) {
-
 	/*
 	 * Copy any remaining data into the output buffer and pad to a record.
 	 * Don't worry about truncation or translation, the input buffer is
@@ -988,7 +981,6 @@ static void summary(void) {
 }
 
 static void terminate(int notused) {
-
 	exit(0);
 	/* NOTREACHED */
 }
@@ -1132,7 +1124,6 @@ static void jcl(char **argv) {
 static int
 c_arg(const void *a, const void *b)
 {
-
 	return (strcmp(((const struct arg *)a)->name,
 	    ((const struct arg *)b)->name));
 }
@@ -1159,7 +1150,6 @@ f_cbs(char *arg)
 static void
 f_count(char *arg)
 {
-
 	cpy_cnt = strsuftoll("block count", arg, 0, LLONG_MAX);
 	if(!cpy_cnt) terminate(0);
 }
@@ -1167,7 +1157,6 @@ f_count(char *arg)
 static void
 f_files(char *arg)
 {
-
 	files_cnt = (unsigned int)strsuftoll("file count", arg, 0, UINT_MAX);
 	if(!files_cnt) terminate(0);
 }
@@ -1183,14 +1172,12 @@ f_ibs(char *arg)
 static void
 f_if(char *arg)
 {
-
 	in.name = arg;
 }
 
 static void
 f_obs(char *arg)
 {
-
 	if (!(ddflags & C_BS))
 		out.dbsz = strsuftoll("output block size", arg, 1, UINT_MAX);
 }
@@ -1198,28 +1185,24 @@ f_obs(char *arg)
 static void
 f_of(char *arg)
 {
-
 	out.name = arg;
 }
 
 static void
 f_seek(char *arg)
 {
-
 	out.offset = strsuftoll("seek blocks", arg, 0, LLONG_MAX);
 }
 
 static void
 f_skip(char *arg)
 {
-
 	in.offset = strsuftoll("skip blocks", arg, 0, LLONG_MAX);
 }
 
 static void
 f_progress(char *arg)
 {
-
 	if(*arg != '0') progress = 1;
 }
 
@@ -1228,7 +1211,6 @@ f_progress(char *arg)
 static void
 f_conv(char *arg)
 {
-
 	fprintf(stderr, "conv option disabled\n");
 	exit(1);
 	/* NOTREACHED */
@@ -1280,7 +1262,6 @@ f_conv(char *arg)
 static int
 c_conv(const void *a, const void *b)
 {
-
 	return (strcmp(((const struct conv *)a)->name,
 	    ((const struct conv *)b)->name));
 }
