@@ -340,6 +340,7 @@ redup_clean_fd(int fd)
 static void dd_in(void) {
 	int flags;
 	int64_t n;
+	off_t offset;
 
 	for(flags = ddflags;;) {
 		if(cpy_cnt && (st.in_full + st.in_part) >= cpy_cnt) return;
@@ -354,6 +355,13 @@ static void dd_in(void) {
 		if(flags & C_SYNC) {
 			if(flags & (C_BLOCK|C_UNBLOCK)) memset(in.dbp, ' ', in.dbsz);
 			else memset(in.dbp, 0, in.dbsz);
+		}
+
+		if(!(in.flags & (ISPIPE|ISTAPE))) {
+			offset = lseek(in.fd, 0, SEEK_CUR);
+			if(offset == -1) {
+				fprintf(stderr, "%s: seek error: %s\n", in.name, strerror(errno));
+			}
 		}
 
 		n = read(in.fd, in.dbp, in.dbsz);
@@ -383,8 +391,9 @@ static void dd_in(void) {
 			 * raw disks this section should be modified to re-read
 			 * in sector size chunks.
 			 */
-			if(!(in.flags & (ISPIPE|ISTAPE)) &&
-			    lseek(in.fd, (off_t)in.dbsz, SEEK_CUR) == -1) {
+			if(!(in.flags & (ISPIPE|ISTAPE)) && (offset == -1 ?
+			  lseek(in.fd, (off_t)in.dbsz, SEEK_CUR) :
+			  lseek(in.fd, offset + in.dbsz, SEEK_SET)) == -1) {
 				fprintf(stderr, "%s: seek error: %s\n", in.name, strerror(errno));
 			}
 
