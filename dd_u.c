@@ -326,7 +326,7 @@ static void dd_in(void) {
 			 * raw disks this section should be modified to re-read
 			 * in sector size chunks.
 			 */
-			if(!(in.flags & (ISPIPE|ISTAPE)) && lseek(in.fd, (off_t)in.dbsz, SEEK_CUR)) {
+			if(!(in.flags & (ISPIPE|ISTAPE)) && lseek(in.fd, (off_t)in.dbsz, SEEK_CUR) == -1) {
 				fprintf(stderr, "%s: seek error: %s\n", in.name, strerror(errno));
 			}
 

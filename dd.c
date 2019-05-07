@@ -122,6 +122,10 @@ int		progress = 0;		/* display sign of life */
 const uint8_t	*ctab;			/* conversion table */
 sigset_t	infoset;		/* a set blocking SIGINFO */
 
+static void summaryx(int sig) {
+	summary();
+}
+
 int main(int argc, char *argv[]) {
 #if 0
 	int ch;
@@ -169,10 +173,18 @@ end_of_options_processing:
 	jcl(argv);
 	setup();
 
-//	(void)signal(SIGINFO, summaryx);
+#ifdef SIGINFO
+	(void)signal(SIGINFO, summaryx);
+#else
+	(void)signal(SIGUSR1, summaryx);
+#endif
 	(void)signal(SIGINT, terminate);
 	(void)sigemptyset(&infoset);
-//	(void)sigaddset(&infoset, SIGINFO);
+#ifdef SIGINFO
+	(void)sigaddset(&infoset, SIGINFO);
+#else
+	(void)sigaddset(&infoset, SIGUSR1);
+#endif
 
 	(void)atexit(summary);
 
@@ -372,7 +384,7 @@ static void dd_in(void) {
 			 * in sector size chunks.
 			 */
 			if(!(in.flags & (ISPIPE|ISTAPE)) &&
-			    lseek(in.fd, (off_t)in.dbsz, SEEK_CUR)) {
+			    lseek(in.fd, (off_t)in.dbsz, SEEK_CUR) == -1) {
 				fprintf(stderr, "%s: seek error: %s\n", in.name, strerror(errno));
 			}
 
