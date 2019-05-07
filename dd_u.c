@@ -33,6 +33,8 @@
  * SUCH DAMAGE.
  */
 
+//#include <sys/cdefs.h>
+
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
@@ -65,6 +67,7 @@ extern int fdatasync(int);
 
 //#define NO_CONV
 
+//#include "extern.h"
 static void block(void);
 static void block_close(void);
 static void dd_out(int);
@@ -74,6 +77,7 @@ static void jcl(char **);
 static void pos_in(void);
 static void pos_out(void);
 static void summary(void);
+//void summaryx(int);
 static void terminate(int);
 static void unblock(void);
 static void unblock_close(void);
@@ -118,11 +122,15 @@ int		progress = 0;		/* display sign of life */
 const uint8_t	*ctab;			/* conversion table */
 sigset_t	infoset;		/* a set blocking SIGINFO */
 
-int dd_main(int argc, char *argv[])
-{
+static void summaryx(int sig) {
+	summary();
+}
+
+int dd_main(int argc, char *argv[]) {
+#if 0
 	int ch;
 
-	while((ch = getopt(argc, argv, "")) != -1) {
+	while ((ch = getopt(argc, argv, "")) != -1) {
 		switch (ch) {
 		default:
 			fprintf(stderr, "usage: dd [operand ...]\n");
@@ -130,36 +138,75 @@ int dd_main(int argc, char *argv[])
 			/* NOTREACHED */
 		}
 	}
-	argc -= (optind - 1);
-	argv += (optind - 1);
+#else
+	//int end_of_options = 0;
+	char **v = argv;
+	while(*++v) if(**v == '-') {
+		const char *arg = *v + 1;
+		switch(*arg) {
+			case '-': {
+				const char *long_arg = arg + 1;
+				if(!*long_arg) {
+					int i = v - argv;
+					do {
+						argv[i] = argv[i-1];
+					} while(--i);
+					argc--;
+					argv++;
+					goto end_of_options_processing;
+				}
+				if(strcmp(long_arg, "help") == 0) goto usage;
+			}
+			default:
+				fprintf(stderr, "Unknown option '%s'\n", *v);
+			usage:
+			case 'h':
+				fprintf(stderr, "Usage: %s [<operand ...>]\n", argv[0]);
+				return -1;
+		}
+	}
+end_of_options_processing:
+#endif		
+	//argc -= (optind - 1);
+	//argv += (optind - 1);
 
 	jcl(argv);
 	setup();
 
-//	(void)signal(SIGINFO, summaryx);
+#ifdef SIGINFO
+	(void)signal(SIGINFO, summaryx);
+#else
+	(void)signal(SIGUSR1, summaryx);
+#endif
 	(void)signal(SIGINT, terminate);
 	(void)sigemptyset(&infoset);
-//	(void)sigaddset(&infoset, SIGINFO);
+#ifdef SIGINFO
+	(void)sigaddset(&infoset, SIGINFO);
+#else
+	(void)sigaddset(&infoset, SIGUSR1);
+#endif
 
-	atexit(summary);
+	(void)atexit(summary);
 
 	while(files_cnt--) dd_in();
 
 	dd_close();
 	return 0;
+	/* NOTREACHED */
 }
 
 static void
 setup(void)
 {
 
-	if(!in.name) {
+	if (in.name == NULL) {
 		in.name = "stdin";
 		in.fd = STDIN_FILENO;
 	} else {
 		in.fd = open(in.name, O_RDONLY, 0);
-		if(in.fd == -1) {
-			fprintf(stderr, "%s: cannot open for read: %s\n", in.name, strerror(errno));
+		if (in.fd == -1) {
+			fprintf(stderr, "%s: cannot open for read: %s\n",
+				in.name, strerror(errno));
 			exit(1);
 			/* NOTREACHED */
 		}
@@ -176,7 +223,7 @@ setup(void)
 		/* NOTREACHED */
 	}
 
-	if(!out.name) {
+	if(out.name == NULL) {
 		/* No way to check for read access here. */
 		out.fd = STDOUT_FILENO;
 		out.name = "stdout";
@@ -188,11 +235,11 @@ setup(void)
 		 * Without read we may have a problem if output also does
 		 * not support seeks.
 		 */
-		if (out.fd < 0) {
+		if (out.fd == -1) {
 			out.fd = open(out.name, O_WRONLY | OFLAGS, DEFFILEMODE);
 			out.flags |= NOREAD;
 		}
-		if (out.fd < 0) {
+		if (out.fd == -1) {
 			fprintf(stderr, "%s: cannot open for write: %s\n",
 				out.name, strerror(errno));
 			exit(1);
@@ -209,10 +256,13 @@ setup(void)
 	 * Allocate space for the input and output buffers.  If not doing
 	 * record oriented I/O, only need a single buffer.
 	 */
-	if(!(ddflags & (C_BLOCK|C_UNBLOCK))) {
-		if ((in.db = malloc(out.dbsz + in.dbsz - 1)) == NULL) exit(1);
+	if (!(ddflags & (C_BLOCK|C_UNBLOCK))) {
+		if ((in.db = malloc(out.dbsz + in.dbsz - 1)) == NULL) {
+			exit(1);
+			/* NOTREACHED */
+		}
 		out.db = in.db;
-	} else if((in.db =
+	} else if ((in.db =
 	    malloc((unsigned int)(MAX(in.dbsz, cbsz) + cbsz))) == NULL ||
 	    (out.db = malloc((unsigned int)(out.dbsz + cbsz))) == NULL) {
 		exit(1);
@@ -230,7 +280,7 @@ setup(void)
 	 * kinds of output files, tapes, for example.
 	 */
 	if ((ddflags & (C_OF | C_SEEK | C_NOTRUNC)) == (C_OF | C_SEEK)) {
-		ftruncate(out.fd, (off_t)out.offset * out.dbsz);
+		(void)ftruncate(out.fd, (off_t)out.offset * out.dbsz);
 	}
 
 	gettimeofday(&st.start, NULL);	/* Statistics timestamp. */
@@ -243,12 +293,14 @@ getfdtype(IO *io)
 	struct stat sb;
 
 	if (fstat(io->fd, &sb)) {
-		fprintf(stderr, "%s: cannot fstat: %s\n", io->name, strerror(errno));
+		fprintf(stderr, "%s: cannot fstat: %s\n",
+			io->name, strerror(errno));
 		exit(1);
 		/* NOTREACHED */
 	}
-	if (S_ISCHR(sb.st_mode)) io->flags |= /*ioctl(io->fd, MTIOCGET, &mt) ? ISCHR : ISTAPE; */ ISCHR;
-	else if(lseek(io->fd, (off_t)0, SEEK_CUR) == -1 && errno == ESPIPE) {
+	if(S_ISCHR(sb.st_mode)) {
+		io->flags |= /*ioctl(io->fd, MTIOCGET, &mt) ? ISCHR : ISTAPE; */ ISCHR;
+	} else if (lseek(io->fd, (off_t)0, SEEK_CUR) == -1 && errno == ESPIPE) {
 		io->flags |= ISPIPE;		/* XXX fixed in 4.4BSD */
 	}
 }
@@ -264,16 +316,17 @@ redup_clean_fd(int fd)
 {
 	int newfd;
 
-	if (fd != STDIN_FILENO && fd != STDOUT_FILENO && fd != STDERR_FILENO)
+	if(fd != STDIN_FILENO && fd != STDOUT_FILENO && fd != STDERR_FILENO) {
 		/* File descriptor is ok, return immediately. */
 		return fd;
+	}
 
 	/*
 	 * 3 is the first descriptor greater than STD*_FILENO.  Any
 	 * free descriptor valued 3 or above is acceptable...
 	 */
 	newfd = fcntl(fd, F_DUPFD, 3);
-	if(newfd < 0) {
+	if(newfd == -1) {
 		fprintf(stderr, "dupfd IO: %s\n", strerror(errno));
 		exit(1);
 		/* NOTREACHED */
@@ -287,6 +340,7 @@ redup_clean_fd(int fd)
 static void dd_in(void) {
 	int flags;
 	int64_t n;
+	off_t offset;
 
 	for(flags = ddflags;;) {
 		if(cpy_cnt && (st.in_full + st.in_part) >= cpy_cnt) return;
@@ -303,6 +357,13 @@ static void dd_in(void) {
 			else memset(in.dbp, 0, in.dbsz);
 		}
 
+		if(!(in.flags & (ISPIPE|ISTAPE))) {
+			offset = lseek(in.fd, 0, SEEK_CUR);
+			if(offset == -1) {
+				fprintf(stderr, "%s: seek error: %s\n", in.name, strerror(errno));
+			}
+		}
+
 		n = read(in.fd, in.dbp, in.dbsz);
 		if(n == 0) {
 			in.dbrcnt = 0;
@@ -316,8 +377,12 @@ static void dd_in(void) {
 			 * If noerror not specified, die.  POSIX requires that
 			 * the warning message be followed by an I/O display.
 			 */
-			fprintf(stderr, "%s: read error: %s\n", in.name, strerror(errno));
-			if(!(flags & C_NOERROR)) exit(1);
+			fprintf(stderr, "%s: read error: %s\n",
+				in.name, strerror(errno));
+			if(!(flags & C_NOERROR)) {
+				exit(1);
+				/* NOTREACHED */
+			}
 			summary();
 
 			/*
@@ -326,7 +391,9 @@ static void dd_in(void) {
 			 * raw disks this section should be modified to re-read
 			 * in sector size chunks.
 			 */
-			if(!(in.flags & (ISPIPE|ISTAPE)) && lseek(in.fd, (off_t)in.dbsz, SEEK_CUR) == -1) {
+			if(!(in.flags & (ISPIPE|ISTAPE)) && (offset == -1 ?
+			  lseek(in.fd, (off_t)in.dbsz, SEEK_CUR) :
+			  lseek(in.fd, offset + in.dbsz, SEEK_SET)) == -1) {
 				fprintf(stderr, "%s: seek error: %s\n", in.name, strerror(errno));
 			}
 
@@ -362,6 +429,14 @@ static void dd_in(void) {
 			continue;
 		}
 
+/*		if (ddflags & C_SWAB) {
+			if ((n = in.dbrcnt) & 1) {
+				++st.swab;
+				--n;
+			}
+			swab(in.dbp, in.dbp, n);
+		}
+*/
 		in.dbp += in.dbrcnt;
 		(*cfunc)();
 	}
@@ -484,8 +559,8 @@ static void dd_out(int force) {
 			}
 			outp += nw;
 			st.bytes += nw;
-			if (nw == n) {
-				if (n != out.dbsz) st.out_part++;
+			if(nw == n) {
+				if(n != out.dbsz) st.out_part++;
 				else st.out_full++;
 				break;
 			}
@@ -497,8 +572,7 @@ static void dd_out(int force) {
 					"device\n", out.name);
 			}
 			if(out.flags & ISTAPE) {
-				fprintf(stderr, "%s: short write on tape device",
-					out.name);
+				fprintf(stderr, "%s: short write on tape device", out.name);
 				exit(1);
 				/* NOTREACHED */
 			}
@@ -521,10 +595,10 @@ static ssize_t bwrite(int fd, const void *buf, size_t len) {
 	ssize_t rv;
 	int oerrno;
 
-	sigprocmask(SIG_BLOCK, &infoset, &oset);
+	(void)sigprocmask(SIG_BLOCK, &infoset, &oset);
 	rv = write(fd, buf, len);
 	oerrno = errno;
-	sigprocmask(SIG_SETMASK, &oset, NULL);
+	(void)sigprocmask(SIG_SETMASK, &oset, NULL);
 	errno = oerrno;
 	return (rv);
 }
@@ -540,8 +614,9 @@ static void pos_in(void) {
 
 	/* If not a pipe or tape device, try to seek on it. */
 	if (!(in.flags & (ISPIPE|ISTAPE))) {
-		if (lseek(in.fd, (off_t)in.offset * (off_t)in.dbsz, SEEK_CUR) == -1) {
-			fprintf(stderr, "%s: seek error: %s", in.name, strerror(errno));
+		if(lseek(in.fd, (off_t)in.offset * (off_t)in.dbsz, SEEK_CUR) == -1) {
+			fprintf(stderr, "%s: seek error: %s",
+				in.name, strerror(errno));
 			exit(1);
 			/* NOTREACHED */
 		}
@@ -554,10 +629,10 @@ static void pos_in(void) {
 	 * being skipped.  No differentiation for reading complete and partial
 	 * blocks for other devices.
 	 */
-	for(bcnt = in.dbsz, cnt = in.offset, warned = 0; cnt;) {
-		if((nr = read(in.fd, in.db, bcnt)) > 0) {
-			if(in.flags & ISPIPE) {
-				if(!(bcnt -= nr)) {
+	for (bcnt = in.dbsz, cnt = in.offset, warned = 0; cnt;) {
+		if ((nr = read(in.fd, in.db, bcnt)) > 0) {
+			if (in.flags & ISPIPE) {
+				if (!(bcnt -= nr)) {
 					bcnt = in.dbsz;
 					cnt--;
 				}
@@ -567,7 +642,7 @@ static void pos_in(void) {
 
 		if (nr == 0) {
 			if (files_cnt > 1) {
-				--files_cnt;
+				files_cnt--;
 				continue;
 			}
 			fprintf(stderr, "skip reached end of input\n");
@@ -580,8 +655,8 @@ static void pos_in(void) {
 		 * If noerror not set die.  POSIX requires that the warning
 		 * message be followed by an I/O display.
 		 */
-		if (ddflags & C_NOERROR) {
-			if (!warned) {
+		if(ddflags & C_NOERROR) {
+			if(!warned) {
 				fprintf(stderr, "%s: error occurred\n", in.name);
 				warned = 1;
 				summary();
@@ -604,8 +679,9 @@ static void pos_out(void) {
 	 * have specified the seek operand.
 	 */
 	if (!(out.flags & ISTAPE)) {
-		if (lseek(out.fd, (off_t)out.offset * (off_t)out.dbsz, SEEK_SET) == -1) {
-			fprintf(stderr, "%s: seek error: %s\n", out.name, strerror(errno));
+		if(lseek(out.fd, (off_t)out.offset * (off_t)out.dbsz, SEEK_SET) == -1) {
+			fprintf(stderr, "%s: seek error: %s\n",
+				out.name, strerror(errno));
 			exit(1);
 			/* NOTREACHED */
 		}
@@ -625,7 +701,7 @@ static void pos_out(void) {
 	}
 
 	/* Read it. */
-	for (cnt = 0; cnt < out.offset; ++cnt) {
+	for(cnt = 0; cnt < out.offset; ++cnt) {
 		if((n = read(out.fd, out.db, out.dbsz)) > 0) continue;
 
 		if(n < 0) {
@@ -648,8 +724,8 @@ static void pos_out(void) {
 			/* NOTREACHED */
 		}
 
-		while(cnt++ < out.offset)
-			if((n = bwrite(out.fd, out.db, out.dbsz)) != out.dbsz) {
+		while (cnt++ < out.offset)
+			if ((n = bwrite(out.fd, out.db, out.dbsz)) != out.dbsz) {
 				fprintf(stderr, "%s: cannot position "
 					"by writing: %s\n", out.name, strerror(errno));
 				exit(1);
@@ -667,16 +743,18 @@ static void pos_out(void) {
  */
 static void def(void) {
 	uint64_t cnt;
-	uint8_t *inp;
 	const uint8_t *t;
 
-	if((t = ctab)) for(inp = in.dbp - (cnt = in.dbrcnt); cnt--; inp++) *inp = t[*inp];
+	if((t = ctab) != NULL) {
+		uint8_t *inp;
+		for(inp = in.dbp - (cnt = in.dbrcnt); cnt--; inp++) *inp = t[*inp];
+	}
 
 	/* Make the output buffer look right. */
 	out.dbp = in.dbp;
 	out.dbcnt = in.dbcnt;
 
-	if(in.dbcnt >= out.dbsz) {
+	if (in.dbcnt >= out.dbsz) {
 		/* If the output buffer is full, write it. */
 		dd_out(0);
 
@@ -699,7 +777,7 @@ static void def_close(void) {
 	if(in.dbcnt) out.dbcnt = in.dbcnt;
 }
 
-#ifdef	NO_CONV
+#ifdef NO_CONV
 /* Build a smaller version (i.e. for a miniroot) */
 /* These can not be called, but just in case...  */
 static const char no_block[] = "unblock and -DNO_CONV?\n";
@@ -749,7 +827,7 @@ static void block(void) {
 	for(inp = in.dbp - in.dbcnt, outp = out.dbp; in.dbcnt;) {
 		maxlen = MIN(cbsz, in.dbcnt);
 		if((t = ctab) != NULL) {
-			for(cnt = 0; cnt < maxlen && (ch = *inp++) != '\n'; cnt++) *outp++ = t[ch];
+			for(cnt = 0; cnt < maxlen && (ch = *inp++) != '\n'; ++cnt) *outp++ = t[ch];
 		} else {
 			for(cnt = 0; cnt < maxlen && (ch = *inp++) != '\n'; ++cnt) *outp++ = ch;
 		}
@@ -757,8 +835,8 @@ static void block(void) {
 		 * Check for short record without a newline.  Reassemble the
 		 * input block.
 		 */
-		if (ch != '\n' && in.dbcnt < cbsz) {
-			memmove(in.db, in.dbp - in.dbcnt, in.dbcnt);
+		if(ch != '\n' && in.dbcnt < cbsz) {
+			(void)memmove(in.db, in.dbp - in.dbcnt, in.dbcnt);
 			break;
 		}
 
@@ -776,7 +854,7 @@ static void block(void) {
 			if(!in.dbcnt || *inp != '\n') st.trunc++;
 
 			/* Toss characters to a newline. */
-			for(; in.dbcnt && *inp++ != '\n'; --in.dbcnt);
+			for(; in.dbcnt && *inp++ != '\n'; in.dbcnt++);
 			if(!in.dbcnt) intrunc = 1;
 			else in.dbcnt--;
 		}
@@ -820,23 +898,26 @@ static void unblock(void) {
 	const uint8_t *t;
 
 	/* Translation and case conversion. */
-	if((t = ctab)) for(cnt = in.dbrcnt, inp = in.dbp - 1; cnt--; inp--) *inp = t[*inp];
+	if((t = ctab) != NULL) {
+		for(cnt = in.dbrcnt, inp = in.dbp - 1; cnt--; inp--) *inp = t[*inp];
+	}
 	/*
 	 * Copy records (max cbsz size chunks) into the output buffer.  The
 	 * translation has to already be done or we might not recognize the
 	 * spaces.
 	 */
-	for(inp = in.db; in.dbcnt >= cbsz; inp += cbsz, in.dbcnt -= cbsz) {
-		for(t = inp + cbsz - 1; t >= inp && *t == ' '; --t);
-		if(t >= inp) {
+	for (inp = in.db; in.dbcnt >= cbsz; inp += cbsz, in.dbcnt -= cbsz) {
+		for (t = inp + cbsz - 1; t >= inp && *t == ' '; --t);
+		if (t >= inp) {
 			cnt = t - inp + 1;
-			memmove(out.dbp, inp, cnt);
+			(void)memmove(out.dbp, inp, cnt);
 			out.dbp += cnt;
 			out.dbcnt += cnt;
 		}
-		out.dbcnt++;
+		++out.dbcnt;
 		*out.dbp++ = '\n';
-		if(out.dbcnt >= out.dbsz) dd_out(0);
+		if (out.dbcnt >= out.dbsz)
+			dd_out(0);
 	}
 	if(in.dbcnt) memmove(in.db, in.dbp - in.dbcnt, in.dbcnt);
 	in.dbp = in.db + in.dbcnt;
@@ -855,7 +936,7 @@ static void unblock_close(void) {
 			out.dbp += cnt;
 			out.dbcnt += cnt;
 		}
-		++out.dbcnt;
+		out.dbcnt++;
 		*out.dbp++ = '\n';
 	}
 }
@@ -871,38 +952,39 @@ static void summary(void) {
 
 	if(progress) write(STDERR_FILENO, "\n", 1);
 
-	gettimeofday(&tv, NULL);
+	(void)gettimeofday(&tv, NULL);
 	mS = tv2mS(tv) - tv2mS(st.start);
 	if(mS == 0) mS = 1;
 	/* Use snprintf(3) so that we don't reenter stdio(3). */
-	snprintf(buf, sizeof(buf), "%llu+%llu records in\n%llu+%llu records out\n",
-	    (unsigned long long)st.in_full,  (unsigned long long)st.in_part,
-	    (unsigned long long)st.out_full, (unsigned long long)st.out_part);
-	write(STDERR_FILENO, buf, strlen(buf));
+	(void)snprintf(buf, sizeof(buf), "%llu+%llu records in\n%llu+%llu records out\n",
+	    (unsigned long long int)st.in_full,  (unsigned long long int)st.in_part,
+	    (unsigned long long int)st.out_full, (unsigned long long int)st.out_part);
+	(void)write(STDERR_FILENO, buf, strlen(buf));
 	if(st.swab) {
-		snprintf(buf, sizeof(buf), "%llu odd length swab %s\n",
+		(void)snprintf(buf, sizeof(buf), "%llu odd length swab %s\n",
 		    (unsigned long long)st.swab,
 		    (st.swab == 1) ? "block" : "blocks");
-		write(STDERR_FILENO, buf, strlen(buf));
+		(void)write(STDERR_FILENO, buf, strlen(buf));
 	}
 	if(st.trunc) {
-		snprintf(buf, sizeof(buf), "%llu truncated %s\n",
+		(void)snprintf(buf, sizeof(buf), "%llu truncated %s\n",
 		    (unsigned long long)st.trunc,
 		    (st.trunc == 1) ? "block" : "blocks");
-		write(STDERR_FILENO, buf, strlen(buf));
+		(void)write(STDERR_FILENO, buf, strlen(buf));
 	}
 	if(st.sparse) {
-		snprintf(buf, sizeof(buf), "%llu sparse output %s\n",
+		(void)snprintf(buf, sizeof(buf), "%llu sparse output %s\n",
 		    (unsigned long long)st.sparse,
 		    (st.sparse == 1) ? "block" : "blocks");
-		write(STDERR_FILENO, buf, strlen(buf));
+		(void)write(STDERR_FILENO, buf, strlen(buf));
 	}
-	snprintf(buf, sizeof(buf), "%llu bytes transferred in %lu.%03d secs (%llu bytes/sec)\n",
-	    (unsigned long long)st.bytes,
-	    (long)(mS / 1000),
+	(void)snprintf(buf, sizeof(buf),
+	    "%llu bytes transferred in %lu.%03d secs (%llu bytes/sec)\n",
+	    (unsigned long long int)st.bytes,
+	    (long int)(mS / 1000),
 	    (int)(mS % 1000),
-	    (unsigned long long)(st.bytes * 1000LL / mS));
-	write(STDERR_FILENO, buf, strlen(buf));
+	    (unsigned long long int)(st.bytes * 1000LL / mS));
+	(void)write(STDERR_FILENO, buf, strlen(buf));
 }
 
 static void terminate(int notused) {
@@ -1055,9 +1137,8 @@ c_arg(const void *a, const void *b)
 	    ((const struct arg *)b)->name));
 }
 
-static long long strsuftoll(const char *name, const char *arg, int def, unsigned long long int max)
-{
-	long long result;
+static long long int strsuftoll(const char *name, const char *arg, int def, unsigned long long int max) {
+	long long int result;
 	
 	if(sscanf(arg, "%lld", &result) == 0) result = def;
 	return result;
@@ -1066,7 +1147,6 @@ static long long strsuftoll(const char *name, const char *arg, int def, unsigned
 static void
 f_bs(char *arg)
 {
-
 	in.dbsz = out.dbsz = strsuftoll("block size", arg, 1, UINT_MAX);
 }
 
@@ -1095,7 +1175,9 @@ f_files(char *arg)
 static void
 f_ibs(char *arg)
 {
-	if(!(ddflags & C_BS)) in.dbsz = strsuftoll("input block size", arg, 1, UINT_MAX);
+	if(!(ddflags & C_BS)) {
+		in.dbsz = strsuftoll("input block size", arg, 1, UINT_MAX);
+	}
 }
 
 static void
@@ -1108,12 +1190,15 @@ f_if(char *arg)
 static void
 f_obs(char *arg)
 {
-	if(!(ddflags & C_BS)) out.dbsz = strsuftoll("output block size", arg, 1, UINT_MAX);
+
+	if (!(ddflags & C_BS))
+		out.dbsz = strsuftoll("output block size", arg, 1, UINT_MAX);
 }
 
 static void
 f_of(char *arg)
 {
+
 	out.name = arg;
 }
 
@@ -1134,6 +1219,7 @@ f_skip(char *arg)
 static void
 f_progress(char *arg)
 {
+
 	if(*arg != '0') progress = 1;
 }
 

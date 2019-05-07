@@ -398,6 +398,7 @@ TRAN_SRC = \
 	chroot.c \
 	clear.c \
 	cmp.c \
+	dd.c \
 	du.c \
 	exists.c \
 	getenforce.c \
