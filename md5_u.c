@@ -1,6 +1,6 @@
 /*	md5 - toolbox
 	Copyright 2007-2015 PC GO Ld.
-	Copyright 2015-2017 Rivoreo
+	Copyright 2015-2019 Rivoreo
 
 	This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
 
@@ -29,13 +29,12 @@
 
 static int quiet = 0;
 
-static int usage() {
+static void print_usage() {
 	fprintf(stderr,"Usage: md5"
 #if defined _WIN32 && !defined _WIN32_WNT_NATIVE
 			".exe"
 #endif
 			" [-q] <file> [...]\n");
-	return -1;
 }
 
 static int do_md5(const char *path) {
@@ -83,17 +82,44 @@ static int do_md5(const char *path) {
 }
 
 int md5_main(int argc, char *argv[]) {
-	int i, ret = 0;
-
-	for(i=0; i<argc; i++) if(strcmp(argv[i], "-q") == 0 || strcmp(argv[i], "--quiet") == 0) {
-		int j;
-		quiet = 1;
-		for(j=i; j>0; j--) argv[j] = argv[j - 1];
-		argc--;
-		argv++;
+	int i = 1, end_of_options = 0, ret = 0;
+	while(i < argc && !end_of_options) {
+		if(argv[i][0] == '-') {
+			int j;
+			const char *o = argv[i] + 1;
+			while(*o) switch(*o++) {
+				case 'q':
+					quiet = 1;
+					break;
+				case 'h':
+					print_usage();
+					return 0;
+				case '-':
+					if(*o) {
+						if(strcmp(o, "quiet") == 0) {
+							quiet = 1;
+						} else {
+							fprintf(stderr, "%s: Invalid option '%s'\n",
+								argv[0], argv[i]);
+							return -1;
+						}
+					} else end_of_options = 1;
+					goto move_argv;
+				default:
+					fprintf(stderr, "%s: Invalid option '-%c'\n", argv[0], o[-1]);
+					return -1;
+			}
+move_argv:
+			for(j=i; j>0; j--) argv[j] = argv[j - 1];
+			argc--;
+			argv++;
+		} else i++;
 	}
 
-	if(argc < 2) return usage();
+	if(argc < 2) {
+		print_usage();
+		return -1;
+	}
 
 	/* loop over the file args */
 	for (i = 1; i < argc; i++) {

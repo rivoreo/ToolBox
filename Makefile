@@ -261,6 +261,7 @@ EXTRA_TOOLS +=  \
 	setconsole \
 	setkey \
 	vmstat
+PTHREAD_LIB := -l pthread
 endif		# !SUNOS
 endif		# !FREEBSD
 ALL_TOOLS += \
@@ -340,7 +341,7 @@ TIME_LIB =
 else
 ifdef SUNOS
 NO_UTIMENSAT = 1
-CFLAGS += -D__EXTENSIONS__ -D_NO_STATFS -D__C99FEATURES__ -std=gnu99
+CFLAGS += -D _NO_STATFS=1 -D _REENTRANT=1 -D __EXTENSIONS__=1 -D __C99FEATURES__=1 -std=gnu99
 MATH_LIB = -lm
 SOCKET_LIB = -lnsl -lsocket
 #ifndef NO_OPENSSL
@@ -466,7 +467,7 @@ $(LIB_NAME):
 endif
 
 $(OUTFILE):	$(ALL_TOOLS) toolbox.o
-	$(CC) $(LDFLAGS) $(UNITY_LDFLAGS) $^ -o $@ $(LIBS) $(MATH_LIB) $(SOCKET_LIB) $(SELINUX_LIBS) $(TIME_LIB) $(CRYPT_LIB) -lpthread
+	$(CC) $(LDFLAGS) $(UNITY_LDFLAGS) $^ -o $@ $(LIBS) $(MATH_LIB) $(SOCKET_LIB) $(SELINUX_LIBS) $(TIME_LIB) $(CRYPT_LIB) $(PTHREAD_LIB)
 
 #separate-mingw:
 
