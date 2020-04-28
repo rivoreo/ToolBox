@@ -1,6 +1,6 @@
 /*	toolbox
 	Copyright 2007-2015 PC GO Ld.
-	Copyright 2015-2017 Rivoreo
+	Copyright 2015-2020 Rivoreo
 
 	This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
 
@@ -68,7 +68,7 @@ static int toolbox_main(int argc, char **argv) {
 			puts(PROGRAM_NAME);
 			puts("Version " VERSION);
 			puts("Copyright 2007-2015 PC GO Ld.");
-			puts("Copyright 2015-2017 Rivoreo");
+			puts(COPYRIGHT_LINE);
 			puts("This is free software; you are free to change and redistribute it;\n"
 				"see the source for copying conditions.");
 			puts("There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A\n"
@@ -102,8 +102,8 @@ static struct {
 
 static void help() {
 	int i;
-	puts(PROGRAM_NAME " " VERSION "\nCopyright 2015-2016 Rivoreo\n\n"
-		"Usage: \n	toolbox <tool> [<tool-arguments>]\n	<tool> [<tool-arguments>]\n\nList of tools:");
+	puts(PROGRAM_NAME " " VERSION "\n" COPYRIGHT_LINE "\n");
+	puts("Usage:\n	toolbox <tool> [<tool-arguments>]\n	<tool> [<tool-arguments>]\n\nList of tools:");
 	for(i = 2; tools[i].name; i++) printf("	%s\n", tools[i].name);
 	putchar('\n');
 }
