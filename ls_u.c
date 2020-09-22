@@ -1,6 +1,6 @@
 /*	ls - toolbox
 	Copyright 2007-2015 PC GO Ld.
-	Copyright 2015 libdll.so
+	Copyright 2015-2020 Rivoreo
 
 	This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
 
@@ -92,7 +92,11 @@ extern int _snprintf(char *, size_t, const char *, ...);
 #endif		/* !_WIN32_WCE */
 #else
 #if !defined major || !defined minor
+#ifdef __GLIBC__
+#include <sys/sysmacros.h>
+#else
 #include <sys/mkdev.h>
+#endif
 #endif
 #endif		/* _WIN32 */
 #endif		/* _WINDOWSNT_NATIVE */
