@@ -1,6 +1,6 @@
 /*	ls - toolbox
 	Copyright 2007-2015 PC GO Ld.
-	Copyright 2015-2020 Rivoreo
+	Copyright 2015-2021 Rivoreo
 
 	This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
 
@@ -746,6 +746,21 @@ static void show_inode(const struct stat *st) {
 #endif
 }
 
+static char *escape_name(const char *name) {
+	static char buffer[256];
+	char c;
+	unsigned int i = 0;
+	do {
+		c = name[i];
+		buffer[i] = c == '\x1b' ? '?' : c;
+		if(++i > sizeof buffer - 1) {
+			buffer[sizeof buffer - 1] = 0;
+			break;
+		}
+	} while(c);
+	return buffer;
+}
+
 static int listfile_other(const char *path, const char *filename, const struct stat *st, int flags) {
 	struct stat s;
 	if(!st) {
@@ -758,7 +773,7 @@ static int listfile_other(const char *path, const char *filename, const struct s
 
 	if(flags & LIST_INODE) show_inode(st);
 
-	/* blocks are 512 bytes, we want output to be KB */
+	/* blocks are 512 bytes, we want output to be KiB */
 	if((flags & LIST_SIZE) != 0) {
 #if defined _WIN32 && !defined _WINDOWSNT_NATIVE
 		unsigned long int size = st->st_size / 1024;		// XXX
@@ -821,6 +836,7 @@ static int listfile_long(const char *path, int flags) {
 	char size[16];
 
 	if((flags & LIST_DIRECTORIES) || !(name = strrchr(path, '/')) || !*++name) name = path;
+	name = escape_name(name);
 
 	if(lstat(path, &s) < 0) {
 		int e = errno;
@@ -991,6 +1007,7 @@ static int listfile_maclabel(const char *path, int flags) {
 	char size[16];
 
 	if((flags & LIST_DIRECTORIES) || !(name = strrchr(path, '/')) || !*++name) name = path;
+	name = escape_name(name);
 
 	if(lstat(path, &s) < 0) {
 		perror(path);
@@ -1115,8 +1132,12 @@ static int listfile(const char *dirname, const char *filename, int flags) {
 	//struct stat s;
 	//char file[4096];
 	char tmp[4096];
-	const char *name;
+	const char *basename;
 	const char *pathname = filename;
+
+	if((flags & LIST_DIRECTORIES) || !(basename = strrchr(pathname, '/'))) basename = pathname;
+	else basename++;
+	basename = escape_name(basename);
 
 	if(dirname != NULL) {
 		const char *slash = "/";
@@ -1128,12 +1149,8 @@ static int listfile(const char *dirname, const char *filename, int flags) {
 	}
 
 	if((flags & (LIST_LONG | LIST_SIZE | LIST_CLASSIFY | LIST_PATH_SLASH | LIST_MACLABEL | LIST_INODE | LIST_FILE_TYPE)) == 0) {
-		/* name is anything after the final '/', or the whole path if none*/
-		if((flags & LIST_DIRECTORIES) || !(name = strrchr(pathname, '/'))) name = pathname;
-		else name++;
-
-		if(is_color) printf_color(get_file_color(pathname), "%V%s%v\n", name);
-		else puts(name);
+		if(is_color) printf_color(get_file_color(pathname), "%V%s%v\n", basename);
+		else puts(basename);
 
 		return 0;
 	}
@@ -1146,7 +1163,7 @@ static int listfile(const char *dirname, const char *filename, int flags) {
 	if ((flags & LIST_LONG) != 0) {
 		return listfile_long(pathname, flags);
 	} else {
-		return listfile_other(pathname, filename, NULL, flags);
+		return listfile_other(pathname, basename, NULL, flags);
 	}
 }
 
@@ -1211,7 +1228,7 @@ static int listdir(const char *name, int flags) {
 		}
 		strlist_sort(&subdirs);
 		STRLIST_FOREACH(&subdirs, path, {
-			printf("\n%s:\n", path);
+			printf("\n%s:\n", escape_name(path));
 			listdir(path, flags);
 		});
 		strlist_done(&subdirs);
