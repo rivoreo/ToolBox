@@ -56,7 +56,7 @@ SHARED_OBJECT = noexec
 endif
 endif
 
-CFLAGS += -D_REENTRANT -Iinclude -O1 -Wall
+CFLAGS += -D _REENTRANT=1 -I include -fno-common -O1 -Wall
 
 ifdef DARWIN
 LIB_NAME = libtoolbox.dylib
