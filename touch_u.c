@@ -1,6 +1,6 @@
 /*	touch - toolbox
 	Copyright 2007-2015 PC GO Ld.
-	Copyright 2015-2016 Rivoreo
+	Copyright 2015-2021 Rivoreo
 
 	This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
 
@@ -50,12 +50,12 @@ static void usage(void) {
 #ifndef _NO_UTIMENSAT
 		"hl"
 #endif
-		"] [-t <time_t>] <file>\n");
+		"] [-t <timestamp>] <file>\n");
 }
 
 int touch_main(int argc, char *argv[]) {
 	int i, aflag = 0, mflag = 0, debug = 0, end_of_options = 0;
-	char *file = NULL;
+	char *path = NULL;
 #ifdef _NO_UTIMENSAT
 	int tflag = 0;
 	struct timeval specified_time, times[2];
@@ -132,27 +132,29 @@ int touch_main(int argc, char *argv[]) {
 				usage();
 				return -1;
 			}
-			file = argv[i];
+			path = argv[i];
 		}
 	}
 
-	if(!file) {
+	if(!path) {
 		fprintf(stderr, "touch: no file specified\n");
 		return 1;
 	}
 
-	if(access(file, F_OK) < 0) {
-		int fd;
+	if(access(path, F_OK) < 0) {
 		if(debug) fprintf(stderr, "File not exists\n");
-		if((fd = creat(file, 0666)) == 0) close(fd);
+		int fd = creat(path, 0666);
+		if(fd != -1) close(fd);
 	}
 
 #ifdef _NO_UTIMENSAT
 	if(!mflag && !aflag) {
 		if(!tflag) {
-			int r = utimes(file, NULL);
-			if(r < 0) perror(file);
-			return r;
+			if(utimes(path, NULL) < 0) {
+				perror(path);
+				return 1;
+			}
+			return 0;
 		}
 		aflag = mflag = 1;
 	}
@@ -161,7 +163,10 @@ int touch_main(int argc, char *argv[]) {
 		times[0] = specified_time;
 	} else {
 		struct stat omit;
-		stat(file, &omit);
+		if(stat(path, &omit) < 0) {
+			perror(path);
+			return 1;
+		}
 		times[0].tv_sec = omit.st_atime;
 		times[0].tv_usec = 0;
 	}
@@ -170,12 +175,15 @@ int touch_main(int argc, char *argv[]) {
 		times[1] = specified_time;
 	} else {
 		struct stat omit;
-		stat(file, &omit);
+		if(stat(path, &omit) < 0) {
+			perror(path);
+			return 1;
+		}
 		times[0].tv_sec = omit.st_mtime;
 		times[0].tv_usec = 0;
 	}
 
-	int r = utimes(file, times);
+	int s = utimes(path, times);
 #else
 	if(!mflag && !aflag) aflag = mflag = 1;
 
@@ -192,14 +200,17 @@ int touch_main(int argc, char *argv[]) {
 	}
 
 	if(debug) {
-		fprintf(stderr, "file = %s\n", file);
+		fprintf(stderr, "path = \"%s\"\n", path);
 		fprintf(stderr, "times[0].tv_sec = %ld, times[0].tv_nsec = %ld\n", times[0].tv_sec, times[0].tv_nsec);
 		fprintf(stderr, "times[1].tv_sec = %ld, times[1].tv_nsec = %ld\n", times[1].tv_sec, times[1].tv_nsec);
 		fprintf(stderr, "flags = 0x%8.8x\n", flags);
 	}
 
-	int r = utimensat(AT_FDCWD, file, times, flags);
+	int s = utimensat(AT_FDCWD, path, times, flags);
 #endif
-	if(r < 0) perror(argv[0]);
-	return r;
+	if(s < 0) {
+		perror(path);
+		return 1;
+	}
+	return 0;
 }
