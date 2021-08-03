@@ -352,10 +352,8 @@ else
 ifndef MINGW
 # !Windows && !Solaris && !Interix
 ALL_TOOLS += \
-	iftop_u.o \
 	isptrace1allowed_u.o
 EXTRA_TOOLS += \
-	iftop \
 	isptrace1allowed
 endif
 endif		# SUNOS

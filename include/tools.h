@@ -37,9 +37,6 @@ TOOL(id)
 #ifndef __INTERIX
 TOOL(ifconfig)
 #endif
-#if defined __linux__ || defined __gnu_hurd__
-TOOL(iftop)
-#endif
 #ifdef __linux__
 TOOL(insmod)
 #endif
