@@ -1,5 +1,5 @@
 /*	mknod - toolbox
-	Copyright 2015-2020 Rivoreo
+	Copyright 2015-2021 Rivoreo
 
 	This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
 
@@ -67,8 +67,15 @@ first_loop:
 						} else if(strcmp(o, "help") == 0) {
 							print_usage(argv[0]);
 							return 0;
+						} else {
+							fprintf(stderr, "%s: Invalid option '--%s'\n", argv[0], o);
+							return -1;
 						}
 					} else goto options_parse_end;
+					break;
+				default:
+					fprintf(stderr, "%s: Invalid option '-%c'\n", argv[0], o[-1]);
+					return -1;
 			}
 		}
 		i++;
@@ -79,8 +86,8 @@ options_parse_end:
 		print_usage(argv[0]);
 		return -1;
 	}
-	if(argv[2][1]) {
-		fprintf(stderr, "%s: The type can only take one character\n", argv[0]);
+	if(!argv[2][0] || argv[2][1]) {
+		fprintf(stderr, "%s: The type takes only one character\n", argv[0]);
 		return 1;
 	}
 	switch(*(argv[2])) {
@@ -98,7 +105,7 @@ options_parse_end:
 			return 1;
 	}
 	dev_t dev = 0;
-	if((mode & S_IFBLK) || (mode & S_IFCHR)) {
+	if(S_ISBLK(mode) || S_ISCHR(mode)) {
 		if(argc < 5) {
 			fprintf(stderr, "%s: Missing major and minor for type '%c'\n", argv[0], *(argv[2]));
 			return 2;
