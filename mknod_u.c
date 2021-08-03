@@ -113,7 +113,7 @@ options_parse_end:
 			fprintf(stderr, "%s: Too many operand for type '%c'\n", argv[0], *(argv[2]));
 			return 2;
 		}
-		dev = makedev(atoi(argv[3]), atoi(argv[4]));
+		dev = makedev(strtoul(argv[3], NULL, 0), strtoul(argv[4], NULL, 0));
 	} else if(argc > 3) {
 		fprintf(stderr, "%s: Too many operand for type 'p'\n", argv[0]);
 		return 2;
