@@ -1,6 +1,6 @@
 /*	ifconfig - toolbox
 	Copyright 2007-2015 PC GO Ld.
-	Copyright 2015-2018 Rivoreo
+	Copyright 2015-2021 Rivoreo
 
 	This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
 
@@ -257,38 +257,24 @@ static void setaddr(int s, struct ifreq *ifr, const char *addr) {
 #endif
 }
 
-static int print_status(int s, struct ifreq *ifr) {
-	unsigned int addr, mask, flags, mtu, metric;
-	char astring[20];
-	char mstring[20];
+static int print_status(int fd, struct ifreq *ifr) {
+	unsigned int flags, mtu, metric;
+	char astring[16];
+	char mstring[16];
 	const char *updown, *brdcst, *loopbk, *ppp, *running, *multi, *noarp;
-	int have_address = 0;
 
-	//fprintf(stderr, "function: print_status(%d, %p)\n", s, ifr);
-
-	if(ioctl(s, SIOCGIFADDR, ifr) == 0) {
-		have_address = 1;
-		addr = ((struct sockaddr_in *)&ifr->ifr_addr)->sin_addr.s_addr;
-		if (ioctl(s, SIOCGIFNETMASK, ifr) < 0) return -1;
-		mask = ((struct sockaddr_in *)&ifr->ifr_addr)->sin_addr.s_addr;
-
-		sprintf(astring, "%d.%d.%d.%d",
-			addr & 0xff,
-			((addr >> 8) & 0xff),
-			((addr >> 16) & 0xff),
-			((addr >> 24) & 0xff));
-		sprintf(mstring, "%d.%d.%d.%d",
-			mask & 0xff,
-			((mask >> 8) & 0xff),
-			((mask >> 16) & 0xff),
-			((mask >> 24) & 0xff));
+	int have_address = ioctl(fd, SIOCGIFADDR, ifr) == 0;
+	if(have_address) {
+		if(!inet_ntop(AF_INET, &((struct sockaddr_in *)&ifr->ifr_addr)->sin_addr, astring, sizeof astring)) return -1;
+		if(ioctl(fd, SIOCGIFNETMASK, ifr) < 0) return -1;
+		if(!inet_ntop(AF_INET, &((struct sockaddr_in *)&ifr->ifr_addr)->sin_addr, mstring, sizeof mstring)) return -1;
 	}
 
-	if (ioctl(s, SIOCGIFFLAGS, ifr) < 0) return -1;
+	if (ioctl(fd, SIOCGIFFLAGS, ifr) < 0) return -1;
 	flags = ifr->ifr_flags;
 
-	metric = getmetric(s, ifr);
-	mtu = getmtu(s, ifr);
+	metric = getmetric(fd, ifr);
+	mtu = getmtu(fd, ifr);
 
 	printf("%s: ", ifr->ifr_name);
 	if(have_address) printf("ip %s mask %s ", astring, mstring);
@@ -354,7 +340,7 @@ static int print_status_all(int fd) {
 static void print_usage(const char *name, int show_options) {
 	fprintf(stderr, "ifconfig - toolbox " VERSION "\n"
 		"Copyright 2007-2015 PC GO Ld.\n"
-		"Copyright 2015-2018 Rivoreo\n\n"
+		"Copyright 2015-2021 Rivoreo\n\n"
 		"Usage:\n"
 		"	%s -a\n"
 		"	%s <interface> [<address>[/<prefix-len>]]%s\n\n",
