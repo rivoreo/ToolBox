@@ -1,5 +1,5 @@
 /*	ioctl - toolbox
-	Copyright 2015-2018 Rivoreo
+	Copyright 2015-2021 Rivoreo
 
 	This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
 
@@ -36,6 +36,7 @@ int ioctl_main(int argc, char *argv[]) {
 	int res;
 
 	int read_only = 0;
+	int verbose = 0;
 	int length = -1;
 	int arg_size = 4;
 	int is_string = 0;
@@ -50,11 +51,14 @@ int ioctl_main(int argc, char *argv[]) {
 	int no_close = 0;
 
 	while(1) {
-		int c = getopt(argc, argv, "rdl:a:sh");
+		int c = getopt(argc, argv, "rvdl:a:sh");
 		if(c == -1) break;
 		switch(c) {
 			case 'r':
 				read_only = 1;
+				break;
+			case 'v':
+				verbose = 1;
 				break;
 #if !defined _WIN32 && !defined _WINDOWSNT_NATIVE
 			case 'd':
@@ -80,7 +84,7 @@ int ioctl_main(int argc, char *argv[]) {
 				arg_size = sizeof(char *);
 				break;
 			case 'h':
-				fprintf(stderr, "Usage: %s [-l <length>] [-a <argsize> | -s] [-r"
+				fprintf(stderr, "Usage: %s [-l <length>] [-a <argsize> | -s] [-rv"
 #if !defined _WIN32 && !defined _WINDOWSNT_NATIVE
 					"d"
 #endif
@@ -89,6 +93,7 @@ int ioctl_main(int argc, char *argv[]) {
 					"	-a <argsize>  Size of each argument (1-8)\n"
 					"	-s            Argments are pointers to C string\n"
 					"	-r            Open device in read only mode\n"
+					"	-v            Be verbose\n"
 #if !defined _WIN32 && !defined _WINDOWSNT_NATIVE
 					"	-d            Direct argument (no iobuffer)\n"
 #endif
@@ -166,12 +171,12 @@ int ioctl_main(int argc, char *argv[]) {
 			optind++;
 		}
 	}
-	printf("sending ioctl 0x%x", (unsigned int)ioctl_nr);
-	rem = length;
-	while(rem--) {
-		printf(" 0x%02x", *ioctl_argp_save++);
+	if(verbose) {
+		fprintf(stderr, "sending ioctl 0x%x", (unsigned int)ioctl_nr);
+		rem = length;
+		while(rem--) fprintf(stderr, " 0x%02x", *ioctl_argp_save++);
+		fputc('\n', stderr);
 	}
-	putchar('\n');
 
 #if defined _WIN32 || defined _WINDOWSNT_NATIVE
 	//int ioctl(int fd, int request, ...) {
@@ -202,6 +207,7 @@ int ioctl_main(int argc, char *argv[]) {
 		goto failed;
 	}
 	if(!no_close) close(fd);
+	printf("%d\n", res);
 	if(length) {
 		printf("return buf:");
 		ioctl_argp = ioctl_args;
