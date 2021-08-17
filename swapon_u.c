@@ -1,5 +1,5 @@
 /*	swapon - toolbox
-	Copyright 2015-2016 Rivoreo
+	Copyright 2015-2021 Rivoreo
 
 	This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
 
@@ -36,7 +36,7 @@ static int swapon(char *path) {
 #endif
 
 static void print_usage(const char *name) {
-	fprintf(stderr, "Usage: %s [-v]"
+	fprintf(stderr, "Usage: %s [-v] "
 #if defined __linux__ || defined __gnu_hurd__
 		"[-p <prio>] "
 #endif
@@ -58,7 +58,6 @@ int swapon_main(int argc, char **argv) {
 	int flags = 0;
 	int prio;
 #endif
-	int verbose = 0;
 
 	opterr = 0;
 
@@ -77,12 +76,16 @@ int swapon_main(int argc, char **argv) {
 					return -EINVAL;
 				}
 				prio = parse_prio(optarg);
+				if(prio < 0) {
+					fprintf(stderr, "%s: Invalid prio value '%s'\n",
+						argv[0], optarg);
+					return -EINVAL;
+				}
 				flags |= SWAP_FLAG_PREFER;
 				flags |= (prio << SWAP_FLAG_PRIO_SHIFT) & SWAP_FLAG_PRIO_MASK;
 				break;
 #endif
 			case 'v':
-				verbose = 1;
 				break;
 			case 'h':
 				print_usage(argv[0]);
