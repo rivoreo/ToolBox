@@ -102,6 +102,7 @@ int uptime_main() {
 				break;
 			}
 		}
+		endutxent();
 		if(up < 0) {
 #endif
 			fprintf(stderr, "Could not get up time\n");

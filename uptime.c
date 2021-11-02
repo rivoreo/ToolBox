@@ -163,6 +163,7 @@ int main() {
 				break;
 			}
 		}
+		endutxent();
 		if(up < 0) {
 #endif
 #ifdef __linux__
