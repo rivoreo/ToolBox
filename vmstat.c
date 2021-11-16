@@ -62,22 +62,20 @@ static void usage(char *command);
 
 int main(int argc, char *argv[]) {
 	struct state s[2];
-	int iterations, delay, header_interval;
 	int toggle, count;
 	int i;
 
-	iterations = -1;
-	delay = 1;
-	header_interval = 20;
-
+	int iterations = 1;
+	int delay = 1;
+	int header_interval = 20;
 	for (i = 1; i < argc; i++) {
 		if(strcmp(argv[i], "-n") == 0) { 
-			if(i >= argc - 1) {
+			if(i++ >= argc - 1) {
 				fprintf(stderr, "Option -n requires an argument.\n");
 				//exit(EXIT_FAILURE);
 				return EXIT_FAILURE;
 			}
-			iterations = atoi(argv[++i]);
+			iterations = strcasecmp(argv[i], "inf") == 0 ? -1 : atoi(argv[i]);
 			continue;
 		}
 		if(strcmp(argv[i], "-d") == 0) {
@@ -112,15 +110,14 @@ int main(int argc, char *argv[]) {
 	toggle = 0;
 	count = 0;
 
-	if(header_interval) print_header();
-	read_state(&s[1 - toggle]);
+	read_state(s + 1);
 	while ((iterations < 0) || (iterations-- > 0)) {
 		sleep(delay);
-		read_state(&s[toggle]);
 		if (header_interval) {
 			if (count == 0) print_header();
 			count = (count + 1) % header_interval;
 		}
+		read_state(s + toggle);
 		print_line(s + (1 - toggle), s + toggle);
 		toggle = 1 - toggle;
 	}
