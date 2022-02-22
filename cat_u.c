@@ -188,8 +188,17 @@ static void raw_cat(int rfd) {
 			oldtime = tv.tv_sec + (double)tv.tv_usec / 1000000;
 		}
 	}
-	//while((nr = read(rfd, buf, bsize)) > 0) {
 	while(1) {
+		/* Older util-linux script(1) erroneously measuring the time
+		 * before calling read(2), this causes multiple issues
+		 * including the first timing data being wasted, the timing
+		 * data has to be read off-by-one when replaying, and missing
+		 * timing data of the last chunk of data. This bug has been
+		 * fixed in newer util-linux by commits b0d6b85 and a21f7ec;
+		 * it however hopelessly broke the compatibily with existing
+		 * recordings, therefore we have to keep the old buggy
+		 * behavior, while additionally printing the timing data for
+		 * last chunk of data after EOF. */
 		if(Tflag && gettimeofday(&tv, NULL) < 0) {
 			fprintf(stderr, "gettimeofday failed: %s, disabling timing output\n", strerror(errno));
 			Tflag = 0;
@@ -207,6 +216,11 @@ static void raw_cat(int rfd) {
 				exit(EXIT_FAILURE);
 			}
 		}
+	}
+	// Print timing data for last chunk
+	if(Tflag && gettimeofday(&tv, NULL) == 0) {
+		newtime = tv.tv_sec + (double)tv.tv_usec / 1000000;
+		fprintf(stderr, "%f 0\n", newtime - oldtime);
 	}
 	if(nr < 0) {
 		fprintf(stderr,"%s: invalid length\n", filename);
