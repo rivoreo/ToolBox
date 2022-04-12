@@ -1,9 +1,15 @@
 /*	mkdir - toolbox
-	Copyright 2015-2018 Rivoreo
+	Copyright 2015-2022 Rivoreo
 
-	This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; either version 2 of the License, or (at
+	your option) any later version.
 
-	This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+	This program is distributed in the hope that it will be useful, but
+	WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+	General Public License for more details.
 */
 
 #include <stdio.h>
@@ -18,11 +24,13 @@
 static void print_usage() {
 	fprintf(stderr,
 		"Usage: mkdir"
-#if defined _WIN32 && !defined _WIN32_WNT_NATIVE
+#if defined _WIN32 && !defined _WINDOWSNT_NATIVE
 		".exe"
 #endif
 		" [<option>] <target> [...]\n"
+#if !defined _WIN32 || defined _WINDOWSNT_NATIVE
 		"    -m, --mode <mode>	set mode for newly created directories\n"
+#endif
 		"    -p, --parents	create parent directories as needed\n"
 		"    -v, --verbose	print name for each created directory\n"
 		"    --help		display usage and exit\n");
@@ -37,7 +45,9 @@ int mkdir_main(int argc, char *argv[]) {
 		{ NULL, 0, NULL, 0 }
 	};
 	int ret = 0;
+#if !defined _WIN32 || defined _WINDOWSNT_NATIVE
 	mode_t mode = (mode_t)-1;
+#endif
 	int recursive = 0;
 	int verbose = 0;
 	while(1) {
@@ -48,11 +58,13 @@ int mkdir_main(int argc, char *argv[]) {
 				print_usage();
 				return 0;
 			case 'm':
+#if !defined _WIN32 || defined _WINDOWSNT_NATIVE
 				mode = STR2MODE(optarg);
 				if(mode == (mode_t)-1) {
 					fprintf(stderr, "%s: Bad mode '%s'\n", argv[0], optarg);
 					return -1;
 				}
+#endif
 				break;
 			case 'p':
 				recursive = 1;
@@ -69,11 +81,13 @@ int mkdir_main(int argc, char *argv[]) {
 		return -1;
 	}
 
+#if !defined _WIN32 || defined _WINDOWSNT_NATIVE
 	mode_t orig_umask = umask(0);
 	if(mode == (mode_t)-1) {
 		umask(orig_umask & ~(S_IWUSR | S_IXUSR));
 		mode = 0777;
 	}
+#endif
 
 	char currpath[PATH_MAX], *pathpiece;
 	struct stat st;
@@ -97,7 +111,7 @@ int mkdir_main(int argc, char *argv[]) {
 				strcat(currpath, pathpiece);
 				strcat(currpath, "/");
 				if(stat(currpath, &st) < 0) {
-#if defined _WIN32 && !defined _WIN32_WNT_NATIVE
+#if defined _WIN32 && !defined _WINDOWSNT_NATIVE
 					int sr = mkdir(currpath);
 #else
 					int sr = mkdir(currpath, mode);
@@ -113,7 +127,7 @@ int mkdir_main(int argc, char *argv[]) {
 				pathpiece = strtok(NULL, "/");
 			}
 		} else {
-#if defined _WIN32 && !defined _WIN32_WNT_NATIVE
+#if defined _WIN32 && !defined _WINDOWSNT_NATIVE
 			int sr = mkdir(path);
 #else
 			int sr = mkdir(path, mode);
@@ -127,7 +141,9 @@ int mkdir_main(int argc, char *argv[]) {
 		}
 	} while(++optind < argc);
 
+#if !defined _WIN32 || defined _WINDOWSNT_NATIVE
 	umask(orig_umask);
+#endif
 
 	return ret;
 }
